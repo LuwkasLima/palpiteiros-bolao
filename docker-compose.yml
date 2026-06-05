@@ -1,0 +1,22 @@
+# Local dev services. Works with `docker compose` or `podman-compose`.
+# Start with: pnpm db:up   (or: podman-compose up -d)
+services:
+  mongo:
+    image: docker.io/library/mongo:7
+    container_name: bolao-mongo
+    restart: unless-stopped
+    ports:
+      - "27017:27017"
+    volumes:
+      - mongo-data:/data/db
+
+  mailpit:
+    image: docker.io/axllent/mailpit:latest
+    container_name: bolao-mailpit
+    restart: unless-stopped
+    ports:
+      - "1025:1025" # SMTP (the API sends magic-link emails here)
+      - "8025:8025" # Web UI — open http://localhost:8025 to read them
+
+volumes:
+  mongo-data:
