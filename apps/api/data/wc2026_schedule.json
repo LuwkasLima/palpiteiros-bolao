@@ -1,0 +1,78 @@
+{
+  "_note": "Illustrative 2026 World Cup draw (48 teams, 12 groups of 4). Group assignments are PROVISIONAL placeholders — replace with the official FIFA draw before going live. The seed script generates all group fixtures and the knockout skeleton from this file.",
+  "tournament_start": "2026-06-11",
+  "groups": {
+    "A": [
+      { "code": "MEX", "name": "Mexico", "flag_emoji": "🇲🇽" },
+      { "code": "CRO", "name": "Croatia", "flag_emoji": "🇭🇷" },
+      { "code": "ECU", "name": "Ecuador", "flag_emoji": "🇪🇨" },
+      { "code": "KSA", "name": "Saudi Arabia", "flag_emoji": "🇸🇦" }
+    ],
+    "B": [
+      { "code": "CAN", "name": "Canada", "flag_emoji": "🇨🇦" },
+      { "code": "BEL", "name": "Belgium", "flag_emoji": "🇧🇪" },
+      { "code": "MAR", "name": "Morocco", "flag_emoji": "🇲🇦" },
+      { "code": "JPN", "name": "Japan", "flag_emoji": "🇯🇵" }
+    ],
+    "C": [
+      { "code": "USA", "name": "United States", "flag_emoji": "🇺🇸" },
+      { "code": "NED", "name": "Netherlands", "flag_emoji": "🇳🇱" },
+      { "code": "GHA", "name": "Ghana", "flag_emoji": "🇬🇭" },
+      { "code": "QAT", "name": "Qatar", "flag_emoji": "🇶🇦" }
+    ],
+    "D": [
+      { "code": "ARG", "name": "Argentina", "flag_emoji": "🇦🇷" },
+      { "code": "NGA", "name": "Nigeria", "flag_emoji": "🇳🇬" },
+      { "code": "AUS", "name": "Australia", "flag_emoji": "🇦🇺" },
+      { "code": "PAN", "name": "Panama", "flag_emoji": "🇵🇦" }
+    ],
+    "E": [
+      { "code": "FRA", "name": "France", "flag_emoji": "🇫🇷" },
+      { "code": "SEN", "name": "Senegal", "flag_emoji": "🇸🇳" },
+      { "code": "IRN", "name": "Iran", "flag_emoji": "🇮🇷" },
+      { "code": "NZL", "name": "New Zealand", "flag_emoji": "🇳🇿" }
+    ],
+    "F": [
+      { "code": "BRA", "name": "Brazil", "flag_emoji": "🇧🇷" },
+      { "code": "SUI", "name": "Switzerland", "flag_emoji": "🇨🇭" },
+      { "code": "CMR", "name": "Cameroon", "flag_emoji": "🇨🇲" },
+      { "code": "CRC", "name": "Costa Rica", "flag_emoji": "🇨🇷" }
+    ],
+    "G": [
+      { "code": "ENG", "name": "England", "flag_emoji": "🏴󠁧󠁢󠁥󠁮󠁧󠁿" },
+      { "code": "URU", "name": "Uruguay", "flag_emoji": "🇺🇾" },
+      { "code": "KOR", "name": "South Korea", "flag_emoji": "🇰🇷" },
+      { "code": "EGY", "name": "Egypt", "flag_emoji": "🇪🇬" }
+    ],
+    "H": [
+      { "code": "ESP", "name": "Spain", "flag_emoji": "🇪🇸" },
+      { "code": "DEN", "name": "Denmark", "flag_emoji": "🇩🇰" },
+      { "code": "TUN", "name": "Tunisia", "flag_emoji": "🇹🇳" },
+      { "code": "HON", "name": "Honduras", "flag_emoji": "🇭🇳" }
+    ],
+    "I": [
+      { "code": "POR", "name": "Portugal", "flag_emoji": "🇵🇹" },
+      { "code": "COL", "name": "Colombia", "flag_emoji": "🇨🇴" },
+      { "code": "CIV", "name": "Ivory Coast", "flag_emoji": "🇨🇮" },
+      { "code": "JAM", "name": "Jamaica", "flag_emoji": "🇯🇲" }
+    ],
+    "J": [
+      { "code": "GER", "name": "Germany", "flag_emoji": "🇩🇪" },
+      { "code": "POL", "name": "Poland", "flag_emoji": "🇵🇱" },
+      { "code": "ALG", "name": "Algeria", "flag_emoji": "🇩🇿" },
+      { "code": "VEN", "name": "Venezuela", "flag_emoji": "🇻🇪" }
+    ],
+    "K": [
+      { "code": "ITA", "name": "Italy", "flag_emoji": "🇮🇹" },
+      { "code": "SRB", "name": "Serbia", "flag_emoji": "🇷🇸" },
+      { "code": "MLI", "name": "Mali", "flag_emoji": "🇲🇱" },
+      { "code": "NOR", "name": "Norway", "flag_emoji": "🇳🇴" }
+    ],
+    "L": [
+      { "code": "SCO", "name": "Scotland", "flag_emoji": "🏴󠁧󠁢󠁳󠁣󠁴󠁿" },
+      { "code": "PER", "name": "Peru", "flag_emoji": "🇵🇪" },
+      { "code": "RSA", "name": "South Africa", "flag_emoji": "🇿🇦" },
+      { "code": "UZB", "name": "Uzbekistan", "flag_emoji": "🇺🇿" }
+    ]
+  }
+}
