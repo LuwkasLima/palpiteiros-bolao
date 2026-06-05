@@ -1,0 +1,18 @@
+{
+  "name": "bolao",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Bolão — FIFA World Cup 2026 sweepstakes (for fun, no money)",
+  "packageManager": "pnpm@11.5.2",
+  "scripts": {
+    "db:up": "podman-compose up -d",
+    "db:down": "podman-compose down",
+    "db:logs": "podman-compose logs -f",
+    "api:dev": "cd apps/api && uv run uvicorn app.main:app --reload --port 8000",
+    "api:seed": "cd apps/api && uv run python -m app.seed",
+    "api:test": "cd apps/api && uv run pytest",
+    "web:dev": "pnpm --filter web dev",
+    "web:build": "pnpm --filter web build",
+    "contracts:gen": "pnpm --filter @bolao/contracts gen"
+  }
+}

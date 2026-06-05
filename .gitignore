@@ -12,6 +12,7 @@ build/
 out/
 .next/
 .turbo/
+next-env.d.ts
 
 # Env
 .env
@@ -28,3 +29,14 @@ yarn-error.log*
 .cache/
 coverage/
 *.tsbuildinfo
+
+# Python
+__pycache__/
+*.py[cod]
+.venv/
+.pytest_cache/
+.ruff_cache/
+.mypy_cache/
+
+# Container volumes
+.podman-data/
