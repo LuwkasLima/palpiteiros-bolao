@@ -51,6 +51,7 @@ class User(Document):
     email: EmailStr
     display_name: str
     is_admin: bool = False
+    onboarding_done: bool | None = None  # None = user predates this field, treat as True
     created_at: datetime = Field(default_factory=utcnow)
 
     class Settings:

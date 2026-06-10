@@ -15,7 +15,6 @@ from app.models import MatchStatus, MemberRole, Stage
 
 class RequestLinkIn(BaseModel):
     email: EmailStr
-    display_name: str | None = Field(default=None, max_length=60)
 
 
 class VerifyIn(BaseModel):
@@ -31,6 +30,11 @@ class UserOut(BaseModel):
     email: EmailStr
     display_name: str
     is_admin: bool
+    onboarding_done: bool
+
+
+class UpdateProfileIn(BaseModel):
+    display_name: str = Field(min_length=1, max_length=60)
 
 
 # --- Teams & matches ----------------------------------------------------------

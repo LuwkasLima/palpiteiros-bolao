@@ -404,8 +404,6 @@ export interface components {
              * Format: email
              */
             email: string;
-            /** Display Name */
-            display_name?: string | null;
         };
         /** ResultIn */
         ResultIn: {
@@ -447,6 +445,8 @@ export interface components {
             display_name: string;
             /** Is Admin */
             is_admin: boolean;
+            /** Onboarding Done */
+            onboarding_done: boolean;
         };
         /** ValidationError */
         ValidationError: {
