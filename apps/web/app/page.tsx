@@ -18,6 +18,7 @@ export default function HomePage() {
 
   useEffect(() => {
     if (!loading && !user) router.replace("/login");
+    if (!loading && user && !user.onboarding_done) router.replace("/onboarding");
   }, [loading, user, router]);
 
   useEffect(() => {

@@ -15,7 +15,7 @@ from fastapi import APIRouter, Cookie, HTTPException, Response, status
 from app.config import get_settings
 from app.deps import CurrentUser
 from app.models import MagicLink, Session, User
-from app.schemas import MessageOut, RequestLinkIn, UserOut, VerifyIn
+from app.schemas import MessageOut, RequestLinkIn, UpdateProfileIn, UserOut, VerifyIn
 from app.security import SESSION_COOKIE, hash_token, new_token
 from app.services.email import send_magic_link
 
@@ -24,6 +24,16 @@ router = APIRouter(prefix="/auth", tags=["auth"])
 
 def _default_display_name(email: str) -> str:
     return email.split("@", 1)[0]
+
+
+def _user_out(user: User) -> UserOut:
+    return UserOut(
+        id=str(user.id),
+        email=user.email,
+        display_name=user.display_name,
+        is_admin=user.is_admin,
+        onboarding_done=user.onboarding_done if user.onboarding_done is not None else True,
+    )
 
 
 @router.post("/request-link", response_model=MessageOut)
@@ -39,19 +49,13 @@ async def request_link(payload: RequestLinkIn) -> MessageOut:
         + timedelta(minutes=settings.magic_link_ttl_minutes),
     ).insert()
 
-    # Carry the chosen display name through the link so verify can apply it on first login.
     link = f"{settings.web_base_url}/auth/verify?token={token}"
-    if payload.display_name:
-        from urllib.parse import quote
-
-        link += f"&name={quote(payload.display_name)}"
-
     send_magic_link(email, link, settings=settings)
     return MessageOut(message="If that email is valid, a sign-in link is on its way.")
 
 
 @router.post("/verify", response_model=UserOut)
-async def verify(payload: VerifyIn, response: Response, name: str | None = None) -> UserOut:
+async def verify(payload: VerifyIn, response: Response) -> UserOut:
     settings = get_settings()
     link = await MagicLink.find_one(MagicLink.token_hash == hash_token(payload.token))
 
@@ -72,8 +76,9 @@ async def verify(payload: VerifyIn, response: Response, name: str | None = None)
     if user is None:
         user = User(
             email=email,
-            display_name=name or _default_display_name(email),
+            display_name=_default_display_name(email),
             is_admin=email in settings.admin_email_set,
+            onboarding_done=False,
         )
         await user.insert()
     else:
@@ -99,9 +104,7 @@ async def verify(payload: VerifyIn, response: Response, name: str | None = None)
         secure=settings.api_base_url.startswith("https"),
         path="/",
     )
-    return UserOut(
-        id=str(user.id), email=user.email, display_name=user.display_name, is_admin=user.is_admin
-    )
+    return _user_out(user)
 
 
 @router.post("/logout", response_model=MessageOut)
@@ -118,11 +121,17 @@ async def logout(
     return MessageOut(message="Signed out.")
 
 
+@router.patch("/me", response_model=UserOut)
+async def update_me(payload: UpdateProfileIn, user: CurrentUser) -> UserOut:
+    user.display_name = payload.display_name
+    user.onboarding_done = True
+    await user.save()
+    return _user_out(user)
+
+
 @router.get("/me", response_model=UserOut)
 async def me(user: CurrentUser) -> UserOut:
-    return UserOut(
-        id=str(user.id), email=user.email, display_name=user.display_name, is_admin=user.is_admin
-    )
+    return _user_out(user)
 
 
 def _invalid() -> HTTPException:

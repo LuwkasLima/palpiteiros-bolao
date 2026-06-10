@@ -5,7 +5,6 @@ import { api, ApiError } from "@/lib/api";
 
 export default function LoginPage() {
   const [email, setEmail] = useState("");
-  const [name, setName] = useState("");
   const [sent, setSent] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
@@ -15,7 +14,7 @@ export default function LoginPage() {
     setBusy(true);
     setError(null);
     try {
-      await api.requestLink(email.trim(), name.trim() || undefined);
+      await api.requestLink(email.trim());
       setSent(true);
     } catch (err) {
       setError(err instanceof ApiError ? err.message : "Algo deu errado.");
@@ -45,15 +44,6 @@ export default function LoginPage() {
         </div>
       ) : (
         <form onSubmit={submit} className="card flex flex-col gap-4 p-5">
-          <label className="flex flex-col gap-1.5 text-sm">
-            <span className="text-[var(--muted)]">Seu nome (como aparece no ranking)</span>
-            <input
-              className="input"
-              value={name}
-              onChange={(e) => setName(e.target.value)}
-              placeholder="Lucas"
-            />
-          </label>
           <label className="flex flex-col gap-1.5 text-sm">
             <span className="text-[var(--muted)]">E-mail</span>
             <input
