@@ -17,13 +17,12 @@ function VerifyInner() {
     ran.current = true;
 
     const token = params.get("token");
-    const name = params.get("name") ?? undefined;
     if (!token) {
       setError("Link inválido.");
       return;
     }
     api
-      .verify(token, name)
+      .verify(token)
       .then(async () => {
         await refresh();
         router.replace("/");
