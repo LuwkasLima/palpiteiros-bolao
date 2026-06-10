@@ -44,18 +44,23 @@ async function request<T>(path: string, init?: RequestInit): Promise<T> {
 
 export const api = {
   // Auth
-  requestLink: (email: string, displayName?: string) =>
+  requestLink: (email: string) =>
     request<{ message: string }>("/auth/request-link", {
       method: "POST",
-      body: JSON.stringify({ email, display_name: displayName || null }),
+      body: JSON.stringify({ email }),
     }),
-  verify: (token: string, name?: string) =>
-    request<UserOut>(`/auth/verify${name ? `?name=${encodeURIComponent(name)}` : ""}`, {
+  verify: (token: string) =>
+    request<UserOut>("/auth/verify", {
       method: "POST",
       body: JSON.stringify({ token }),
     }),
   logout: () => request<{ message: string }>("/auth/logout", { method: "POST" }),
   me: () => request<UserOut>("/auth/me"),
+  updateProfile: (displayName: string) =>
+    request<UserOut>("/auth/me", {
+      method: "PATCH",
+      body: JSON.stringify({ display_name: displayName }),
+    }),
 
   // Tournament
   teams: () => request<TeamOut[]>("/teams"),
