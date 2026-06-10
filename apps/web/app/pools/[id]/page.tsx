@@ -80,7 +80,7 @@ export default function PoolPage({ params }: { params: Promise<{ id: string }> }
             <div
               key={row.user_id}
               className={`flex items-center justify-between p-3.5 ${
-                row.user_id === user!.id ? "bg-[var(--surface-2)]" : ""
+                row.user_id === user?.id ? "bg-[var(--surface-2)]" : ""
               }`}
             >
               <div className="flex items-center gap-3">
