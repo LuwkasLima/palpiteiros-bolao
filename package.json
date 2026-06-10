@@ -5,6 +5,11 @@
   "description": "Bolão — FIFA World Cup 2026 sweepstakes (for fun, no money)",
   "packageManager": "pnpm@11.5.2",
   "scripts": {
+    "setup": "uv sync --project apps/api --dev && pnpm install",
+    "dev": "concurrently -n api,web -c blue,green \"pnpm api:dev\" \"pnpm web:dev\"",
+    "services:up": "podman-compose up -d mailpit",
+    "services:down": "podman-compose down",
+    "services:logs": "podman-compose logs -f",
     "db:up": "podman-compose up -d",
     "db:down": "podman-compose down",
     "db:logs": "podman-compose logs -f",
@@ -14,5 +19,8 @@
     "web:dev": "pnpm --filter web dev",
     "web:build": "pnpm --filter web build",
     "contracts:gen": "pnpm --filter @bolao/contracts gen"
+  },
+  "devDependencies": {
+    "concurrently": "^9.0.0"
   }
 }
