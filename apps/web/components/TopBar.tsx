@@ -15,6 +15,9 @@ export function TopBar() {
           </span>
         </Link>
         <nav className="flex items-center gap-3 text-sm">
+          <Link href="/regras" className="text-[var(--muted)] hover:text-[var(--text)]">
+            Regras
+          </Link>
           {user?.is_admin && (
             <Link href="/admin" className="text-[var(--muted)] hover:text-[var(--text)]">
               Admin
