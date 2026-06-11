@@ -25,9 +25,15 @@ export default function LoginPage() {
 
   return (
     <div className="mx-auto mt-6 max-w-md">
-      <h1 className="mb-1 text-2xl font-extrabold">Entrar no Social dos Palpiteiros</h1>
+      <h1 className="mb-1 text-2xl font-extrabold">O Social dos Palpiteiros</h1>
+      <p className="mb-4 text-sm text-[var(--muted)]">
+        Plataforma de bolão raiz em versão simples e moderna: você
+        entra pelo celular, usando só seu email, sem complicação. Foi feito para reunir amigos pela
+        brincadeira e pela nostalgia, com respeito à privacidade e aquele clima gostoso de Copa do
+        Mundo a cada jogo.
+      </p>
       <p className="mb-6 text-sm text-[var(--muted)]">
-        Nao precisa de senha! Enviamos um link mágico para o seu e-mail.
+        Não precisa de senha! Enviamos um link mágico para o seu e-mail.
       </p>
 
       {sent ? (

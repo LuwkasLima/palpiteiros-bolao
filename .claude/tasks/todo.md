@@ -7,13 +7,15 @@
 - [ ]Show an Icon on the bolao card in the front end if you have open predictions to make for that day
 - [ ] Show predictions of the participants under the leaderboard once the game has started.
 - [ ] Allow fo users to send emoticons to the predictions of the other users in the bolao.
-- [ ] Limit 10 boloes per user
+- [ ] Limit 3 boloes per user and 10 participations
 - [ ] Criar um Leaderboard geral (com todos os usuarios de todos os boloes)
 - [ ] Opcao para editar nome depois de salvo
+- [ ]
 
 
 # BUGS:
 - [ ] Midnight games are displaying one day before the game (e.g. Australia vs Turkey)
+- [ ] Adjust "Meus Palpites" button for cellphones
 
 # COMPLETED
 - [x] Show the scores for each game on the side of each prediction once they are computed to ensure transparency.

@@ -6,7 +6,7 @@ import { InstallHint } from "@/components/InstallHint";
 import { TopBar } from "@/components/TopBar";
 
 export const metadata: Metadata = {
-  title: "Social dos Palpiteiros",
+  title: "Social dos Palpiteiros (Beta)",
   description: "Social dos Palpiteiros — palpite, dispute e divirta-se com os amigos na Copa do Mundo 2026.",
   manifest: "/manifest.webmanifest",
   appleWebApp: {
@@ -15,7 +15,10 @@ export const metadata: Metadata = {
     title: "Social dos Palpiteiros",
   },
   icons: {
-    icon: "/icons/icon-192.png",
+    icon: [
+      { url: "/favicon.ico", sizes: "any" },
+      { url: "/icons/icon-192.png", sizes: "192x192", type: "image/png" },
+    ],
     apple: "/icons/apple-touch-icon.png",
   },
 };

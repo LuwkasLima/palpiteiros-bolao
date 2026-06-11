@@ -59,7 +59,8 @@ export default function PoolPage({ params }: { params: Promise<{ id: string }> }
           <p className="text-sm text-[var(--muted)]">{pool.members.length} participantes</p>
         </div>
         <Link href={`/pools/${id}/predict`} className="btn">
-          Meus palpites
+          <span className="sm:hidden">Palpites</span>
+          <span className="hidden sm:inline">Meus palpites</span>
         </Link>
       </div>
 
