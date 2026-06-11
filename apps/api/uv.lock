@@ -55,6 +55,7 @@ version = "0.1.0"
 source = { virtual = "." }
 dependencies = [
     { name = "beanie" },
+    { name = "certifi" },
     { name = "fastapi" },
     { name = "itsdangerous" },
     { name = "pydantic", extra = ["email"] },
@@ -75,6 +76,7 @@ dev = [
 [package.metadata]
 requires-dist = [
     { name = "beanie", specifier = ">=2.0" },
+    { name = "certifi", specifier = ">=2024.0" },
     { name = "fastapi", specifier = ">=0.115" },
     { name = "itsdangerous", specifier = ">=2.2" },
     { name = "pydantic", extras = ["email"], specifier = ">=2.9" },

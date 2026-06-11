@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import asyncio
 
+import certifi
 from beanie import init_beanie
 from pymongo import AsyncMongoClient
 
@@ -19,7 +20,7 @@ async def init_db() -> None:
     """Connect to MongoDB and register Beanie documents (creates indexes)."""
     global _client
     settings = get_settings()
-    _client = AsyncMongoClient(settings.mongodb_uri)
+    _client = AsyncMongoClient(settings.mongodb_uri, tlsCAFile=certifi.where())
     await init_beanie(database=_client[settings.mongodb_db], document_models=ALL_DOCUMENTS)
 
 
