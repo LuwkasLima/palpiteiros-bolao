@@ -19,6 +19,7 @@ POINTS_EXACT = 5  # exact scoreline
 POINTS_MARGIN = 3  # correct winner AND correct goal margin (non-draws), but not exact
 POINTS_OUTCOME = 2  # correct outcome only (incl. any non-exact draw)
 ADVANCE_BONUS = 2  # knockout only: correct "who advances" pick
+POINTS_CLEAN_SHEET = 1  # per side: predicted 0 goals and the team actually scored 0
 
 # Escalating per-round weight — the anti-runaway mechanic.
 ROUND_WEIGHT: dict[Stage, int] = {
@@ -42,6 +43,11 @@ def _outcome(home: int, away: int) -> str:
     if home < away:
         return "away"
     return "draw"
+
+
+def _clean_sheet_hits(pred_home: int, pred_away: int, act_home: int, act_away: int) -> int:
+    """Number of sides where the player correctly predicted a clean sheet (0 or 1 or 2)."""
+    return (pred_home == 0 and act_home == 0) + (pred_away == 0 and act_away == 0)
 
 
 def base_points(pred_home: int, pred_away: int, act_home: int, act_away: int) -> int:
@@ -75,6 +81,14 @@ def points_for(prediction: Prediction, match: Match) -> int:
         match.home_score,
         match.away_score,
     ) * weight
+
+    if points > 0:
+        points += _clean_sheet_hits(
+            prediction.home_score,
+            prediction.away_score,
+            match.home_score,
+            match.away_score,
+        ) * weight
 
     if (
         match.stage is not Stage.GROUP
