@@ -54,8 +54,9 @@ def _pred(home: int, away: int, advancing: PydanticObjectId | None = None):
 
 def test_points_for_applies_round_weight():
     # Exact prediction in a group game vs the final: final is worth far more.
-    group = scoring.points_for(_pred(1, 0), _match(Stage.GROUP, 1, 0))
-    final = scoring.points_for(_pred(1, 0), _match(Stage.FINAL, 1, 0))
+    # Use a no-zero scoreline so the clean-sheet bonus doesn't mix in.
+    group = scoring.points_for(_pred(2, 1), _match(Stage.GROUP, 2, 1))
+    final = scoring.points_for(_pred(2, 1), _match(Stage.FINAL, 2, 1))
     assert group == scoring.POINTS_EXACT * 1
     assert final == scoring.POINTS_EXACT * 13
     assert final > group
@@ -80,6 +81,36 @@ def test_points_for_advancing_bonus_only_when_correct():
     m = _match(Stage.QF, 2, 1, advancing=PydanticObjectId())
     pts = scoring.points_for(_pred(2, 1, advancing=PydanticObjectId()), m)
     assert pts == scoring.POINTS_EXACT * scoring.round_weight(Stage.QF)
+
+
+def test_clean_sheet_both_sides():
+    # Predicting 0-0, actual 0-0 — exact base + 2 clean-sheet bonuses.
+    weight = scoring.round_weight(Stage.GROUP)
+    pts = scoring.points_for(_pred(0, 0), _match(Stage.GROUP, 0, 0))
+    expected = scoring.POINTS_EXACT * weight + 2 * scoring.POINTS_CLEAN_SHEET * weight
+    assert pts == expected
+
+
+def test_clean_sheet_away_only():
+    # Predict 1-0, actual 2-0 — correct outcome but different margin, plus away clean sheet.
+    weight = scoring.round_weight(Stage.GROUP)
+    pts = scoring.points_for(_pred(1, 0), _match(Stage.GROUP, 2, 0))
+    expected = scoring.POINTS_OUTCOME * weight + 1 * scoring.POINTS_CLEAN_SHEET * weight
+    assert pts == expected
+
+
+def test_clean_sheet_no_bonus_on_wrong_outcome():
+    # Predicted 0-1 (away win), actual 1-0 (home win) — wrong outcome, no bonus despite 0s.
+    pts = scoring.points_for(_pred(0, 1), _match(Stage.GROUP, 1, 0))
+    assert pts == 0
+
+
+def test_clean_sheet_scales_with_round_weight():
+    # Same prediction earns more clean-sheet bonus points in the final than in the group stage.
+    group_pts = scoring.points_for(_pred(1, 0), _match(Stage.GROUP, 1, 0))
+    final_pts = scoring.points_for(_pred(1, 0), _match(Stage.FINAL, 1, 0))
+    # Both earn 1 clean-sheet hit; final weight (13) > group weight (1).
+    assert final_pts > group_pts
 
 
 def test_late_round_can_overturn_group_lead():
