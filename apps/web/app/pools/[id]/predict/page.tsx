@@ -6,7 +6,7 @@ import { useRouter } from "next/navigation";
 import type { MatchOut, PredictionOut, TeamOut } from "@bolao/contracts";
 import { api, ApiError } from "@/lib/api";
 import { useAuth } from "@/lib/auth";
-import { STAGE_ORDER, formatKickoff, groupKickoffSort, sideLabel, stageLabel, teamMap } from "@/lib/format";
+import { STAGE_ORDER, formatKickoff, groupKickoffSort, matchPoints, sideLabel, stageLabel, teamMap } from "@/lib/format";
 
 type SaveState = "idle" | "saving" | "saved" | "error";
 
@@ -116,6 +116,7 @@ function MatchRow({
   }
 
   const final = match.status === "final";
+  const pts = final && pred ? matchPoints(pred, match) : null;
 
   return (
     <div className="flex items-center gap-2 p-3">
@@ -142,7 +143,12 @@ function MatchRow({
       <div className="flex-1 text-left text-sm font-medium">{awayLabel}</div>
       <div className="ml-1 w-16 text-right text-[10px] leading-tight">
         {final ? (
-          <span className="chip">{match.home_score}×{match.away_score}</span>
+          <>
+            <span className="chip">{match.home_score}×{match.away_score}</span>
+            {pts != null && (
+              <span className="block font-bold text-[var(--accent)]">+{pts} pts</span>
+            )}
+          </>
         ) : match.is_locked ? (
           <span className="text-[var(--muted)]">🔒 fechado</span>
         ) : state === "saving" ? (
