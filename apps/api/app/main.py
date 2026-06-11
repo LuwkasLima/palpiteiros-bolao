@@ -23,7 +23,7 @@ async def lifespan(app: FastAPI):
 
 def create_app() -> FastAPI:
     settings = get_settings()
-    app = FastAPI(title="Bolão World Cup 2026 API", version="0.1.0", lifespan=lifespan)
+    app = FastAPI(title="Social dos Palpiteiros API", version="0.1.0", lifespan=lifespan)
 
     @app.middleware("http")
     async def _ensure_db(request: Request, call_next):

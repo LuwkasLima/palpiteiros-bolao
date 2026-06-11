@@ -57,7 +57,7 @@ export function InstallHint() {
               <b>Adicionar à Tela de Início</b>.
             </>
           ) : (
-            <>Instale o Bolão na tela inicial para acesso rápido.</>
+            <>Instale o Social dos Palpiteiros na tela inicial para acesso rápido.</>
           )}
         </div>
         {!isIos && deferred && (

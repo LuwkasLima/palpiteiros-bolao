@@ -41,7 +41,7 @@ export default function PoolPage({ params }: { params: Promise<{ id: string }> }
       : pool.invite_url;
 
   async function share() {
-    const data = { title: `Bolão: ${pool!.name}`, text: "Entre no meu bolão da Copa 2026!", url: inviteUrl };
+    const data = { title: `Bolão: ${pool!.name}`, text: "Entre no meu bolão no Social dos Palpiteiros!", url: inviteUrl };
     if (navigator.share) {
       await navigator.share(data).catch(() => {});
     } else {

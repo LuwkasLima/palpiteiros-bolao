@@ -1,7 +1,7 @@
 {
-  "name": "Bolão Copa 2026",
-  "short_name": "Bolão 2026",
-  "description": "Palpite, dispute e divirta-se com os amigos na Copa do Mundo 2026.",
+  "name": "Social dos Palpiteiros",
+  "short_name": "Palpiteiros",
+  "description": "Social dos Palpiteiros — palpite, dispute e divirta-se com os amigos na Copa do Mundo 2026.",
   "lang": "pt-BR",
   "start_url": "/",
   "scope": "/",
