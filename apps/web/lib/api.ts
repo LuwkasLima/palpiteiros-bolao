@@ -13,7 +13,7 @@ import type {
   UserOut,
 } from "@bolao/contracts";
 
-const BASE = process.env.NEXT_PUBLIC_API_BASE_URL ?? "http://localhost:8000";
+const BASE = process.env.NEXT_PUBLIC_API_BASE_URL || "/api";
 
 export class ApiError extends Error {
   constructor(public status: number, message: string) {
