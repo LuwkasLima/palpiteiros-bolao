@@ -94,4 +94,6 @@ export const api = {
       method: "POST",
       body: JSON.stringify(body),
     }),
+  clearResult: (matchId: string) =>
+    request<MatchOut>(`/admin/matches/${matchId}/result`, { method: "DELETE" }),
 };
