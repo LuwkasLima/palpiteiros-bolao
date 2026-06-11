@@ -37,7 +37,7 @@ export default function OnboardingPage() {
 
   return (
     <div className="mx-auto mt-6 max-w-md">
-      <h1 className="mb-1 text-2xl font-extrabold">Bem-vindo ao Bolão!</h1>
+      <h1 className="mb-1 text-2xl font-extrabold">Bem-vindo ao Social dos Palpiteiros!</h1>
       <p className="mb-6 text-sm text-[var(--muted)]">
         Como você quer aparecer no ranking?
       </p>
@@ -48,7 +48,7 @@ export default function OnboardingPage() {
             className="input"
             value={name}
             onChange={(e) => setName(e.target.value)}
-            placeholder="Lucas"
+            placeholder="Escreva Aqui"
             autoFocus
             required
           />

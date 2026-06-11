@@ -10,3 +10,4 @@
 - Show the scores for each game on the side of each prediction once they are computed to ensure transparency.
 - Show predictions of the participants under the leaderboard once the game has started.
 - [LARGE] Allow fo users to send emoticons to the predictions of the other users in the bolao.
+- Adicionar limite de 10 boloes por pessoa

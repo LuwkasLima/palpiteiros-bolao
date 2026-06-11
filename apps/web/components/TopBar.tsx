@@ -11,7 +11,7 @@ export function TopBar() {
         <Link href="/" className="flex items-center gap-2 font-extrabold">
           <span className="text-xl">⚽</span>
           <span>
-            Bolão <span className="text-[var(--accent)]">2026</span>
+            Social dos <span className="text-[var(--accent)]">Palpiteiros</span>
           </span>
         </Link>
         <nav className="flex items-center gap-3 text-sm">

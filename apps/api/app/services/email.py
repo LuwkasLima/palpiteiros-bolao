@@ -33,9 +33,9 @@ def send_email(to: str, subject: str, body: str, settings: Settings | None = Non
 def send_magic_link(to: str, link: str, settings: Settings | None = None) -> None:
     body = (
         "Olá!\n\n"
-        "Clique no link abaixo para entrar no Bolão da Copa 2026 "
+        "Clique no link abaixo para entrar no Social dos Palpiteiros "
         "(válido por alguns minutos):\n\n"
         f"{link}\n\n"
         "Se você não pediu este acesso, pode ignorar este e-mail.\n"
     )
-    send_email(to, "Seu acesso ao Bolão 2026", body, settings=settings)
+    send_email(to, "Seu acesso ao Social dos Palpiteiros", body, settings=settings)
