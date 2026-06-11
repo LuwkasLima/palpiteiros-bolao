@@ -101,6 +101,22 @@ function ResultRow({
     }
   }
 
+  async function clear() {
+    setBusy(true);
+    setErr(null);
+    try {
+      const saved = await api.clearResult(match.id);
+      onSaved(saved);
+      setHome("");
+      setAway("");
+      setAdvancing("");
+    } catch (e) {
+      setErr(e instanceof ApiError ? e.message : "Erro ao limpar.");
+    } finally {
+      setBusy(false);
+    }
+  }
+
   return (
     <div className="card p-3">
       <div className="flex items-center gap-2">
@@ -144,6 +160,15 @@ function ResultRow({
             </select>
           )}
           {match.status === "final" && <span className="chip">final</span>}
+          {match.status === "final" && (
+            <button
+              className="btn-ghost px-3 py-1.5 text-sm text-red-400"
+              disabled={busy}
+              onClick={clear}
+            >
+              Limpar
+            </button>
+          )}
           <button
             className="btn px-3 py-1.5 text-sm"
             disabled={busy || home === "" || away === "" || (isKnockout && !hasTeams)}
