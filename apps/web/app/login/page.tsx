@@ -25,21 +25,16 @@ export default function LoginPage() {
 
   return (
     <div className="mx-auto mt-6 max-w-md">
-      <h1 className="mb-1 text-2xl font-extrabold">Entrar no Bolão</h1>
+      <h1 className="mb-1 text-2xl font-extrabold">Entrar no Social dos Palpiteiros</h1>
       <p className="mb-6 text-sm text-[var(--muted)]">
-        Sem senha. Enviamos um link mágico para o seu e-mail.
+        Nao precisa de senha! Enviamos um link mágico para o seu e-mail.
       </p>
 
       {sent ? (
         <div className="card p-5">
           <p className="font-semibold">📩 Link enviado!</p>
           <p className="mt-2 text-sm text-[var(--muted)]">
-            Verifique <b>{email}</b> e clique no link para entrar. (Em desenvolvimento, ele
-            aparece no Mailpit em{" "}
-            <a className="text-[var(--accent-2)]" href="http://localhost:8025" target="_blank">
-              localhost:8025
-            </a>
-            .)
+            Verifique o inbox de <b>{email}</b> e clique no link para entrar.
           </p>
         </div>
       ) : (

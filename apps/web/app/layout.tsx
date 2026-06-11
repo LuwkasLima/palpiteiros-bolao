@@ -6,13 +6,13 @@ import { InstallHint } from "@/components/InstallHint";
 import { TopBar } from "@/components/TopBar";
 
 export const metadata: Metadata = {
-  title: "Bolão Copa 2026",
-  description: "Bolão da Copa do Mundo 2026 — palpite, dispute e divirta-se com os amigos.",
+  title: "Social dos Palpiteiros",
+  description: "Social dos Palpiteiros — palpite, dispute e divirta-se com os amigos na Copa do Mundo 2026.",
   manifest: "/manifest.webmanifest",
   appleWebApp: {
     capable: true,
     statusBarStyle: "black-translucent",
-    title: "Bolão 2026",
+    title: "Social dos Palpiteiros",
   },
   icons: {
     icon: "/icons/icon-192.png",
