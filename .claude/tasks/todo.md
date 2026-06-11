@@ -11,3 +11,9 @@
 - Show predictions of the participants under the leaderboard once the game has started.
 - [LARGE] Allow fo users to send emoticons to the predictions of the other users in the bolao.
 - Adicionar limite de 10 boloes por pessoa
+- Criar um Leaderboard geral (com todos os usuarios de todos os boloes)
+- Opcao para editar nome depois de salvo
+
+
+# BUGS:
+- Midnight games are displaying one day before the game (e.g. Australia vs Turkey)
