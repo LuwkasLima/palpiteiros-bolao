@@ -116,7 +116,7 @@ function MatchRow({
   }
 
   const final = match.status === "final";
-  const pts = final && pred ? matchPoints(pred, match) : null;
+  const pts = final ? (pred ? matchPoints(pred, match) : 0) : null;
 
   return (
     <div className="flex items-center gap-2 p-3">
@@ -146,7 +146,9 @@ function MatchRow({
           <>
             <span className="chip">{match.home_score}×{match.away_score}</span>
             {pts != null && (
-              <span className="block font-bold text-[var(--accent)]">+{pts} pts</span>
+              <span className={`block font-bold ${pts > 0 ? "text-[var(--accent)]" : "text-[var(--muted)]"}`}>
+                {pts > 0 ? "+" : ""}{pts} pts
+              </span>
             )}
           </>
         ) : match.is_locked ? (
