@@ -19,7 +19,9 @@
 
 ## Repository conventions
 
-- Keep plans and progress notes in `tasks/todo.md` when a task spans multiple steps or sessions.
+- `tasks/todo.md` is the user's backlog. Do not write to it unless explicitly asked.
+- For in-session task tracking, use the `TodoWrite` tool (in-memory only, never written to disk).
+- When a task requires a multi-step plan written to disk, create a named file like `tasks/plan-<topic>.md` and delete it when the work is done. Never use `tasks/todo.md` for this.
 - Keep project lessons and recurring gotchas in `tasks/lessons.md` only when those lessons are meant to be shared by the team.
 - Prefer concise updates over long narrative logs.
 
