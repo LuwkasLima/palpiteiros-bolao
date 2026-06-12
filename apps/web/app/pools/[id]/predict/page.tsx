@@ -6,7 +6,8 @@ import { useRouter } from "next/navigation";
 import type { MatchOut, PredictionOut, TeamOut } from "@bolao/contracts";
 import { api, ApiError } from "@/lib/api";
 import { useAuth } from "@/lib/auth";
-import { STAGE_ORDER, formatKickoff, groupKickoffSort, matchPoints, sideLabel, stageLabel, teamMap } from "@/lib/format";
+import { formatKickoffTime, formatMatchDay, groupKickoffSort, matchDayKey, matchPoints, sideLabel, stageBadge, teamMap } from "@/lib/format";
+import { venue, type Venue } from "@/lib/venues";
 
 type SaveState = "idle" | "saving" | "saved" | "error";
 
@@ -38,12 +39,13 @@ export default function PredictPage({ params }: { params: Promise<{ id: string }
   }, [poolId, user]);
 
   const tmap = useMemo(() => teamMap(teams), [teams]);
-  const byStage = useMemo(() => {
+  const byDay = useMemo(() => {
     const groups: Record<string, MatchOut[]> = {};
-    (matches ?? []).forEach((m) => (groups[m.stage] ??= []).push(m));
+    (matches ?? []).forEach((m) => (groups[matchDayKey(m.kickoff_at)] ??= []).push(m));
     Object.values(groups).forEach((list) => list.sort(groupKickoffSort));
     return groups;
   }, [matches]);
+  const dayKeys = useMemo(() => Object.keys(byDay).sort(), [byDay]);
 
   if (error) return <p className="mt-10 text-center text-red-400">{error}</p>;
   if (!matches) return <p className="mt-10 text-center text-[var(--muted)]">Carregando jogos…</p>;
@@ -57,17 +59,18 @@ export default function PredictPage({ params }: { params: Promise<{ id: string }
         </Link>
       </div>
 
-      {STAGE_ORDER.filter((s) => byStage[s]?.length).map((stage) => (
-        <section key={stage}>
-          <h2 className="mb-2 font-bold text-[var(--accent-2)]">{stageLabel(stage)}</h2>
+      {dayKeys.map((day) => (
+        <section key={day}>
+          <h2 className="mb-2 font-bold text-[var(--accent-2)]">{formatMatchDay(day)}</h2>
           <div className="card divide-y divide-[var(--border)]">
-            {byStage[stage].map((m) => (
+            {byDay[day].map((m) => (
               <MatchRow
                 key={m.id}
                 match={m}
                 tmap={tmap}
                 pred={preds[m.id]}
                 poolId={poolId}
+                venue={venue(m.key)}
                 onSaved={(p) => setPreds((prev) => ({ ...prev, [m.id]: p }))}
               />
             ))}
@@ -83,12 +86,14 @@ function MatchRow({
   tmap,
   pred,
   poolId,
+  venue: venueInfo,
   onSaved,
 }: {
   match: MatchOut;
   tmap: ReturnType<typeof teamMap>;
   pred?: PredictionOut;
   poolId: string;
+  venue?: Venue;
   onSaved: (p: PredictionOut) => void;
 }) {
   const [home, setHome] = useState<string>(pred ? String(pred.home_score) : "");
@@ -119,49 +124,55 @@ function MatchRow({
   const pts = final ? (pred ? matchPoints(pred, match) : 0) : null;
 
   return (
-    <div className="flex items-center gap-2 p-3">
-      <div className="flex-1 text-right text-sm font-medium">{homeLabel}</div>
-      <div className="flex items-center gap-1">
-        <input
-          className="score-input"
-          inputMode="numeric"
-          value={home}
-          disabled={match.is_locked}
-          onChange={(e) => setHome(e.target.value.replace(/\D/g, "").slice(0, 2))}
-          onBlur={save}
-        />
-        <span className="text-[var(--muted)]">×</span>
-        <input
-          className="score-input"
-          inputMode="numeric"
-          value={away}
-          disabled={match.is_locked}
-          onChange={(e) => setAway(e.target.value.replace(/\D/g, "").slice(0, 2))}
-          onBlur={save}
-        />
+    <div className="p-3">
+      <div className="flex items-center gap-2">
+        <div className="min-w-0 flex-1 truncate text-right text-sm font-medium">{homeLabel}</div>
+        <div className="flex items-center gap-1">
+          <input
+            className="score-input"
+            inputMode="numeric"
+            value={home}
+            disabled={match.is_locked}
+            onChange={(e) => setHome(e.target.value.replace(/\D/g, "").slice(0, 2))}
+            onBlur={save}
+          />
+          <span className="text-[var(--muted)]">×</span>
+          <input
+            className="score-input"
+            inputMode="numeric"
+            value={away}
+            disabled={match.is_locked}
+            onChange={(e) => setAway(e.target.value.replace(/\D/g, "").slice(0, 2))}
+            onBlur={save}
+          />
+        </div>
+        <div className="min-w-0 flex-1 truncate text-left text-sm font-medium">{awayLabel}</div>
+        <div className="ml-1 w-20 text-right text-xs leading-tight">
+          {final ? (
+            <>
+              <span className="chip">{match.home_score}×{match.away_score}</span>
+              {pts != null && (
+                <span className={`mt-1 block font-bold ${pts > 0 ? "text-[var(--accent)]" : "text-[var(--muted)]"}`}>
+                  {pts > 0 ? "+" : ""}{pts} pts
+                </span>
+              )}
+            </>
+          ) : match.is_locked ? (
+            <span className="text-[var(--muted)]">🔒 fechado</span>
+          ) : state === "saving" ? (
+            <span className="text-[var(--muted)]">salvando…</span>
+          ) : state === "saved" ? (
+            <span className="text-[var(--accent)]">✓ salvo</span>
+          ) : state === "error" ? (
+            <span className="text-red-400">erro</span>
+          ) : (
+            <span className="text-[var(--muted)]">{formatKickoffTime(match.kickoff_at)}</span>
+          )}
+        </div>
       </div>
-      <div className="flex-1 text-left text-sm font-medium">{awayLabel}</div>
-      <div className="ml-1 w-16 text-right text-[10px] leading-tight">
-        {final ? (
-          <>
-            <span className="chip">{match.home_score}×{match.away_score}</span>
-            {pts != null && (
-              <span className={`block font-bold ${pts > 0 ? "text-[var(--accent)]" : "text-[var(--muted)]"}`}>
-                {pts > 0 ? "+" : ""}{pts} pts
-              </span>
-            )}
-          </>
-        ) : match.is_locked ? (
-          <span className="text-[var(--muted)]">🔒 fechado</span>
-        ) : state === "saving" ? (
-          <span className="text-[var(--muted)]">salvando…</span>
-        ) : state === "saved" ? (
-          <span className="text-[var(--accent)]">✓ salvo</span>
-        ) : state === "error" ? (
-          <span className="text-red-400">erro</span>
-        ) : (
-          <span className="text-[var(--muted)]">{formatKickoff(match.kickoff_at)}</span>
-        )}
+      <div className="mt-1.5 flex items-center justify-between gap-2 text-xs text-[var(--muted)]">
+        <span className="shrink-0">{stageBadge(match.stage, match.group_label)}</span>
+        {venueInfo && <span className="min-w-0 truncate text-right">{venueInfo.stadium} · {venueInfo.city}</span>}
       </div>
     </div>
   );
