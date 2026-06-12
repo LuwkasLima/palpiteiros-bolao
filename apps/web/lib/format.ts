@@ -47,6 +47,39 @@ export function groupKickoffSort(a: MatchOut, b: MatchOut): number {
   return new Date(a.kickoff_at).getTime() - new Date(b.kickoff_at).getTime();
 }
 
+function normalizeUtc(iso: string): string {
+  return /Z|[+-]\d{2}:?\d{2}$/.test(iso) ? iso : iso + "Z";
+}
+
+/** Returns a YYYY-MM-DD key in the user's local timezone — used to group matches by day. */
+export function matchDayKey(iso: string): string {
+  return new Date(normalizeUtc(iso)).toLocaleDateString("en-CA");
+}
+
+/** Formats only the local time portion of a UTC ISO string (HH:mm in pt-BR). */
+export function formatKickoffTime(iso: string): string {
+  const utc = /Z|[+-]\d{2}:?\d{2}$/.test(iso) ? iso : iso + "Z";
+  return new Date(utc).toLocaleTimeString("pt-BR", { hour: "2-digit", minute: "2-digit" });
+}
+
+/** Formats a YYYY-MM-DD day key as a human-readable section header in pt-BR. */
+export function formatMatchDay(dayKey: string): string {
+  // Parse at local noon to avoid any DST/timezone edge on date boundaries.
+  const d = new Date(dayKey + "T12:00:00");
+  const s = d.toLocaleDateString("pt-BR", { weekday: "short", day: "numeric", month: "short" });
+  return s.charAt(0).toUpperCase() + s.slice(1);
+}
+
+const STAGE_BADGE: Record<string, string> = {
+  r32: "R32", r16: "Oitavas", qf: "Quartas", sf: "Semifinal", third: "3º lugar", final: "Final",
+};
+
+/** Short label for the inline stage chip on each match row. */
+export function stageBadge(stage: string, groupLabel: string | null): string {
+  if (stage === "group") return groupLabel ? `Grupo ${groupLabel}` : "Fase de grupos";
+  return STAGE_BADGE[stage] ?? stage;
+}
+
 function _outcome(home: number, away: number) {
   return home > away ? "home" : away > home ? "away" : "draw";
 }
