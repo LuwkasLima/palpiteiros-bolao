@@ -27,7 +27,6 @@
 
 | # | Time (ET) | Group | Match | Stadium | City |
 |---|-----------|-------|-------|---------|------|
-| 6 | 00:00 | D | Australia v Türkiye | BC Place | Vancouver |
 | 8 | 15:00 | B | Qatar v Switzerland | Levi's Stadium | San Francisco |
 | 7 | 18:00 | C | Brazil v Morocco | MetLife Stadium | New York/NJ |
 | 5 | 21:00 | C | Haiti v Scotland | Gillette Stadium | Boston |
@@ -36,6 +35,7 @@
 
 | # | Time (ET) | Group | Match | Stadium | City |
 |---|-----------|-------|-------|---------|------|
+| 6 | 12:00 | D | Australia v Türkiye | BC Place | Vancouver |
 | 10 | 13:00 | E | Germany v Curaçao | NRG Stadium | Houston |
 | 11 | 16:00 | F | Netherlands v Japan | AT&T Stadium | Dallas |
 | 9 | 19:00 | E | Ivory Coast v Ecuador | Lincoln Financial Field | Philadelphia |
