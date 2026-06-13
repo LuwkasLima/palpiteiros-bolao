@@ -31,6 +31,13 @@ async def get_current_user(
     user = await User.get(session.user_id)
     if user is None:
         raise HTTPException(status.HTTP_401_UNAUTHORIZED, "User not found")
+    now = datetime.now(timezone.utc)
+    seen = user.last_seen_at
+    if seen is None or (now - (seen if seen.tzinfo else seen.replace(tzinfo=timezone.utc))).total_seconds() > 28800:
+        try:
+            await user.set({User.last_seen_at: now})
+        except Exception:
+            pass  # best-effort; never block a request over a tracking write
     return user
 
 

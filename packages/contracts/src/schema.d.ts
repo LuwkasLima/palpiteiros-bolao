@@ -69,7 +69,8 @@ export interface paths {
         delete?: never;
         options?: never;
         head?: never;
-        patch?: never;
+        /** Update Me */
+        patch: operations["update_me_auth_me_patch"];
         trace?: never;
     };
     "/teams": {
@@ -209,6 +210,40 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/pools/{pool_id}/predictions/revealed": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Revealed Predictions */
+        get: operations["revealed_predictions_pools__pool_id__predictions_revealed_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/admin/stats": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Get Stats */
+        get: operations["get_stats_admin_stats_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/admin/matches/{match_id}/result": {
         parameters: {
             query?: never;
@@ -220,7 +255,8 @@ export interface paths {
         put?: never;
         /** Set Result */
         post: operations["set_result_admin_matches__match_id__result_post"];
-        delete?: never;
+        /** Clear Result */
+        delete: operations["clear_result_admin_matches__match_id__result_delete"];
         options?: never;
         head?: never;
         patch?: never;
@@ -247,6 +283,26 @@ export interface paths {
 export type webhooks = Record<string, never>;
 export interface components {
     schemas: {
+        /** AdminStatsOut */
+        AdminStatsOut: {
+            /** Total Users */
+            total_users: number;
+            /** Onboarded Users */
+            onboarded_users: number;
+            /** Active Users */
+            active_users: number;
+            /** Total Pools */
+            total_pools: number;
+            /** Avg Pool Size */
+            avg_pool_size: number;
+            /** Total Predictions */
+            total_predictions: number;
+            /** Predictions By Stage */
+            predictions_by_stage: {
+                [key: string]: number;
+            };
+            match_counts: components["schemas"]["MatchStatusCountsOut"];
+        };
         /** HTTPValidationError */
         HTTPValidationError: {
             /** Detail */
@@ -304,11 +360,41 @@ export interface components {
             /** Is Locked */
             is_locked: boolean;
         };
+        /** MatchRevealedOut */
+        MatchRevealedOut: {
+            /** Match Id */
+            match_id: string;
+            /**
+             * Kickoff At
+             * Format: date-time
+             */
+            kickoff_at: string;
+            status: components["schemas"]["MatchStatus"];
+            /** Home Team Name */
+            home_team_name: string | null;
+            /** Away Team Name */
+            away_team_name: string | null;
+            /** Home Score */
+            home_score: number | null;
+            /** Away Score */
+            away_score: number | null;
+            /** Entries */
+            entries: components["schemas"]["PredictionEntryOut"][];
+        };
         /**
          * MatchStatus
          * @enum {string}
          */
         MatchStatus: "scheduled" | "locked" | "final";
+        /** MatchStatusCountsOut */
+        MatchStatusCountsOut: {
+            /** Scheduled */
+            scheduled: number;
+            /** Locked */
+            locked: number;
+            /** Final */
+            final: number;
+        };
         /** MemberOut */
         MemberOut: {
             /** User Id */
@@ -372,15 +458,6 @@ export interface components {
             /** Is Creator */
             is_creator: boolean;
         };
-        /** PredictionIn */
-        PredictionIn: {
-            /** Home Score */
-            home_score: number;
-            /** Away Score */
-            away_score: number;
-            /** Advancing Team Id */
-            advancing_team_id?: string | null;
-        };
         /** PredictionEntryOut */
         PredictionEntryOut: {
             /** User Id */
@@ -396,33 +473,14 @@ export interface components {
             /** Points */
             points: number | null;
         };
-        /** MatchRevealedOut */
-        MatchRevealedOut: {
-            /** Match Id */
-            match_id: string;
-            /**
-             * Kickoff At
-             * Format: date-time
-             */
-            kickoff_at: string;
-            status: components["schemas"]["MatchStatus"];
-            /** Home Team Name */
-            home_team_name: string | null;
-            /** Away Team Name */
-            away_team_name: string | null;
+        /** PredictionIn */
+        PredictionIn: {
             /** Home Score */
-            home_score: number | null;
+            home_score: number;
             /** Away Score */
-            away_score: number | null;
-            /** Entries */
-            entries: components["schemas"]["PredictionEntryOut"][];
-        };
-        /** RevealedPredictionsOut */
-        RevealedPredictionsOut: {
-            /** Pool Id */
-            pool_id: string;
-            /** Matches */
-            matches: components["schemas"]["MatchRevealedOut"][];
+            away_score: number;
+            /** Advancing Team Id */
+            advancing_team_id?: string | null;
         };
         /** PredictionOut */
         PredictionOut: {
@@ -457,6 +515,13 @@ export interface components {
             /** Advancing Team Id */
             advancing_team_id?: string | null;
         };
+        /** RevealedPredictionsOut */
+        RevealedPredictionsOut: {
+            /** Pool Id */
+            pool_id: string;
+            /** Matches */
+            matches: components["schemas"]["MatchRevealedOut"][];
+        };
         /**
          * Stage
          * @enum {string}
@@ -474,6 +539,11 @@ export interface components {
             group_label: string | null;
             /** Flag Emoji */
             flag_emoji: string;
+        };
+        /** UpdateProfileIn */
+        UpdateProfileIn: {
+            /** Display Name */
+            display_name: string;
         };
         /** UserOut */
         UserOut: {
@@ -553,9 +623,7 @@ export interface operations {
     };
     verify_auth_verify_post: {
         parameters: {
-            query?: {
-                name?: string | null;
-            };
+            query?: never;
             header?: never;
             path?: never;
             cookie?: never;
@@ -627,6 +695,41 @@ export interface operations {
             };
         };
         requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["UserOut"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    update_me_auth_me_patch: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: {
+                bolao_session?: string | null;
+            };
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["UpdateProfileIn"];
+            };
+        };
         responses: {
             /** @description Successful Response */
             200: {
@@ -937,6 +1040,70 @@ export interface operations {
             };
         };
     };
+    revealed_predictions_pools__pool_id__predictions_revealed_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                pool_id: string;
+            };
+            cookie?: {
+                bolao_session?: string | null;
+            };
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["RevealedPredictionsOut"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    get_stats_admin_stats_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: {
+                bolao_session?: string | null;
+            };
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["AdminStatsOut"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
     set_result_admin_matches__match_id__result_post: {
         parameters: {
             query?: never;
@@ -953,6 +1120,39 @@ export interface operations {
                 "application/json": components["schemas"]["ResultIn"];
             };
         };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["MatchOut"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    clear_result_admin_matches__match_id__result_delete: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                match_id: string;
+            };
+            cookie?: {
+                bolao_session?: string | null;
+            };
+        };
+        requestBody?: never;
         responses: {
             /** @description Successful Response */
             200: {

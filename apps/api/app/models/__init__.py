@@ -53,10 +53,14 @@ class User(Document):
     is_admin: bool = False
     onboarding_done: bool | None = None  # None = user predates this field, treat as True
     created_at: datetime = Field(default_factory=utcnow)
+    last_seen_at: datetime | None = None
 
     class Settings:
         name = "users"
-        indexes = [IndexModel([("email", pymongo.ASCENDING)], unique=True)]
+        indexes = [
+            IndexModel([("email", pymongo.ASCENDING)], unique=True),
+            IndexModel([("last_seen_at", pymongo.ASCENDING)]),
+        ]
 
 
 class MagicLink(Document):
