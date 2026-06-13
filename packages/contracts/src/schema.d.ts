@@ -381,6 +381,49 @@ export interface components {
             /** Advancing Team Id */
             advancing_team_id?: string | null;
         };
+        /** PredictionEntryOut */
+        PredictionEntryOut: {
+            /** User Id */
+            user_id: string;
+            /** Display Name */
+            display_name: string;
+            /** Home Score */
+            home_score: number;
+            /** Away Score */
+            away_score: number;
+            /** Advancing Team Id */
+            advancing_team_id: string | null;
+            /** Points */
+            points: number | null;
+        };
+        /** MatchRevealedOut */
+        MatchRevealedOut: {
+            /** Match Id */
+            match_id: string;
+            /**
+             * Kickoff At
+             * Format: date-time
+             */
+            kickoff_at: string;
+            status: components["schemas"]["MatchStatus"];
+            /** Home Team Name */
+            home_team_name: string | null;
+            /** Away Team Name */
+            away_team_name: string | null;
+            /** Home Score */
+            home_score: number | null;
+            /** Away Score */
+            away_score: number | null;
+            /** Entries */
+            entries: components["schemas"]["PredictionEntryOut"][];
+        };
+        /** RevealedPredictionsOut */
+        RevealedPredictionsOut: {
+            /** Pool Id */
+            pool_id: string;
+            /** Matches */
+            matches: components["schemas"]["MatchRevealedOut"][];
+        };
         /** PredictionOut */
         PredictionOut: {
             /** Match Id */

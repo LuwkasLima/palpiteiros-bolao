@@ -9,6 +9,7 @@ import type {
   PredictionIn,
   PredictionOut,
   ResultIn,
+  RevealedPredictionsOut,
   TeamOut,
   UserOut,
 } from "@bolao/contracts";
@@ -82,6 +83,8 @@ export const api = {
   // Predictions
   myPredictions: (poolId: string) =>
     request<PredictionOut[]>(`/pools/${poolId}/predictions`),
+  revealedPredictions: (poolId: string) =>
+    request<RevealedPredictionsOut>(`/pools/${poolId}/predictions/revealed`),
   savePrediction: (poolId: string, matchId: string, body: PredictionIn) =>
     request<PredictionOut>(`/pools/${poolId}/predictions/${matchId}`, {
       method: "PUT",

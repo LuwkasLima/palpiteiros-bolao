@@ -7,10 +7,17 @@ the same user can predict differently across pools they belong to.
 from __future__ import annotations
 
 from fastapi import APIRouter, HTTPException, status
+from beanie.operators import In
 
 from app.deps import CurrentUser
-from app.models import Match, Prediction, Stage, utcnow
-from app.schemas import PredictionIn, PredictionOut
+from app.models import Match, MatchStatus, Prediction, Stage, Team, utcnow
+from app.schemas import (
+    MatchRevealedOut,
+    PredictionEntryOut,
+    PredictionIn,
+    PredictionOut,
+    RevealedPredictionsOut,
+)
 from app.serializers import is_match_locked
 from app.services.access import load_member_pool, parse_object_id
 
@@ -79,3 +86,64 @@ async def upsert_prediction(
         pred.updated_at = utcnow()
     await pred.save()
     return _to_out(pred)
+
+
+@router.get("/revealed", response_model=RevealedPredictionsOut)
+async def revealed_predictions(pool_id: str, user: CurrentUser) -> RevealedPredictionsOut:
+    pool = await load_member_pool(pool_id, user)
+
+    member_names = {m.user_id: m.display_name for m in pool.members}
+
+    all_preds = await Prediction.find(Prediction.pool_id == pool.id).to_list()
+    if not all_preds:
+        return RevealedPredictionsOut(pool_id=pool_id, matches=[])
+
+    match_ids = list({p.match_id for p in all_preds})
+    now = utcnow()
+    matches = await Match.find(
+        In(Match.id, match_ids),
+        Match.kickoff_at <= now,
+        Match.status != MatchStatus.FINAL,
+    ).to_list()
+
+    if not matches:
+        return RevealedPredictionsOut(pool_id=pool_id, matches=[])
+
+    team_ids = list(
+        {m.home_team_id for m in matches if m.home_team_id}
+        | {m.away_team_id for m in matches if m.away_team_id}
+    )
+    teams = await Team.find(In(Team.id, team_ids)).to_list() if team_ids else []
+    team_names = {t.id: t.name for t in teams}
+
+    preds_by_match: dict = {}
+    for pred in all_preds:
+        preds_by_match.setdefault(pred.match_id, []).append(pred)
+
+    result = []
+    for match in sorted(matches, key=lambda m: m.kickoff_at):
+        entries = [
+            PredictionEntryOut(
+                user_id=str(p.user_id),
+                display_name=member_names.get(p.user_id, "?"),
+                home_score=p.home_score,
+                away_score=p.away_score,
+                advancing_team_id=str(p.advancing_team_id) if p.advancing_team_id else None,
+                points=None,
+            )
+            for p in preds_by_match.get(match.id, [])
+        ]
+        result.append(
+            MatchRevealedOut(
+                match_id=str(match.id),
+                kickoff_at=match.kickoff_at,
+                status=match.status,
+                home_team_name=team_names.get(match.home_team_id) if match.home_team_id else None,
+                away_team_name=team_names.get(match.away_team_id) if match.away_team_id else None,
+                home_score=match.home_score,
+                away_score=match.away_score,
+                entries=entries,
+            )
+        )
+
+    return RevealedPredictionsOut(pool_id=pool_id, matches=result)
