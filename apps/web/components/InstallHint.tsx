@@ -23,9 +23,17 @@ export function InstallHint() {
       window.navigator.standalone === true;
     if (standalone) return;
 
-    const ios = /iphone|ipad|ipod/i.test(window.navigator.userAgent);
-    setIsIos(ios);
-    if (ios) {
+    // Prefer the native install prompt over UA sniffing — works on Chrome desktop/Android.
+    const w = window as typeof window & { __pwa_prompt?: BeforeInstallPromptEvent | null };
+    if (w.__pwa_prompt) {
+      setDeferred(w.__pwa_prompt);
+      setShow(true);
+      return;
+    }
+
+    // iOS Safari has no beforeinstallprompt; fall back to manual instructions.
+    if (/iphone|ipad|ipod/i.test(window.navigator.userAgent)) {
+      setIsIos(true);
       setShow(true);
       return;
     }

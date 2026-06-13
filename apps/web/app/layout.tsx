@@ -33,6 +33,14 @@ export const viewport: Viewport = {
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
     <html lang="pt-BR">
+      <head>
+        {/* Capture beforeinstallprompt before React hydrates — Android Chrome fires it early */}
+        <script
+          dangerouslySetInnerHTML={{
+            __html: `window.__pwa_prompt=null;window.addEventListener('beforeinstallprompt',function(e){e.preventDefault();window.__pwa_prompt=e;});`,
+          }}
+        />
+      </head>
       <body>
         <AuthProvider>
           <TopBar />

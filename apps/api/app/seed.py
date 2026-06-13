@@ -51,6 +51,7 @@ async def _upsert_match(key: str, **fields) -> None:
     # Don't clobber a result that's already been entered.
     if match.status is MatchStatus.FINAL:
         return
+    match.status = MatchStatus.SCHEDULED
     for name, value in fields.items():
         setattr(match, name, value)
     await match.save()
