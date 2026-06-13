@@ -169,3 +169,20 @@ class ResultIn(BaseModel):
     home_score: int = Field(ge=0, le=99)
     away_score: int = Field(ge=0, le=99)
     advancing_team_id: str | None = None
+
+
+class MatchStatusCountsOut(BaseModel):
+    scheduled: int
+    locked: int
+    final: int
+
+
+class AdminStatsOut(BaseModel):
+    total_users: int
+    onboarded_users: int
+    active_users: int
+    total_pools: int
+    avg_pool_size: float
+    total_predictions: int
+    predictions_by_stage: dict[str, int]
+    match_counts: MatchStatusCountsOut
