@@ -1,9 +1,11 @@
 "use client";
 
 import Link from "next/link";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { usePathname } from "next/navigation";
 import { useAuth } from "@/lib/auth";
+
+type BeforeInstallPromptEvent = Event & { prompt: () => Promise<void> };
 
 function BookIcon() {
   return (
@@ -32,11 +34,51 @@ function SignOutIcon() {
   );
 }
 
+function DownloadIcon() {
+  return (
+    <svg width="20" height="20" viewBox="0 0 20 20" fill="none" aria-hidden>
+      <path d="M10 3v10M6 9l4 4 4-4" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
+      <path d="M3 15h14" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" />
+    </svg>
+  );
+}
+
 export function TopBar() {
   const { user, signOut } = useAuth();
   const [open, setOpen] = useState(false);
   const pathname = usePathname();
   const close = () => setOpen(false);
+
+  const [installPrompt, setInstallPrompt] = useState<BeforeInstallPromptEvent | null>(null);
+  const [isIos, setIsIos] = useState(false);
+  const [showIosHint, setShowIosHint] = useState(false);
+
+  useEffect(() => {
+    const standalone =
+      window.matchMedia("(display-mode: standalone)").matches ||
+      (window.navigator as { standalone?: boolean }).standalone === true;
+    if (standalone) return;
+
+    // Prefer the native install prompt over UA sniffing — works on Chrome desktop/Android.
+    const w = window as typeof window & { __pwa_prompt?: BeforeInstallPromptEvent | null };
+    if (w.__pwa_prompt) {
+      setInstallPrompt(w.__pwa_prompt);
+      return;
+    }
+
+    // iOS Safari has no beforeinstallprompt; fall back to manual instructions.
+    if (/iphone|ipad|ipod/i.test(window.navigator.userAgent)) {
+      setIsIos(true);
+      return;
+    }
+
+    const onPrompt = (e: Event) => {
+      e.preventDefault();
+      setInstallPrompt(e as BeforeInstallPromptEvent);
+    };
+    window.addEventListener("beforeinstallprompt", onPrompt);
+    return () => window.removeEventListener("beforeinstallprompt", onPrompt);
+  }, []);
 
   const navLinkClass = (href: string) =>
     pathname === href
@@ -110,6 +152,31 @@ export function TopBar() {
               <GearIcon />
               Admin
             </Link>
+          )}
+          {(installPrompt || isIos) && (
+            <>
+              <div className="mx-2 my-1 border-t border-[var(--border)]" />
+              <button
+                onClick={async () => {
+                  if (isIos) {
+                    setShowIosHint((v) => !v);
+                  } else if (installPrompt) {
+                    await installPrompt.prompt();
+                    setInstallPrompt(null);
+                    close();
+                  }
+                }}
+                className="flex items-center gap-3 rounded-lg border-l-2 border-transparent px-4 py-3 text-left text-xl text-[var(--text)] active:bg-[var(--surface-2)]"
+              >
+                <DownloadIcon />
+                Baixar App
+              </button>
+              {showIosHint && (
+                <p className="px-4 pb-2 text-sm text-[var(--muted)]">
+                  Toque em <b>Compartilhar</b> e depois <b>Adicionar à Tela de Início</b>.
+                </p>
+              )}
+            </>
           )}
           {user && (
             <>
