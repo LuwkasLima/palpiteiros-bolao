@@ -2,6 +2,7 @@
 // @bolao/contracts (generated from the API's OpenAPI schema). Everything sends the session
 // cookie via `credentials: "include"`.
 import type {
+  AdminStatsOut,
   LeaderboardOut,
   MatchOut,
   PoolOut,
@@ -92,6 +93,7 @@ export const api = {
     }),
 
   // Admin
+  stats: () => request<AdminStatsOut>("/admin/stats"),
   setResult: (matchId: string, body: ResultIn) =>
     request<MatchOut>(`/admin/matches/${matchId}/result`, {
       method: "POST",
