@@ -19,3 +19,6 @@ export type LeaderboardRowOut = Schemas["LeaderboardRowOut"];
 export type ResultIn = Schemas["ResultIn"];
 export type Stage = Schemas["Stage"];
 export type MatchStatus = Schemas["MatchStatus"];
+export type PredictionEntryOut = Schemas["PredictionEntryOut"];
+export type MatchRevealedOut = Schemas["MatchRevealedOut"];
+export type RevealedPredictionsOut = Schemas["RevealedPredictionsOut"];

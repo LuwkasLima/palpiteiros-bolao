@@ -118,6 +118,34 @@ class PredictionOut(BaseModel):
     updated_at: datetime
 
 
+# --- Revealed predictions -----------------------------------------------------
+
+
+class PredictionEntryOut(BaseModel):
+    user_id: str
+    display_name: str
+    home_score: int
+    away_score: int
+    advancing_team_id: str | None
+    points: int | None
+
+
+class MatchRevealedOut(BaseModel):
+    match_id: str
+    kickoff_at: datetime
+    status: MatchStatus
+    home_team_name: str | None
+    away_team_name: str | None
+    home_score: int | None
+    away_score: int | None
+    entries: list[PredictionEntryOut]
+
+
+class RevealedPredictionsOut(BaseModel):
+    pool_id: str
+    matches: list[MatchRevealedOut]
+
+
 # --- Leaderboard --------------------------------------------------------------
 
 
