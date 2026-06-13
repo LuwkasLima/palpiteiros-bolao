@@ -1,4 +1,4 @@
-"""Admin-only endpoints: enter final results.
+"""Admin-only endpoints: enter final results and view platform stats.
 
 Setting a result marks the match ``final``; leaderboards are computed on read, so they
 reflect the new result immediately. Admin access is gated by the email allowlist (see
@@ -7,17 +7,71 @@ reflect the new result immediately. Admin access is gated by the email allowlist
 
 from __future__ import annotations
 
-from datetime import datetime, timezone
+from datetime import datetime, timedelta, timezone
 
+from beanie.operators import Or
 from fastapi import APIRouter, HTTPException, status
 
 from app.deps import AdminUser
-from app.models import Match, MatchStatus, Stage
-from app.schemas import MatchOut, ResultIn
+from app.models import Match, MatchStatus, Pool, Prediction, Stage, User
+from app.schemas import AdminStatsOut, MatchOut, MatchStatusCountsOut, ResultIn
 from app.serializers import match_to_out
 from app.services.access import parse_object_id
 
 router = APIRouter(prefix="/admin", tags=["admin"])
+
+
+@router.get("/stats", response_model=AdminStatsOut)
+async def get_stats(_: AdminUser) -> AdminStatsOut:
+    total_users = await User.count()
+
+    onboarded_users = await User.find(
+        Or(User.onboarding_done == True, User.onboarding_done == None)  # noqa: E711,E712
+    ).count()
+
+    since = datetime.now(timezone.utc) - timedelta(days=7)
+    active_users = await User.find(User.last_seen_at >= since).count()
+
+    total_pools = await Pool.count()
+
+    avg_result = await Pool.aggregate(
+        [{"$group": {"_id": None, "avg": {"$avg": {"$size": "$members"}}}}]
+    ).to_list()
+    avg_pool_size = round(avg_result[0]["avg"], 1) if avg_result else 0.0
+
+    total_predictions = await Prediction.count()
+
+    stage_pipeline = [
+        {
+            "$lookup": {
+                "from": "matches",
+                "localField": "match_id",
+                "foreignField": "_id",
+                "as": "match",
+            }
+        },
+        {"$unwind": "$match"},
+        {"$group": {"_id": "$match.stage", "count": {"$sum": 1}}},
+    ]
+    stage_results = await Prediction.aggregate(stage_pipeline).to_list()
+    predictions_by_stage = {r["_id"]: r["count"] for r in stage_results}
+
+    match_counts = MatchStatusCountsOut(
+        scheduled=await Match.find(Match.status == MatchStatus.SCHEDULED).count(),
+        locked=await Match.find(Match.status == MatchStatus.LOCKED).count(),
+        final=await Match.find(Match.status == MatchStatus.FINAL).count(),
+    )
+
+    return AdminStatsOut(
+        total_users=total_users,
+        onboarded_users=onboarded_users,
+        active_users=active_users,
+        total_pools=total_pools,
+        avg_pool_size=avg_pool_size,
+        total_predictions=total_predictions,
+        predictions_by_stage=predictions_by_stage,
+        match_counts=match_counts,
+    )
 
 
 @router.post("/matches/{match_id}/result", response_model=MatchOut)

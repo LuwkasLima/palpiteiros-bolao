@@ -1,24 +1,16 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
-import { useRouter } from "next/navigation";
 import type { MatchOut, TeamOut } from "@bolao/contracts";
 import { api, ApiError } from "@/lib/api";
 import { useAuth } from "@/lib/auth";
 import { STAGE_ORDER, formatKickoff, groupKickoffSort, sideLabel, stageLabel, teamMap } from "@/lib/format";
 
 export default function AdminPage() {
-  const { user, loading } = useAuth();
-  const router = useRouter();
+  const { user } = useAuth();
   const [matches, setMatches] = useState<MatchOut[] | null>(null);
   const [teams, setTeams] = useState<TeamOut[]>([]);
   const [error, setError] = useState<string | null>(null);
-
-  useEffect(() => {
-    if (loading) return;
-    if (!user) router.replace("/login");
-    else if (!user.is_admin) router.replace("/");
-  }, [loading, user, router]);
 
   useEffect(() => {
     if (!user?.is_admin) return;
@@ -46,7 +38,7 @@ export default function AdminPage() {
   }
 
   return (
-    <div className="flex flex-col gap-6">
+    <>
       <h1 className="text-2xl font-extrabold">Admin · Resultados</h1>
       <p className="text-sm text-[var(--muted)]">
         Informe o placar do tempo normal (90 min). Nos mata-matas, escolha quem avança.
@@ -62,7 +54,7 @@ export default function AdminPage() {
           </div>
         </section>
       ))}
-    </div>
+    </>
   );
 }
 
