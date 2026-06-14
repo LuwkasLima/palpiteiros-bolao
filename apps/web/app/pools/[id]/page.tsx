@@ -6,6 +6,7 @@ import { useRouter } from "next/navigation";
 import type { LeaderboardOut, MatchRevealedOut, PoolOut, RevealedPredictionsOut } from "@bolao/contracts";
 import { api, ApiError } from "@/lib/api";
 import { useAuth } from "@/lib/auth";
+import { SectionHeader } from "@/components/SectionHeader";
 
 export default function PoolPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = use(params);
@@ -16,6 +17,9 @@ export default function PoolPage({ params }: { params: Promise<{ id: string }> }
   const [revealed, setRevealed] = useState<RevealedPredictionsOut | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [copied, setCopied] = useState(false);
+  const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
+  const [deleting, setDeleting] = useState(false);
+  const [deleteError, setDeleteError] = useState<string | null>(null);
 
   useEffect(() => {
     if (!loading && !user) router.replace("/login");
@@ -29,12 +33,21 @@ export default function PoolPage({ params }: { params: Promise<{ id: string }> }
         setBoard(b);
         setRevealed(r);
       })
-      .catch((err) =>
-        setError(err instanceof ApiError ? err.message : "Não foi possível carregar o bolão."),
-      );
+      .catch((err) => {
+        if (err instanceof ApiError && err.status === 404) {
+          setError("Este bolão não existe ou foi excluído.");
+        } else {
+          setError(err instanceof ApiError ? err.message : "Não foi possível carregar o bolão.");
+        }
+      });
   }, [id, user]);
 
-  if (error) return <p className="mt-10 text-center text-red-400">{error}</p>;
+  if (error) return (
+    <div className="mt-10 flex flex-col items-center gap-4 text-center">
+      <p className="text-red-400">{error}</p>
+      <Link href="/" className="btn-ghost text-sm">Voltar ao início</Link>
+    </div>
+  );
   if (!pool || !board) return <p className="mt-10 text-center text-[var(--muted)]">Carregando…</p>;
 
   const inviteUrl =
@@ -48,6 +61,19 @@ export default function PoolPage({ params }: { params: Promise<{ id: string }> }
     revealed?.matches.filter(
       (m) => new Date(toUtc(m.kickoff_at)).toLocaleDateString("sv") === today,
     ) ?? [];
+
+  async function handleDelete() {
+    setDeleting(true);
+    setDeleteError(null);
+    try {
+      await api.deletePool(id);
+      router.refresh();
+      router.replace("/");
+    } catch (err) {
+      setDeleteError(err instanceof ApiError ? err.message : "Não foi possível excluir o bolão.");
+      setDeleting(false);
+    }
+  }
 
   async function share() {
     const data = { title: `Bolão: ${pool!.name}`, text: "Entre no meu bolão no Social dos Palpiteiros!", url: inviteUrl };
@@ -73,19 +99,54 @@ export default function PoolPage({ params }: { params: Promise<{ id: string }> }
         </Link>
       </div>
 
+      {showDeleteConfirm && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4">
+          <div className="card flex w-full max-w-sm flex-col gap-4 p-6">
+            <h2 className="text-lg font-bold">Excluir bolão?</h2>
+            <p className="text-sm text-[var(--muted)]">
+              Esta ação é permanente. O bolão <strong className="text-[var(--fg)]">{pool.name}</strong> e todos os palpites serão apagados para todos os participantes.
+            </p>
+            {deleteError && <p className="text-sm text-red-400">{deleteError}</p>}
+            <div className="flex gap-3">
+              <button
+                className="btn flex-1 bg-red-600 hover:bg-red-500"
+                onClick={handleDelete}
+                disabled={deleting}
+              >
+                {deleting ? "Excluindo…" : "Sim, excluir"}
+              </button>
+              <button
+                className="btn-ghost flex-1"
+                onClick={() => { setShowDeleteConfirm(false); setDeleteError(null); }}
+                disabled={deleting}
+              >
+                Cancelar
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {pool.has_pending_today && (
+        <div className="card p-4 text-sm border-[var(--accent)]">
+          <span className="font-bold text-[var(--accent)]">!</span>
+          {" "}Você tem palpites pendentes para hoje.
+        </div>
+      )}
+
       <div className="card flex items-center justify-between gap-3 p-4">
         <div className="text-sm">
           <div className="text-[var(--muted)]">Convide amigos</div>
           <div className="font-mono font-bold">{pool.invite_code}</div>
         </div>
         <button className="btn-ghost text-sm" onClick={share}>
-          {copied ? "Copiado!" : "Compartilhar link"}
+          {copied ? "Copiado!" : "Convidar"}
         </button>
       </div>
 
       {todayRevealedMatches.length > 0 && (
-        <section>
-          <h2 className="mb-2 font-bold">Palpites da partida</h2>
+        <section className="flex flex-col gap-2">
+          <SectionHeader>Palpites da partida</SectionHeader>
           <div className="flex flex-col gap-3">
             {todayRevealedMatches.map((match) => (
               <MatchPredictionsCard key={match.match_id} match={match} currentUserId={user?.id} />
@@ -94,8 +155,8 @@ export default function PoolPage({ params }: { params: Promise<{ id: string }> }
         </section>
       )}
 
-      <section>
-        <h2 className="mb-2 font-bold">🏆 Classificação</h2>
+      <section className="flex flex-col gap-2">
+        <SectionHeader>🏆 Classificação</SectionHeader>
         <div className="card divide-y divide-[var(--border)]">
           {board.rows.map((row, i) => (
             <div
@@ -122,6 +183,24 @@ export default function PoolPage({ params }: { params: Promise<{ id: string }> }
           Pontuação cresce nas fases finais — o jogo fica disputado até a última rodada.
         </p>
       </section>
+
+      {pool.is_creator && (
+        <section className="flex flex-col gap-2 pt-4">
+          <SectionHeader>Zona de perigo</SectionHeader>
+          <div className="rounded-xl border border-red-900/40 p-4 flex items-center justify-between gap-4">
+            <div>
+              <p className="text-sm font-medium">Excluir bolão</p>
+              <p className="text-xs text-[var(--muted)]">Apaga o bolão e todos os palpites permanentemente.</p>
+            </div>
+            <button
+              className="shrink-0 rounded-lg border border-red-700/60 px-3 py-1.5 text-sm text-red-400 hover:border-red-500 hover:text-red-300 transition-colors"
+              onClick={() => setShowDeleteConfirm(true)}
+            >
+              Excluir
+            </button>
+          </div>
+        </section>
+      )}
     </div>
   );
 }

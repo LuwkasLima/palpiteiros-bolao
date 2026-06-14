@@ -153,7 +153,8 @@ export interface paths {
         get: operations["pool_detail_pools__pool_id__get"];
         put?: never;
         post?: never;
-        delete?: never;
+        /** Delete Pool */
+        delete: operations["delete_pool_pools__pool_id__delete"];
         options?: never;
         head?: never;
         patch?: never;
@@ -444,6 +445,8 @@ export interface components {
             members: components["schemas"]["MemberOut"][];
             /** Is Creator */
             is_creator: boolean;
+            /** Has Pending Today */
+            has_pending_today: boolean;
         };
         /** PoolSummaryOut */
         PoolSummaryOut: {
@@ -457,6 +460,8 @@ export interface components {
             member_count: number;
             /** Is Creator */
             is_creator: boolean;
+            /** Has Pending Today */
+            has_pending_today: boolean;
         };
         /** PredictionEntryOut */
         PredictionEntryOut: {
@@ -924,6 +929,37 @@ export interface operations {
                 content: {
                     "application/json": components["schemas"]["PoolOut"];
                 };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    delete_pool_pools__pool_id__delete: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                pool_id: string;
+            };
+            cookie?: {
+                bolao_session?: string | null;
+            };
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
             };
             /** @description Validation Error */
             422: {
