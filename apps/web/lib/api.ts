@@ -79,6 +79,7 @@ export const api = {
       body: JSON.stringify({ invite_code: inviteCode }),
     }),
   pool: (id: string) => request<PoolOut>(`/pools/${id}`),
+  deletePool: (id: string) => request<void>(`/pools/${id}`, { method: "DELETE" }),
   leaderboard: (id: string) => request<LeaderboardOut>(`/pools/${id}/leaderboard`),
 
   // Predictions

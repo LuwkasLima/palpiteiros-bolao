@@ -6,13 +6,15 @@ group), so pool + members is a single read.
 
 from __future__ import annotations
 
+from datetime import datetime, timedelta, timezone
+
 import pymongo
 from fastapi import APIRouter, HTTPException, status
 from pymongo.errors import DuplicateKeyError
 
 from app.config import get_settings
 from app.deps import CurrentUser
-from app.models import Member, MemberRole, Pool, User, utcnow
+from app.models import Match, MatchStatus, Member, MemberRole, Pool, Prediction, User, utcnow
 from app.services.access import load_member_pool
 from app.schemas import (
     LeaderboardOut,
@@ -32,7 +34,31 @@ def _invite_url(invite_code: str) -> str:
     return f"{get_settings().web_base_url}/join/{invite_code}"
 
 
-def _to_pool_out(pool: Pool, user: User) -> PoolOut:
+async def _today_match_ids() -> list:
+    now = utcnow()
+    today_end = datetime(now.year, now.month, now.day, tzinfo=timezone.utc) + timedelta(days=1)
+    matches = await Match.find(
+        Match.kickoff_at > now,        # not yet kicked off — prediction window still open
+        Match.kickoff_at < today_end,  # kicks off today
+        Match.status == MatchStatus.SCHEDULED,
+        {"home_team_id": {"$ne": None}},
+    ).to_list()
+    return [m.id for m in matches]
+
+
+async def _has_pending_today(pool_id, user_id) -> bool:
+    match_ids = await _today_match_ids()
+    if not match_ids:
+        return False
+    predicted = await Prediction.find({
+        "pool_id": pool_id,
+        "user_id": user_id,
+        "match_id": {"$in": match_ids},
+    }).count()
+    return predicted < len(match_ids)
+
+
+def _to_pool_out(pool: Pool, user: User, has_pending_today: bool = False) -> PoolOut:
     return PoolOut(
         id=str(pool.id),
         name=pool.name,
@@ -49,6 +75,7 @@ def _to_pool_out(pool: Pool, user: User) -> PoolOut:
             for m in pool.members
         ],
         is_creator=pool.creator_id == user.id,
+        has_pending_today=has_pending_today,
     )
 
 
@@ -65,7 +92,7 @@ async def create_pool(payload: PoolCreateIn, user: CurrentUser) -> PoolOut:
         )
         try:
             await pool.insert()
-            return _to_pool_out(pool, user)
+            return _to_pool_out(pool, user, await _has_pending_today(pool.id, user.id))
         except DuplicateKeyError:
             continue
     raise HTTPException(status.HTTP_500_INTERNAL_SERVER_ERROR, "Could not generate invite code")
@@ -74,7 +101,7 @@ async def create_pool(payload: PoolCreateIn, user: CurrentUser) -> PoolOut:
 @router.post("/join", response_model=PoolOut)
 async def join_pool(payload: PoolJoinIn, user: CurrentUser) -> PoolOut:
     code = payload.invite_code.strip().upper()
-    pool = await Pool.find_one(Pool.invite_code == code)
+    pool = await Pool.find_one(Pool.invite_code == code, Pool.deleted_at == None)  # noqa: E711
     if pool is None:
         raise HTTPException(status.HTTP_404_NOT_FOUND, "Invalid invite code")
 
@@ -94,16 +121,29 @@ async def join_pool(payload: PoolJoinIn, user: CurrentUser) -> PoolOut:
             },
         )
         pool = await Pool.get(pool.id)
-    return _to_pool_out(pool, user)
+    return _to_pool_out(pool, user, await _has_pending_today(pool.id, user.id))
 
 
 @router.get("", response_model=list[PoolSummaryOut])
 async def my_pools(user: CurrentUser) -> list[PoolSummaryOut]:
     pools = (
-        await Pool.find({"members.user_id": user.id})
+        await Pool.find({"members.user_id": user.id}, Pool.deleted_at == None)  # noqa: E711
         .sort([("created_at", pymongo.DESCENDING)])
         .to_list()
     )
+
+    # Batch: 2 extra queries total regardless of pool count.
+    match_ids = await _today_match_ids()
+    preds_by_pool: dict = {}
+    if match_ids and pools:
+        preds = await Prediction.find({
+            "user_id": user.id,
+            "pool_id": {"$in": [p.id for p in pools]},
+            "match_id": {"$in": match_ids},
+        }).to_list()
+        for pred in preds:
+            preds_by_pool.setdefault(pred.pool_id, set()).add(pred.match_id)
+
     return [
         PoolSummaryOut(
             id=str(p.id),
@@ -111,6 +151,7 @@ async def my_pools(user: CurrentUser) -> list[PoolSummaryOut]:
             invite_code=p.invite_code,
             member_count=len(p.members),
             is_creator=p.creator_id == user.id,
+            has_pending_today=bool(match_ids) and len(preds_by_pool.get(p.id, set())) < len(match_ids),
         )
         for p in pools
     ]
@@ -119,7 +160,15 @@ async def my_pools(user: CurrentUser) -> list[PoolSummaryOut]:
 @router.get("/{pool_id}", response_model=PoolOut)
 async def pool_detail(pool_id: str, user: CurrentUser) -> PoolOut:
     pool = await load_member_pool(pool_id, user)
-    return _to_pool_out(pool, user)
+    return _to_pool_out(pool, user, await _has_pending_today(pool.id, user.id))
+
+
+@router.delete("/{pool_id}", status_code=status.HTTP_204_NO_CONTENT)
+async def delete_pool(pool_id: str, user: CurrentUser) -> None:
+    pool = await load_member_pool(pool_id, user)
+    if pool.creator_id != user.id:
+        raise HTTPException(status.HTTP_403_FORBIDDEN, "Only the creator can delete this pool")
+    await pool.set({Pool.deleted_at: utcnow()})
 
 
 @router.get("/{pool_id}/leaderboard", response_model=LeaderboardOut)

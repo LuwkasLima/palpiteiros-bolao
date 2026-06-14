@@ -152,6 +152,7 @@ class Pool(Document):
     invite_code: str
     created_at: datetime = Field(default_factory=utcnow)
     members: list[Member] = Field(default_factory=list)
+    deleted_at: datetime | None = None
 
     class Settings:
         name = "pools"
