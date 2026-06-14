@@ -36,11 +36,10 @@ def _invite_url(invite_code: str) -> str:
 
 async def _today_match_ids() -> list:
     now = utcnow()
-    today_start = datetime(now.year, now.month, now.day, tzinfo=timezone.utc)
-    today_end = today_start + timedelta(days=1)
+    today_end = datetime(now.year, now.month, now.day, tzinfo=timezone.utc) + timedelta(days=1)
     matches = await Match.find(
-        Match.kickoff_at >= today_start,
-        Match.kickoff_at < today_end,
+        Match.kickoff_at > now,        # not yet kicked off — prediction window still open
+        Match.kickoff_at < today_end,  # kicks off today
         Match.status == MatchStatus.SCHEDULED,
         {"home_team_id": {"$ne": None}},
     ).to_list()
@@ -102,7 +101,7 @@ async def create_pool(payload: PoolCreateIn, user: CurrentUser) -> PoolOut:
 @router.post("/join", response_model=PoolOut)
 async def join_pool(payload: PoolJoinIn, user: CurrentUser) -> PoolOut:
     code = payload.invite_code.strip().upper()
-    pool = await Pool.find_one(Pool.invite_code == code)
+    pool = await Pool.find_one(Pool.invite_code == code, Pool.deleted_at == None)  # noqa: E711
     if pool is None:
         raise HTTPException(status.HTTP_404_NOT_FOUND, "Invalid invite code")
 
@@ -128,7 +127,7 @@ async def join_pool(payload: PoolJoinIn, user: CurrentUser) -> PoolOut:
 @router.get("", response_model=list[PoolSummaryOut])
 async def my_pools(user: CurrentUser) -> list[PoolSummaryOut]:
     pools = (
-        await Pool.find({"members.user_id": user.id})
+        await Pool.find({"members.user_id": user.id, "deleted_at": None})
         .sort([("created_at", pymongo.DESCENDING)])
         .to_list()
     )
@@ -169,8 +168,7 @@ async def delete_pool(pool_id: str, user: CurrentUser) -> None:
     pool = await load_member_pool(pool_id, user)
     if pool.creator_id != user.id:
         raise HTTPException(status.HTTP_403_FORBIDDEN, "Only the creator can delete this pool")
-    await Prediction.find(Prediction.pool_id == pool.id).delete()
-    await pool.delete()
+    await pool.set({Pool.deleted_at: utcnow()})
 
 
 @router.get("/{pool_id}/leaderboard", response_model=LeaderboardOut)
