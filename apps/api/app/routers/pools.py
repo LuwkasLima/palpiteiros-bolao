@@ -127,7 +127,7 @@ async def join_pool(payload: PoolJoinIn, user: CurrentUser) -> PoolOut:
 @router.get("", response_model=list[PoolSummaryOut])
 async def my_pools(user: CurrentUser) -> list[PoolSummaryOut]:
     pools = (
-        await Pool.find({"members.user_id": user.id, "deleted_at": None})
+        await Pool.find({"members.user_id": user.id}, Pool.deleted_at == None)  # noqa: E711
         .sort([("created_at", pymongo.DESCENDING)])
         .to_list()
     )

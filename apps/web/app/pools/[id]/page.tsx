@@ -93,20 +93,10 @@ export default function PoolPage({ params }: { params: Promise<{ id: string }> }
           <h1 className="text-2xl font-extrabold">{pool.name}</h1>
           <p className="text-sm text-[var(--muted)]">{pool.members.length} participantes</p>
         </div>
-        <div className="flex items-center gap-2">
-          {pool.is_creator && (
-            <button
-              className="btn-ghost text-sm text-red-400 hover:text-red-300"
-              onClick={() => setShowDeleteConfirm(true)}
-            >
-              Excluir
-            </button>
-          )}
-          <Link href={`/pools/${id}/predict`} className="btn">
-            <span className="sm:hidden">Palpites</span>
-            <span className="hidden sm:inline">Meus palpites</span>
-          </Link>
-        </div>
+        <Link href={`/pools/${id}/predict`} className="btn">
+          <span className="sm:hidden">Palpites</span>
+          <span className="hidden sm:inline">Meus palpites</span>
+        </Link>
       </div>
 
       {showDeleteConfirm && (
@@ -193,6 +183,24 @@ export default function PoolPage({ params }: { params: Promise<{ id: string }> }
           Pontuação cresce nas fases finais — o jogo fica disputado até a última rodada.
         </p>
       </section>
+
+      {pool.is_creator && (
+        <section className="flex flex-col gap-2 pt-4">
+          <SectionHeader>Zona de perigo</SectionHeader>
+          <div className="rounded-xl border border-red-900/40 p-4 flex items-center justify-between gap-4">
+            <div>
+              <p className="text-sm font-medium">Excluir bolão</p>
+              <p className="text-xs text-[var(--muted)]">Apaga o bolão e todos os palpites permanentemente.</p>
+            </div>
+            <button
+              className="shrink-0 rounded-lg border border-red-700/60 px-3 py-1.5 text-sm text-red-400 hover:border-red-500 hover:text-red-300 transition-colors"
+              onClick={() => setShowDeleteConfirm(true)}
+            >
+              Excluir
+            </button>
+          </div>
+        </section>
+      )}
     </div>
   );
 }
