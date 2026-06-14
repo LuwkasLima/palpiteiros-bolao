@@ -6,6 +6,7 @@ import { useRouter } from "next/navigation";
 import type { PoolSummaryOut } from "@bolao/contracts";
 import { api, ApiError } from "@/lib/api";
 import { useAuth } from "@/lib/auth";
+import { SectionHeader } from "@/components/SectionHeader";
 
 export default function HomePage() {
   const { user, loading } = useAuth();
@@ -70,32 +71,42 @@ export default function HomePage() {
         <p className="text-sm text-[var(--muted)]">Seus bolões no Social dos Palpiteiros.</p>
       </div>
 
-      <section className="flex flex-col gap-3">
-        {pools === null ? (
-          <p className="text-[var(--muted)]">Carregando bolões…</p>
-        ) : pools.length === 0 ? (
-          <div className="card p-5 text-sm text-[var(--muted)]">
-            Você ainda não está em nenhum bolão. Crie um ou entre com um código abaixo.
-          </div>
-        ) : (
-          pools.map((p) => (
-            <Link key={p.id} href={`/pools/${p.id}`} className="card flex items-center justify-between p-4 hover:border-[var(--accent-2)]">
-              <div>
-                <div className="font-bold">{p.name}</div>
-                <div className="text-xs text-[var(--muted)]">
-                  {p.member_count} participante{p.member_count === 1 ? "" : "s"}
-                  {p.is_creator && " · você criou"}
+      <section className="flex flex-col gap-2">
+        <SectionHeader>Meus bolões</SectionHeader>
+        <div className="flex flex-col gap-3">
+          {pools === null ? (
+            <p className="text-[var(--muted)]">Carregando bolões…</p>
+          ) : pools.length === 0 ? (
+            <div className="card p-5 text-sm text-[var(--muted)]">
+              Você ainda não está em nenhum bolão. Crie um ou entre com um código abaixo.
+            </div>
+          ) : (
+            pools.map((p) => (
+              <Link key={p.id} href={`/pools/${p.id}`} className="card flex items-center justify-between p-4 hover:border-[var(--accent-2)]">
+                <div>
+                  <div className="font-bold">{p.name}</div>
+                  <div className="text-xs text-[var(--muted)]">
+                    {p.member_count} participante{p.member_count === 1 ? "" : "s"}
+                    {p.is_creator && " · você criou"}
+                  </div>
                 </div>
-              </div>
-              <span className="chip">{p.invite_code}</span>
-            </Link>
-          ))
-        )}
+                <div className="flex items-center gap-2">
+                  {p.has_pending_today && (
+                    <span className="text-sm font-bold text-[var(--accent)]" title="Você tem palpites pendentes hoje">!</span>
+                  )}
+                  <span className="chip">{p.invite_code}</span>
+                </div>
+              </Link>
+            ))
+          )}
+        </div>
       </section>
 
       {error && <p className="text-sm text-red-400">{error}</p>}
 
-      <div className="grid gap-4 sm:grid-cols-2">
+      <section className="flex flex-col gap-2">
+        <SectionHeader>Novos bolões</SectionHeader>
+        <div className="grid gap-4 sm:grid-cols-2">
         <form onSubmit={createPool} className="card flex flex-col gap-3 p-4">
           <h2 className="font-bold">Criar um bolão</h2>
           <input
@@ -124,6 +135,7 @@ export default function HomePage() {
           </button>
         </form>
       </div>
+      </section>
     </div>
   );
 }
