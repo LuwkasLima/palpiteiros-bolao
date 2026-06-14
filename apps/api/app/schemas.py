@@ -89,6 +89,7 @@ class PoolSummaryOut(BaseModel):
     invite_code: str
     member_count: int
     is_creator: bool
+    has_pending_today: bool
 
 
 class PoolOut(BaseModel):
@@ -99,6 +100,7 @@ class PoolOut(BaseModel):
     creator_id: str
     members: list[MemberOut]
     is_creator: bool
+    has_pending_today: bool
 
 
 # --- Predictions --------------------------------------------------------------
