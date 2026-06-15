@@ -43,6 +43,20 @@ export function sideLabel(teamId: string | null, teams: TeamMap, fallback: strin
   return fallback;
 }
 
+/** Compact label: flag emoji + 3-letter code, or the slot fallback when unresolved. */
+export function sideShortLabel(teamId: string | null, teams: TeamMap, fallback: string): string {
+  if (teamId && teams[teamId]) {
+    const t = teams[teamId];
+    return `${t.flag_emoji} ${t.code}`;
+  }
+  return fallback;
+}
+
+/** Full team name without flag, or empty string when the team is not yet resolved. */
+export function sideName(teamId: string | null, teams: TeamMap): string {
+  return teamId && teams[teamId] ? teams[teamId].name : "";
+}
+
 export function groupKickoffSort(a: MatchOut, b: MatchOut): number {
   return new Date(a.kickoff_at).getTime() - new Date(b.kickoff_at).getTime();
 }

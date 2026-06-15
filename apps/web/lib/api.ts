@@ -76,6 +76,7 @@ export const api = {
   matches: (stage?: string) =>
     request<MatchOut[]>(`/matches${stage ? `?stage=${stage}` : ""}`),
   nextMatchesToday: () => request<NextMatchTodayOut[]>(`/matches/next-today?window_end=${encodeURIComponent(localDayEnd())}`),
+  inProgressMatches: () => request<NextMatchTodayOut[]>("/matches/in-progress"),
 
   // Pools
   myPools: () => request<PoolSummaryOut[]>(`/pools?window_end=${encodeURIComponent(localDayEnd())}`),
