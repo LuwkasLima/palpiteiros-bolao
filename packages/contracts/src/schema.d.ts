@@ -90,6 +90,23 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/matches/next-today": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Next Matches Today */
+        get: operations["next_matches_today_matches_next_today_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/matches": {
         parameters: {
             query?: never;
@@ -418,6 +435,29 @@ export interface components {
         MessageOut: {
             /** Message */
             message: string;
+        };
+        /** NextMatchTodayOut */
+        NextMatchTodayOut: {
+            /** Id */
+            id: string;
+            /** Key */
+            key: string;
+            /**
+             * Kickoff At
+             * Format: date-time
+             */
+            kickoff_at: string;
+            /** Home Name */
+            home_name: string | null;
+            /** Home Flag */
+            home_flag: string | null;
+            /** Away Name */
+            away_name: string | null;
+            /** Away Flag */
+            away_flag: string | null;
+            /** Group Label */
+            group_label: string | null;
+            stage: components["schemas"]["Stage"];
         };
         /** PoolCreateIn */
         PoolCreateIn: {
@@ -776,6 +816,29 @@ export interface operations {
             };
         };
     };
+    next_matches_today_matches_next_today_get: {
+        parameters: {
+            query?: {
+                /** @description End of the caller's local calendar day (ISO 8601 UTC). Falls back to end of UTC day when omitted. */
+                window_end?: string | null;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["NextMatchTodayOut"][];
+                };
+            };
+        };
+    };
     list_matches_matches_get: {
         parameters: {
             query?: {
@@ -809,7 +872,10 @@ export interface operations {
     };
     my_pools_pools_get: {
         parameters: {
-            query?: never;
+            query?: {
+                /** @description End of the caller's local calendar day (ISO 8601 UTC). Falls back to end of UTC day when omitted. */
+                window_end?: string | null;
+            };
             header?: never;
             path?: never;
             cookie?: {
@@ -910,7 +976,10 @@ export interface operations {
     };
     pool_detail_pools__pool_id__get: {
         parameters: {
-            query?: never;
+            query?: {
+                /** @description End of the caller's local calendar day (ISO 8601 UTC). Falls back to end of UTC day when omitted. */
+                window_end?: string | null;
+            };
             header?: never;
             path: {
                 pool_id: string;
