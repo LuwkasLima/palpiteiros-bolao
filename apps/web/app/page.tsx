@@ -3,15 +3,18 @@
 import { useEffect, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import type { PoolSummaryOut } from "@bolao/contracts";
+import type { NextMatchTodayOut, PoolSummaryOut } from "@bolao/contracts";
 import { api, ApiError } from "@/lib/api";
 import { useAuth } from "@/lib/auth";
 import { SectionHeader } from "@/components/SectionHeader";
+import { formatKickoffTime, stageBadge } from "@/lib/format";
+import { venue } from "@/lib/venues";
 
 export default function HomePage() {
   const { user, loading } = useAuth();
   const router = useRouter();
   const [pools, setPools] = useState<PoolSummaryOut[] | null>(null);
+  const [nextMatches, setNextMatches] = useState<NextMatchTodayOut[]>([]);
   const [name, setName] = useState("");
   const [code, setCode] = useState("");
   const [error, setError] = useState<string | null>(null);
@@ -32,6 +35,7 @@ export default function HomePage() {
       return;
     }
     api.myPools().then(setPools).catch(() => setPools([]));
+    api.nextMatchesToday().then(setNextMatches).catch(() => {});
   }, [user, router]);
 
   if (loading || !user) {
@@ -71,6 +75,41 @@ export default function HomePage() {
         <p className="text-sm text-[var(--muted)]">Faça seus palpites, torça com os amigos e veja quem manja mais de futebol.</p>
       </div>
 
+      {nextMatches.length > 0 && (
+        <section className="flex flex-col gap-2">
+          <SectionHeader>
+            {nextMatches.length === 1 ? "Próxima partida" : "Próximas partidas"}{" · "}
+            {formatKickoffTime(nextMatches[0].kickoff_at)}
+          </SectionHeader>
+          <div className="card divide-y divide-[var(--border)] border-l-4 [border-left-color:var(--accent)]">
+            {nextMatches.map((m) => {
+              const v = venue(m.key);
+              return (
+                <div key={m.id} className="px-4 py-3">
+                  <div className="flex items-center justify-between gap-2 text-sm">
+                    <span className="min-w-0 flex-1 truncate text-right font-medium">
+                      {m.home_flag} {m.home_name}
+                    </span>
+                    <span className="shrink-0 text-xs text-[var(--muted)]">×</span>
+                    <span className="min-w-0 flex-1 truncate font-medium">
+                      {m.away_flag} {m.away_name}
+                    </span>
+                    {nextMatches.length > 1 && (
+                      <span className="chip shrink-0">{stageBadge(m.stage, m.group_label)}</span>
+                    )}
+                  </div>
+                  {v && (
+                    <p className="mt-1 text-center text-xs text-[var(--muted)]">
+                      {v.stadium} · {v.city}
+                    </p>
+                  )}
+                </div>
+              );
+            })}
+          </div>
+        </section>
+      )}
+
       <section className="flex flex-col gap-2">
         <SectionHeader>Meus bolões</SectionHeader>
         <div className="flex flex-col gap-3">
@@ -92,7 +131,7 @@ export default function HomePage() {
                 </div>
                 <div className="flex items-center gap-2">
                   {p.has_pending_today && (
-                    <span className="text-sm font-bold text-[var(--accent)]" title="Você tem palpites pendentes hoje">!</span>
+                    <span className="text-lg font-bold text-[var(--accent)]" title="Você ainda tem palpites pendentes nos jogos de hoje">!</span>
                   )}
                   <span className="chip">{p.invite_code}</span>
                 </div>

@@ -9,7 +9,7 @@ from __future__ import annotations
 from datetime import datetime, timedelta, timezone
 
 import pymongo
-from fastapi import APIRouter, HTTPException, status
+from fastapi import APIRouter, HTTPException, Query, status
 from pymongo.errors import DuplicateKeyError
 
 from app.config import get_settings
@@ -34,20 +34,20 @@ def _invite_url(invite_code: str) -> str:
     return f"{get_settings().web_base_url}/join/{invite_code}"
 
 
-async def _today_match_ids() -> list:
+async def _today_match_ids(window_end: datetime | None = None) -> list:
     now = utcnow()
-    today_end = datetime(now.year, now.month, now.day, tzinfo=timezone.utc) + timedelta(days=1)
+    cutoff = window_end or (datetime(now.year, now.month, now.day, tzinfo=timezone.utc) + timedelta(days=1))
     matches = await Match.find(
-        Match.kickoff_at > now,        # not yet kicked off — prediction window still open
-        Match.kickoff_at < today_end,  # kicks off today
+        Match.kickoff_at > now,
+        Match.kickoff_at < cutoff,
         Match.status == MatchStatus.SCHEDULED,
         {"home_team_id": {"$ne": None}},
     ).to_list()
     return [m.id for m in matches]
 
 
-async def _has_pending_today(pool_id, user_id) -> bool:
-    match_ids = await _today_match_ids()
+async def _has_pending_today(pool_id, user_id, window_end: datetime | None = None) -> bool:
+    match_ids = await _today_match_ids(window_end)
     if not match_ids:
         return False
     predicted = await Prediction.find({
@@ -125,7 +125,7 @@ async def join_pool(payload: PoolJoinIn, user: CurrentUser) -> PoolOut:
 
 
 @router.get("", response_model=list[PoolSummaryOut])
-async def my_pools(user: CurrentUser) -> list[PoolSummaryOut]:
+async def my_pools(user: CurrentUser, window_end: datetime | None = Query(None)) -> list[PoolSummaryOut]:
     pools = (
         await Pool.find({"members.user_id": user.id}, Pool.deleted_at == None)  # noqa: E711
         .sort([("created_at", pymongo.DESCENDING)])
@@ -133,7 +133,7 @@ async def my_pools(user: CurrentUser) -> list[PoolSummaryOut]:
     )
 
     # Batch: 2 extra queries total regardless of pool count.
-    match_ids = await _today_match_ids()
+    match_ids = await _today_match_ids(window_end)
     preds_by_pool: dict = {}
     if match_ids and pools:
         preds = await Prediction.find({
@@ -158,9 +158,9 @@ async def my_pools(user: CurrentUser) -> list[PoolSummaryOut]:
 
 
 @router.get("/{pool_id}", response_model=PoolOut)
-async def pool_detail(pool_id: str, user: CurrentUser) -> PoolOut:
+async def pool_detail(pool_id: str, user: CurrentUser, window_end: datetime | None = Query(None)) -> PoolOut:
     pool = await load_member_pool(pool_id, user)
-    return _to_pool_out(pool, user, await _has_pending_today(pool.id, user.id))
+    return _to_pool_out(pool, user, await _has_pending_today(pool.id, user.id, window_end))
 
 
 @router.delete("/{pool_id}", status_code=status.HTTP_204_NO_CONTENT)
