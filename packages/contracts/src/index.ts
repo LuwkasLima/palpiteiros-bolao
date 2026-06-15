@@ -24,3 +24,4 @@ export type MatchRevealedOut = Schemas["MatchRevealedOut"];
 export type RevealedPredictionsOut = Schemas["RevealedPredictionsOut"];
 export type AdminStatsOut = Schemas["AdminStatsOut"];
 export type MatchStatusCountsOut = Schemas["MatchStatusCountsOut"];
+export type NextMatchTodayOut = Schemas["NextMatchTodayOut"];
