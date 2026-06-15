@@ -5,6 +5,7 @@ import type {
   AdminStatsOut,
   LeaderboardOut,
   MatchOut,
+  NextMatchTodayOut,
   PoolOut,
   PoolSummaryOut,
   PredictionIn,
@@ -16,6 +17,12 @@ import type {
 } from "@bolao/contracts";
 
 const BASE = process.env.NEXT_PUBLIC_API_BASE_URL || "/api";
+
+function localDayEnd(): string {
+  const d = new Date();
+  d.setHours(23, 59, 59, 999);
+  return d.toISOString();
+}
 
 export class ApiError extends Error {
   constructor(public status: number, message: string) {
@@ -68,9 +75,10 @@ export const api = {
   teams: () => request<TeamOut[]>("/teams"),
   matches: (stage?: string) =>
     request<MatchOut[]>(`/matches${stage ? `?stage=${stage}` : ""}`),
+  nextMatchesToday: () => request<NextMatchTodayOut[]>(`/matches/next-today?window_end=${encodeURIComponent(localDayEnd())}`),
 
   // Pools
-  myPools: () => request<PoolSummaryOut[]>("/pools"),
+  myPools: () => request<PoolSummaryOut[]>(`/pools?window_end=${encodeURIComponent(localDayEnd())}`),
   createPool: (name: string) =>
     request<PoolOut>("/pools", { method: "POST", body: JSON.stringify({ name }) }),
   joinPool: (inviteCode: string) =>
@@ -78,7 +86,7 @@ export const api = {
       method: "POST",
       body: JSON.stringify({ invite_code: inviteCode }),
     }),
-  pool: (id: string) => request<PoolOut>(`/pools/${id}`),
+  pool: (id: string) => request<PoolOut>(`/pools/${id}?window_end=${encodeURIComponent(localDayEnd())}`),
   deletePool: (id: string) => request<void>(`/pools/${id}`, { method: "DELETE" }),
   leaderboard: (id: string) => request<LeaderboardOut>(`/pools/${id}/leaderboard`),
 
