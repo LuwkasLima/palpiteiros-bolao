@@ -81,7 +81,7 @@ export default function HomePage() {
             {nextMatches.length === 1 ? "Próxima partida" : "Próximas partidas"}{" · "}
             {formatKickoffTime(nextMatches[0].kickoff_at)}
           </SectionHeader>
-          <div className="card divide-y divide-[var(--border)]">
+          <div className="card divide-y divide-[var(--border)] border-l-4 [border-left-color:var(--accent)]">
             {nextMatches.map((m) => {
               const v = venue(m.key);
               return (
@@ -131,7 +131,7 @@ export default function HomePage() {
                 </div>
                 <div className="flex items-center gap-2">
                   {p.has_pending_today && (
-                    <span className="text-sm font-bold text-[var(--accent)]" title="Você tem palpites pendentes hoje">!</span>
+                    <span className="text-lg font-bold text-[var(--accent)]" title="Você ainda tem palpites pendentes nos jogos de hoje">!</span>
                   )}
                   <span className="chip">{p.invite_code}</span>
                 </div>

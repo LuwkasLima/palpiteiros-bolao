@@ -128,9 +128,9 @@ export default function PoolPage({ params }: { params: Promise<{ id: string }> }
       )}
 
       {pool.has_pending_today && (
-        <div className="card p-4 text-sm border-[var(--accent)]">
-          <span className="font-bold text-[var(--accent)]">!</span>
-          {" "}Você tem palpites pendentes para hoje.
+        <div className="card flex items-center gap-3 p-4 text-sm border-[var(--accent)]">
+          <span className="text-2xl font-bold text-[var(--accent)]">!</span>
+          <span>Você ainda tem palpites pendentes nos jogos de hoje.</span>
         </div>
       )}
 
