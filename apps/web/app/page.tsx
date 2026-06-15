@@ -14,6 +14,7 @@ export default function HomePage() {
   const { user, loading } = useAuth();
   const router = useRouter();
   const [pools, setPools] = useState<PoolSummaryOut[] | null>(null);
+  const [inProgressMatches, setInProgressMatches] = useState<NextMatchTodayOut[]>([]);
   const [nextMatches, setNextMatches] = useState<NextMatchTodayOut[]>([]);
   const [name, setName] = useState("");
   const [code, setCode] = useState("");
@@ -35,6 +36,7 @@ export default function HomePage() {
       return;
     }
     api.myPools().then(setPools).catch(() => setPools([]));
+    api.inProgressMatches().then(setInProgressMatches).catch(() => {});
     api.nextMatchesToday().then(setNextMatches).catch(() => {});
   }, [user, router]);
 
@@ -74,6 +76,47 @@ export default function HomePage() {
         <h1 className="text-2xl font-extrabold">Olá, {user.display_name} 👋</h1>
         <p className="text-sm text-[var(--muted)]">Faça seus palpites, torça com os amigos e veja quem manja mais de futebol.</p>
       </div>
+
+      {inProgressMatches.length > 0 && (
+        <section className="flex flex-col gap-2">
+          <SectionHeader>
+            {"Em andamento"}
+            {inProgressMatches.length > 1 && ` · ${inProgressMatches.length} partidas`}
+          </SectionHeader>
+          <div className="divide-y divide-[var(--border)] overflow-hidden rounded-2xl border border-green-500/30 border-l-4 border-l-green-500 bg-[var(--surface-2)]">
+            {inProgressMatches.map((m) => {
+              const v = venue(m.key);
+              return (
+                <div key={m.id} className="px-4 py-3">
+                  <div className="flex items-center justify-between gap-2 text-sm">
+                    <span className="min-w-0 flex-1 truncate text-right font-medium">
+                      {m.home_flag} {m.home_name}
+                    </span>
+                    <span className="shrink-0 text-xs text-[var(--muted)]">×</span>
+                    <span className="min-w-0 flex-1 truncate font-medium">
+                      {m.away_flag} {m.away_name}
+                    </span>
+                    <div className="flex shrink-0 items-center gap-1.5">
+                      {inProgressMatches.length > 1 && (
+                        <span className="chip">{stageBadge(m.stage, m.group_label)}</span>
+                      )}
+                      <span className="inline-flex items-center gap-1 rounded-full bg-green-500 px-2.5 py-0.5 text-xs font-bold text-[#04210f]">
+                        <span className="h-1.5 w-1.5 animate-pulse rounded-full bg-[#04210f]" />
+                        LIVE
+                      </span>
+                    </div>
+                  </div>
+                  {v && (
+                    <p className="mt-1 text-center text-xs text-[var(--muted)]">
+                      {v.stadium} · {v.city}
+                    </p>
+                  )}
+                </div>
+              );
+            })}
+          </div>
+        </section>
+      )}
 
       {nextMatches.length > 0 && (
         <section className="flex flex-col gap-2">

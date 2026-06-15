@@ -68,6 +68,43 @@ async def next_matches_today(window_end: datetime | None = Query(None)) -> list[
     ]
 
 
+_IN_PROGRESS_WINDOW = timedelta(hours=2)
+
+
+@router.get("/matches/in-progress", response_model=list[NextMatchTodayOut])
+async def in_progress_matches() -> list[NextMatchTodayOut]:
+    now = utcnow()
+    matches = await Match.find(
+        Match.kickoff_at <= now,
+        Match.kickoff_at > now - _IN_PROGRESS_WINDOW,
+        Match.status != MatchStatus.FINAL,
+        {"home_team_id": {"$ne": None}},
+    ).to_list()
+
+    if not matches:
+        return []
+
+    matches.sort(key=lambda m: m.kickoff_at)
+
+    team_ids = {tid for m in matches for tid in (m.home_team_id, m.away_team_id) if tid}
+    teams = {t.id: t for t in await Team.find({"_id": {"$in": list(team_ids)}}).to_list()}
+
+    return [
+        NextMatchTodayOut(
+            id=str(m.id),
+            key=m.key,
+            kickoff_at=m.kickoff_at,
+            home_name=teams[m.home_team_id].name if m.home_team_id and m.home_team_id in teams else None,
+            home_flag=teams[m.home_team_id].flag_emoji if m.home_team_id and m.home_team_id in teams else None,
+            away_name=teams[m.away_team_id].name if m.away_team_id and m.away_team_id in teams else None,
+            away_flag=teams[m.away_team_id].flag_emoji if m.away_team_id and m.away_team_id in teams else None,
+            group_label=m.group_label,
+            stage=m.stage,
+        )
+        for m in matches
+    ]
+
+
 @router.get("/matches", response_model=list[MatchOut])
 async def list_matches(stage: Stage | None = None) -> list[MatchOut]:
     query = Match.find(Match.stage == stage) if stage else Match.find_all()
