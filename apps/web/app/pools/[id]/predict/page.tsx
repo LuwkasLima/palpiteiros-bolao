@@ -6,7 +6,7 @@ import { useRouter } from "next/navigation";
 import type { MatchOut, PredictionOut, TeamOut } from "@bolao/contracts";
 import { api, ApiError } from "@/lib/api";
 import { useAuth } from "@/lib/auth";
-import { formatKickoffTime, formatMatchDay, groupKickoffSort, matchDayKey, matchPoints, sideLabel, stageBadge, teamMap } from "@/lib/format";
+import { formatKickoffTime, formatMatchDay, groupKickoffSort, matchDayKey, matchPoints, sideName, sideShortLabel, stageBadge, teamMap } from "@/lib/format";
 import { venue, type Venue } from "@/lib/venues";
 
 type SaveState = "idle" | "saving" | "saved" | "error";
@@ -100,8 +100,10 @@ function MatchRow({
   const [away, setAway] = useState<string>(pred ? String(pred.away_score) : "");
   const [state, setState] = useState<SaveState>("idle");
 
-  const homeLabel = sideLabel(match.home_team_id, tmap, match.slot_label ?? "A definir");
-  const awayLabel = sideLabel(match.away_team_id, tmap, match.slot_label ?? "A definir");
+  const homeShort = sideShortLabel(match.home_team_id, tmap, match.slot_label ?? "A definir");
+  const awayShort = sideShortLabel(match.away_team_id, tmap, match.slot_label ?? "A definir");
+  const homeName = sideName(match.home_team_id, tmap);
+  const awayName = sideName(match.away_team_id, tmap);
 
   async function save() {
     if (match.is_locked) return;
@@ -126,7 +128,7 @@ function MatchRow({
   return (
     <div className="p-3">
       <div className="flex items-center gap-2">
-        <div className="min-w-0 flex-1 truncate text-right text-sm font-medium">{homeLabel}</div>
+        <div className="flex-1 text-right text-sm font-medium">{homeShort}</div>
         <div className="flex items-center gap-1">
           <input
             className="score-input"
@@ -146,7 +148,7 @@ function MatchRow({
             onBlur={save}
           />
         </div>
-        <div className="min-w-0 flex-1 truncate text-left text-sm font-medium">{awayLabel}</div>
+        <div className="flex-1 text-left text-sm font-medium">{awayShort}</div>
         <div className="ml-1 w-20 text-right text-xs leading-tight">
           {final ? (
             <>
@@ -170,6 +172,12 @@ function MatchRow({
           )}
         </div>
       </div>
+      {(homeName || awayName) && (
+        <div className="mt-0.5 flex justify-between text-xs text-[var(--muted)]">
+          <span>{homeName}</span>
+          <span>{awayName}</span>
+        </div>
+      )}
       <div className="mt-1.5 flex items-center justify-between gap-2 text-xs text-[var(--muted)]">
         <span className="shrink-0">{stageBadge(match.stage, match.group_label)}</span>
         {venueInfo && <span className="min-w-0 truncate text-right">{venueInfo.stadium} · {venueInfo.city}</span>}
