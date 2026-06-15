@@ -102,7 +102,7 @@ export default function HomePage() {
                       )}
                       <span className="inline-flex items-center gap-1 rounded-full bg-green-500 px-2.5 py-0.5 text-xs font-bold text-[#04210f]">
                         <span className="h-1.5 w-1.5 animate-pulse rounded-full bg-[#04210f]" />
-                        LIVE
+                        Ao Vivo
                       </span>
                     </div>
                   </div>
