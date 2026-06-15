@@ -40,6 +40,18 @@ class UpdateProfileIn(BaseModel):
 # --- Teams & matches ----------------------------------------------------------
 
 
+class NextMatchTodayOut(BaseModel):
+    id: str
+    key: str
+    kickoff_at: datetime
+    home_name: str | None
+    home_flag: str | None
+    away_name: str | None
+    away_flag: str | None
+    group_label: str | None
+    stage: Stage
+
+
 class TeamOut(BaseModel):
     id: str
     name: str
