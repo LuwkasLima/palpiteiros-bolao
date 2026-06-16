@@ -176,6 +176,16 @@ class LeaderboardOut(BaseModel):
     rows: list[LeaderboardRowOut]
 
 
+class WeeklyHeroOut(BaseModel):
+    pool_id: str
+    week_label: str
+    profeta_name: str | None
+    profeta_points: int | None
+    corneteiro_name: str | None
+    corneteiro_points: int | None
+    has_data: bool
+
+
 # --- Admin --------------------------------------------------------------------
 
 

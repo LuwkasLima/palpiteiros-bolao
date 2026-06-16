@@ -7,10 +7,12 @@ hot we can cache a ``standings`` array on the Pool and refresh it on result entr
 
 from __future__ import annotations
 
+from datetime import datetime, timedelta, timezone
+
 from beanie import PydanticObjectId
 
 from app.models import Match, MatchStatus, Pool, Prediction
-from app.schemas import LeaderboardRowOut
+from app.schemas import LeaderboardRowOut, WeeklyHeroOut
 from app.services.scoring import points_for
 
 
@@ -54,3 +56,77 @@ async def compute_leaderboard(pool: Pool) -> list[LeaderboardRowOut]:
     ]
     rows.sort(key=lambda r: (-r.points, -r.exact_count, r.display_name.lower()))
     return rows
+
+
+def _current_week_bounds() -> tuple[datetime, datetime]:
+    """Return (Monday 00:00 UTC, next Monday 00:00 UTC) for the current week."""
+    now = datetime.now(timezone.utc)
+    week_start = (now - timedelta(days=now.weekday())).replace(
+        hour=0, minute=0, second=0, microsecond=0
+    )
+    week_end = week_start + timedelta(days=7)
+    return week_start, week_end
+
+
+async def compute_weekly_hero(pool: Pool) -> WeeklyHeroOut:
+    week_start, week_end = _current_week_bounds()
+
+    week_label = (
+        f"{week_start.strftime('%-d/%m')} – {(week_end - timedelta(days=1)).strftime('%-d/%m')}"
+    )
+
+    final_matches: dict[PydanticObjectId, Match] = {
+        m.id: m
+        async for m in Match.find(
+            Match.status == MatchStatus.FINAL,
+            Match.kickoff_at >= week_start,
+            Match.kickoff_at < week_end,
+        )
+    }
+
+    if not final_matches:
+        return WeeklyHeroOut(
+            pool_id=str(pool.id),
+            week_label=week_label,
+            profeta_name=None,
+            profeta_points=None,
+            corneteiro_name=None,
+            corneteiro_points=None,
+            has_data=False,
+        )
+
+    points: dict[PydanticObjectId, int] = {m.user_id: 0 for m in pool.members}
+    names: dict[PydanticObjectId, str] = {m.user_id: m.display_name for m in pool.members}
+
+    async for pred in Prediction.find(Prediction.pool_id == pool.id):
+        if pred.user_id not in points:
+            continue
+        match = final_matches.get(pred.match_id)
+        if match is None:
+            continue
+        points[pred.user_id] += points_for(pred, match)
+
+    scored = {uid: pts for uid, pts in points.items() if uid in names}
+    if not scored:
+        return WeeklyHeroOut(
+            pool_id=str(pool.id),
+            week_label=week_label,
+            profeta_name=None,
+            profeta_points=None,
+            corneteiro_name=None,
+            corneteiro_points=None,
+            has_data=False,
+        )
+
+    best_uid = max(scored, key=lambda uid: (scored[uid], names[uid].lower()))
+    worst_uid = min(scored, key=lambda uid: (scored[uid], names[uid].lower()))
+
+    return WeeklyHeroOut(
+        pool_id=str(pool.id),
+        week_label=week_label,
+        profeta_name=names[best_uid],
+        profeta_points=scored[best_uid],
+        corneteiro_name=names[worst_uid],
+        corneteiro_points=scored[worst_uid],
+        has_data=True,
+    )

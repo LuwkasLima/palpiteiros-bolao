@@ -23,9 +23,10 @@ from app.schemas import (
     PoolJoinIn,
     PoolOut,
     PoolSummaryOut,
+    WeeklyHeroOut,
 )
 from app.security import new_invite_code
-from app.services.leaderboard import compute_leaderboard
+from app.services.leaderboard import compute_leaderboard, compute_weekly_hero
 
 router = APIRouter(prefix="/pools", tags=["pools"])
 
@@ -176,3 +177,9 @@ async def pool_leaderboard(pool_id: str, user: CurrentUser) -> LeaderboardOut:
     pool = await load_member_pool(pool_id, user)
     rows = await compute_leaderboard(pool)
     return LeaderboardOut(pool_id=str(pool.id), rows=rows)
+
+
+@router.get("/{pool_id}/leaderboard/weekly-hero", response_model=WeeklyHeroOut)
+async def pool_weekly_hero(pool_id: str, user: CurrentUser) -> WeeklyHeroOut:
+    pool = await load_member_pool(pool_id, user)
+    return await compute_weekly_hero(pool)
