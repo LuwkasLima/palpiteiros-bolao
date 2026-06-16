@@ -71,6 +71,11 @@ export const api = {
       method: "PATCH",
       body: JSON.stringify({ display_name: displayName }),
     }),
+  markChangelogSeen: (version: string) =>
+    request<UserOut>("/auth/me/changelog-seen", {
+      method: "POST",
+      body: JSON.stringify({ version }),
+    }),
 
   // Tournament
   teams: () => request<TeamOut[]>("/teams"),
