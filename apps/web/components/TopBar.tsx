@@ -4,6 +4,8 @@ import Link from "next/link";
 import { useEffect, useState } from "react";
 import { usePathname } from "next/navigation";
 import { useAuth } from "@/lib/auth";
+import { LATEST_VERSION } from "@/lib/changelog";
+import { WhatsNewModal } from "./WhatsNewModal";
 
 type BeforeInstallPromptEvent = Event & { prompt: () => Promise<void> };
 
@@ -43,11 +45,27 @@ function DownloadIcon() {
   );
 }
 
+function SparklesIcon() {
+  return (
+    <svg width="20" height="20" viewBox="0 0 20 20" fill="none" aria-hidden>
+      <path d="M10 2l1.5 4.5L16 8l-4.5 1.5L10 14l-1.5-4.5L4 8l4.5-1.5L10 2z" stroke="currentColor" strokeWidth="1.5" strokeLinejoin="round" />
+      <path d="M16 13l.75 2.25L19 16l-2.25.75L16 19l-.75-2.25L13 16l2.25-.75L16 13z" stroke="currentColor" strokeWidth="1.2" strokeLinejoin="round" />
+    </svg>
+  );
+}
+
 export function TopBar() {
   const { user, signOut } = useAuth();
   const [open, setOpen] = useState(false);
+  const [showWhatsNew, setShowWhatsNew] = useState(false);
   const pathname = usePathname();
   const close = () => setOpen(false);
+
+  const hasUnseenChangelog = !!user && user.last_viewed_changelog_version !== LATEST_VERSION;
+
+  useEffect(() => {
+    if (hasUnseenChangelog) setShowWhatsNew(true);
+  }, [hasUnseenChangelog]);
 
   const [installPrompt, setInstallPrompt] = useState<BeforeInstallPromptEvent | null>(null);
   const [isIos, setIsIos] = useState(false);
@@ -116,6 +134,8 @@ export function TopBar() {
         aria-hidden
       />
 
+      <WhatsNewModal isOpen={showWhatsNew} onClose={() => setShowWhatsNew(false)} />
+
       {/* Drawer panel */}
       <div
         className={`fixed right-0 top-0 z-30 flex h-full w-72 flex-col bg-[var(--surface)] shadow-2xl transition-transform duration-200 ${open ? "translate-x-0" : "translate-x-full"}`}
@@ -147,6 +167,18 @@ export function TopBar() {
             <BookIcon />
             Regras
           </Link>
+          {user && (
+            <button
+              onClick={() => { setShowWhatsNew(true); close(); }}
+              className="relative flex items-center gap-3 rounded-lg border-l-2 border-transparent px-4 py-3 text-left text-xl text-[var(--text)] active:bg-[var(--surface-2)]"
+            >
+              <SparklesIcon />
+              O que há de novo
+              {hasUnseenChangelog && (
+                <span className="absolute right-4 top-1/2 -translate-y-1/2 h-2 w-2 rounded-full bg-[var(--accent)]" />
+              )}
+            </button>
+          )}
           {user?.is_admin && (
             <Link href="/admin" onClick={close} className={navLinkClass("/admin")}>
               <GearIcon />
