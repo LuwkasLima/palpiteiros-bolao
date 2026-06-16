@@ -46,10 +46,8 @@ async def next_matches_today(window_end: datetime | None = Query(None)) -> list[
         return []
 
     upcoming.sort(key=lambda m: m.kickoff_at)
-    next_kickoff = upcoming[0].kickoff_at
-    group = [m for m in upcoming if m.kickoff_at == next_kickoff]
 
-    team_ids = {tid for m in group for tid in (m.home_team_id, m.away_team_id) if tid}
+    team_ids = {tid for m in upcoming for tid in (m.home_team_id, m.away_team_id) if tid}
     teams = {t.id: t for t in await Team.find({"_id": {"$in": list(team_ids)}}).to_list()}
 
     return [
@@ -64,7 +62,7 @@ async def next_matches_today(window_end: datetime | None = Query(None)) -> list[
             group_label=m.group_label,
             stage=m.stage,
         )
-        for m in group
+        for m in upcoming
     ]
 
 
