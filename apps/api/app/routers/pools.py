@@ -171,6 +171,17 @@ async def delete_pool(pool_id: str, user: CurrentUser) -> None:
     await pool.set({Pool.deleted_at: utcnow()})
 
 
+@router.delete("/{pool_id}/leave", status_code=status.HTTP_204_NO_CONTENT)
+async def leave_pool(pool_id: str, user: CurrentUser) -> None:
+    pool = await load_member_pool(pool_id, user)
+    if pool.creator_id == user.id:
+        raise HTTPException(status.HTTP_400_BAD_REQUEST, "The creator cannot leave the pool; delete it instead")
+    await Pool.get_pymongo_collection().update_one(
+        {"_id": pool.id},
+        {"$pull": {"members": {"user_id": user.id}}},
+    )
+
+
 @router.get("/{pool_id}/leaderboard", response_model=LeaderboardOut)
 async def pool_leaderboard(pool_id: str, user: CurrentUser) -> LeaderboardOut:
     pool = await load_member_pool(pool_id, user)
