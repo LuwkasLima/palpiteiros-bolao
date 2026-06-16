@@ -52,6 +52,7 @@ class User(Document):
     display_name: str
     is_admin: bool = False
     onboarding_done: bool | None = None  # None = user predates this field, treat as True
+    last_viewed_changelog_version: str | None = None
     created_at: datetime = Field(default_factory=utcnow)
     last_seen_at: datetime | None = None
 
