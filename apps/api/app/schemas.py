@@ -31,10 +31,15 @@ class UserOut(BaseModel):
     display_name: str
     is_admin: bool
     onboarding_done: bool
+    last_viewed_changelog_version: str | None
 
 
 class UpdateProfileIn(BaseModel):
     display_name: str = Field(min_length=1, max_length=60)
+
+
+class ChangelogSeenIn(BaseModel):
+    version: str
 
 
 # --- Teams & matches ----------------------------------------------------------

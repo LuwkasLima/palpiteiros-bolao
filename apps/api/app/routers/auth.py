@@ -15,7 +15,7 @@ from fastapi import APIRouter, Cookie, HTTPException, Response, status
 from app.config import get_settings
 from app.deps import CurrentUser
 from app.models import MagicLink, Session, User
-from app.schemas import MessageOut, RequestLinkIn, UpdateProfileIn, UserOut, VerifyIn
+from app.schemas import ChangelogSeenIn, MessageOut, RequestLinkIn, UpdateProfileIn, UserOut, VerifyIn
 from app.security import SESSION_COOKIE, hash_token, new_token
 from app.services.email import send_magic_link
 
@@ -33,6 +33,7 @@ def _user_out(user: User) -> UserOut:
         display_name=user.display_name,
         is_admin=user.is_admin,
         onboarding_done=user.onboarding_done if user.onboarding_done is not None else True,
+        last_viewed_changelog_version=user.last_viewed_changelog_version,
     )
 
 
@@ -131,6 +132,13 @@ async def update_me(payload: UpdateProfileIn, user: CurrentUser) -> UserOut:
 
 @router.get("/me", response_model=UserOut)
 async def me(user: CurrentUser) -> UserOut:
+    return _user_out(user)
+
+
+@router.post("/me/changelog-seen", response_model=UserOut)
+async def changelog_seen(payload: ChangelogSeenIn, user: CurrentUser) -> UserOut:
+    user.last_viewed_changelog_version = payload.version
+    await user.save()
     return _user_out(user)
 
 

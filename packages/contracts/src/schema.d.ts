@@ -73,6 +73,23 @@ export interface paths {
         patch: operations["update_me_auth_me_patch"];
         trace?: never;
     };
+    "/auth/me/changelog-seen": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Changelog Seen */
+        post: operations["changelog_seen_auth_me_changelog_seen_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/teams": {
         parameters: {
             query?: never;
@@ -639,6 +656,13 @@ export interface components {
             is_admin: boolean;
             /** Onboarding Done */
             onboarding_done: boolean;
+            /** Last Viewed Changelog Version */
+            last_viewed_changelog_version: string | null;
+        };
+        /** ChangelogSeenIn */
+        ChangelogSeenIn: {
+            /** Version */
+            version: string;
         };
         /** ValidationError */
         ValidationError: {
@@ -824,6 +848,41 @@ export interface operations {
         requestBody: {
             content: {
                 "application/json": components["schemas"]["UpdateProfileIn"];
+            };
+        };
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["UserOut"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    changelog_seen_auth_me_changelog_seen_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: {
+                bolao_session?: string | null;
+            };
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ChangelogSeenIn"];
             };
         };
         responses: {

@@ -31,6 +31,14 @@
 - Avoid hacky fixes when a clean, durable solution is reasonable within scope.
 - Make changes that a senior engineer could review and understand quickly.
 
+## Changelog (mandatory after every feature)
+
+After completing any user-facing feature, do both of the following before considering the work done:
+
+1. **Evaluate relevance**: Decide whether the change is meaningful enough to surface to users. Changelog-worthy changes are things a user would notice or care about — new capabilities, visible UI changes, behaviour changes. Bug fixes, refactors, internal tooling, and style tweaks are generally not worth surfacing.
+
+2. **Update the changelog** (if relevant): Add a new entry to the top of `CHANGELOG` in `apps/web/lib/changelog.ts` and bump `LATEST_VERSION` to today's date (`YYYY-MM-DD`). The entry must have a short `title` and 1–3 `items` written from the user's perspective — what they can now do, not what changed in the code.
+
 ## Architecture
 
 - Monorepo with three apps: `apps/web`, `apps/api`, `apps/worker`.
