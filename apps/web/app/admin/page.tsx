@@ -4,7 +4,7 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import type { MatchOut, TeamOut } from "@bolao/contracts";
 import { api, ApiError } from "@/lib/api";
 import { useAuth } from "@/lib/auth";
-import { STAGE_ORDER, formatKickoff, groupKickoffSort, sideLabel, stageLabel, teamMap } from "@/lib/format";
+import { formatKickoff, formatMatchDay, groupKickoffSort, matchDayKey, sideLabel, stageBadge, teamMap } from "@/lib/format";
 
 export default function AdminPage() {
   const { user } = useAuth();
@@ -25,27 +25,20 @@ export default function AdminPage() {
   const tmap = useMemo(() => teamMap(teams), [teams]);
   const today = useMemo(() => new Date().toLocaleDateString("en-CA"), []);
   const sectionRefs = useRef<Record<string, HTMLElement | null>>({});
-  const byStage = useMemo(() => {
+
+  const byDay = useMemo(() => {
     const groups: Record<string, MatchOut[]> = {};
-    (matches ?? []).forEach((m) => (groups[m.stage] ??= []).push(m));
+    (matches ?? []).forEach((m) => (groups[matchDayKey(m.kickoff_at)] ??= []).push(m));
     Object.values(groups).forEach((l) => l.sort(groupKickoffSort));
     return groups;
   }, [matches]);
-
-  const todayStage = useMemo(() => {
-    if (!matches) return null;
-    const toUtc = (iso: string) => (/Z|[+-]\d{2}:?\d{2}$/.test(iso) ? iso : iso + "Z");
-    const match = matches.find(
-      (m) => new Date(toUtc(m.kickoff_at)).toLocaleDateString("en-CA") === today,
-    );
-    return match?.stage ?? null;
-  }, [matches, today]);
+  const dayKeys = useMemo(() => Object.keys(byDay).sort(), [byDay]);
 
   useEffect(() => {
-    if (!todayStage) return;
-    const el = sectionRefs.current[todayStage];
+    if (!dayKeys.length) return;
+    const el = sectionRefs.current[today];
     if (el) el.scrollIntoView({ behavior: "smooth", block: "start" });
-  }, [todayStage]);
+  }, [dayKeys, today]);
 
   if (error) return <p className="mt-10 text-center text-red-400">{error}</p>;
   if (!matches) return <p className="mt-10 text-center text-[var(--muted)]">Carregando…</p>;
@@ -61,18 +54,21 @@ export default function AdminPage() {
         Informe o placar do tempo normal (90 min). Nos mata-matas, escolha quem avança.
       </p>
 
-      {STAGE_ORDER.filter((s) => byStage[s]?.length).map((stage) => (
-        <section key={stage} ref={(el) => { sectionRefs.current[stage] = el; }} className="scroll-mt-16">
-          <h2 className={`mb-2 font-bold ${stage === todayStage ? "text-[var(--accent)]" : "text-[var(--accent-2)]"}`}>
-            {stageLabel(stage)}
-          </h2>
-          <div className="flex flex-col gap-2">
-            {byStage[stage].map((m) => (
-              <ResultRow key={m.id} match={m} tmap={tmap} onSaved={update} />
-            ))}
-          </div>
-        </section>
-      ))}
+      {dayKeys.map((day) => {
+        const isToday = day === today;
+        return (
+          <section key={day} ref={(el) => { sectionRefs.current[day] = el; }} className="scroll-mt-16">
+            <h2 className={`mb-2 font-bold ${isToday ? "text-[var(--accent)]" : "text-[var(--accent-2)]"}`}>
+              {formatMatchDay(day)}
+            </h2>
+            <div className={`card divide-y divide-[var(--border)]${isToday ? " ring-1 ring-[var(--accent)]" : ""}`}>
+              {byDay[day].map((m) => (
+                <ResultRow key={m.id} match={m} tmap={tmap} onSaved={update} />
+              ))}
+            </div>
+          </section>
+        );
+      })}
     </>
   );
 }
@@ -129,7 +125,7 @@ function ResultRow({
   }
 
   return (
-    <div className="card p-3">
+    <div className="p-3">
       <div className="flex items-center gap-2">
         <div className="flex-1 text-right text-sm font-medium">
           {sideLabel(match.home_team_id, tmap, match.slot_label ?? "A definir")}
@@ -153,7 +149,10 @@ function ResultRow({
       </div>
 
       <div className="mt-2 flex items-center justify-between gap-2">
-        <span className="text-[10px] text-[var(--muted)]">{formatKickoff(match.kickoff_at)}</span>
+        <div className="flex items-center gap-2 text-xs text-[var(--muted)]">
+          <span>{formatKickoff(match.kickoff_at)}</span>
+          <span>{stageBadge(match.stage, match.group_label)}</span>
+        </div>
         <div className="flex items-center gap-2">
           {isKnockout && hasTeams && (
             <select
