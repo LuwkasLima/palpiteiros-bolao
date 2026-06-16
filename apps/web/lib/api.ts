@@ -14,6 +14,7 @@ import type {
   RevealedPredictionsOut,
   TeamOut,
   UserOut,
+  WeeklyHeroOut,
 } from "@bolao/contracts";
 
 const BASE = process.env.NEXT_PUBLIC_API_BASE_URL || "/api";
@@ -91,6 +92,10 @@ export const api = {
   deletePool: (id: string) => request<void>(`/pools/${id}`, { method: "DELETE" }),
   leavePool: (id: string) => request<void>(`/pools/${id}/leave`, { method: "DELETE" }),
   leaderboard: (id: string) => request<LeaderboardOut>(`/pools/${id}/leaderboard`),
+  weeklyHero: (id: string, weekStart: string, weekEnd: string) =>
+    request<WeeklyHeroOut>(
+      `/pools/${id}/leaderboard/weekly-hero?week_start=${encodeURIComponent(weekStart)}&week_end=${encodeURIComponent(weekEnd)}`,
+    ),
 
   // Predictions
   myPredictions: (poolId: string) =>

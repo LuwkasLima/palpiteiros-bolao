@@ -3,7 +3,7 @@
 import { use, useEffect, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import type { LeaderboardOut, MatchRevealedOut, PoolOut, RevealedPredictionsOut } from "@bolao/contracts";
+import type { LeaderboardOut, MatchRevealedOut, PoolOut, RevealedPredictionsOut, WeeklyHeroOut } from "@bolao/contracts";
 import { api, ApiError } from "@/lib/api";
 import { useAuth } from "@/lib/auth";
 import { SectionHeader } from "@/components/SectionHeader";
@@ -15,7 +15,19 @@ export default function PoolPage({ params }: { params: Promise<{ id: string }> }
   const [pool, setPool] = useState<PoolOut | null>(null);
   const [board, setBoard] = useState<LeaderboardOut | null>(null);
   const [revealed, setRevealed] = useState<RevealedPredictionsOut | null>(null);
+  const [weeklyHero, setWeeklyHero] = useState<WeeklyHeroOut | null>(null);
   const [error, setError] = useState<string | null>(null);
+
+  const { isEndOfWeek, weekStart, weekEnd } = (() => {
+    const now = new Date();
+    const day = now.getDay(); // 0=Sun … 6=Sat (local time)
+    const start = new Date(now);
+    start.setDate(now.getDate() - day); // rewind to Sunday
+    start.setHours(0, 0, 0, 0);
+    const end = new Date(start);
+    end.setDate(start.getDate() + 7);
+    return { isEndOfWeek: true, weekStart: start.toISOString(), weekEnd: end.toISOString() }; // TODO: restore → isEndOfWeek: day === 0
+  })();
   const [copied, setCopied] = useState(false);
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
   const [deleting, setDeleting] = useState(false);
@@ -30,7 +42,7 @@ export default function PoolPage({ params }: { params: Promise<{ id: string }> }
 
   useEffect(() => {
     if (!user) return;
-    Promise.all([api.pool(id), api.leaderboard(id), api.revealedPredictions(id)])
+    const base = Promise.all([api.pool(id), api.leaderboard(id), api.revealedPredictions(id)])
       .then(([p, b, r]) => {
         setPool(p);
         setBoard(b);
@@ -43,7 +55,11 @@ export default function PoolPage({ params }: { params: Promise<{ id: string }> }
           setError(err instanceof ApiError ? err.message : "Não foi possível carregar o bolão.");
         }
       });
-  }, [id, user]);
+    if (isEndOfWeek) {
+      api.weeklyHero(id, weekStart, weekEnd).then(setWeeklyHero).catch(() => {});
+    }
+    return () => { void base; };
+  }, [id, user, isEndOfWeek]);
 
   if (error) return (
     <div className="mt-10 flex flex-col items-center gap-4 text-center">
@@ -199,29 +215,70 @@ export default function PoolPage({ params }: { params: Promise<{ id: string }> }
         </section>
       )}
 
+      {isEndOfWeek && weeklyHero?.has_data && (
+        <section className="flex flex-col gap-2">
+          <SectionHeader>⚡ Semana {weeklyHero.week_label}</SectionHeader>
+          <div className="grid grid-cols-2 gap-3">
+            <div className="card flex flex-col items-center gap-1 p-4 text-center border-yellow-500/30">
+              <span className="text-2xl">🔮</span>
+              <span className="text-[10px] font-bold uppercase tracking-widest text-yellow-400">Profeta da Semana</span>
+              <span className="mt-1 font-bold leading-tight">{weeklyHero.profeta_name}</span>
+              <span className="text-lg font-extrabold text-[var(--accent)]">{weeklyHero.profeta_points} pts</span>
+            </div>
+            <div className="card flex flex-col items-center gap-1 p-4 text-center border-red-500/30">
+              <span className="text-2xl">📯</span>
+              <span className="text-[10px] font-bold uppercase tracking-widest text-red-400">Corneteiro da Semana</span>
+              <span className="mt-1 font-bold leading-tight">{weeklyHero.corneteiro_name}</span>
+              <span className="text-lg font-extrabold text-[var(--accent)]">{weeklyHero.corneteiro_points} pts</span>
+            </div>
+          </div>
+        </section>
+      )}
+
       <section className="flex flex-col gap-2">
         <SectionHeader>🏆 Classificação</SectionHeader>
         <div className="card divide-y divide-[var(--border)]">
-          {board.rows.map((row, i) => (
-            <div
-              key={row.user_id}
-              className={`flex items-center justify-between p-3.5 ${
-                row.user_id === user?.id ? "bg-[var(--surface-2)]" : ""
-              }`}
-            >
-              <div className="flex items-center gap-3">
-                <span className="w-6 text-center font-bold text-[var(--muted)]">{i + 1}</span>
-                <div>
-                  <div className="font-semibold">{row.display_name}</div>
-                  <div className="text-xs text-[var(--muted)]">
-                    {row.exact_count} placar{row.exact_count === 1 ? "" : "es"} exato
-                    {row.exact_count === 1 ? "" : "s"} · {row.predictions_made} palpites
+          {board.rows.map((row, i) => {
+            const isLast = i === board.rows.length - 1;
+            const title =
+              i === 0 ? "Profeta" :
+              i === 1 ? "Profissional" :
+              i === 2 ? "Botequeiro" :
+              (isLast && board.rows.length > 3) ? "Corneteiro" :
+              null;
+            const titleColor =
+              i === 0 ? "text-yellow-400 border-yellow-500/40 bg-yellow-500/10" :
+              i === 1 ? "text-slate-300 border-slate-400/40 bg-slate-400/10" :
+              i === 2 ? "text-orange-400 border-orange-500/40 bg-orange-500/10" :
+              "text-red-400 border-red-500/40 bg-red-500/10";
+            return (
+              <div
+                key={row.user_id}
+                className={`flex items-center justify-between p-3.5 ${
+                  row.user_id === user?.id ? "bg-[var(--surface-2)]" : ""
+                }`}
+              >
+                <div className="flex items-center gap-3">
+                  <span className="w-6 text-center font-bold text-[var(--muted)]">{i + 1}</span>
+                  <div>
+                    <div className="flex items-center gap-2 flex-wrap">
+                      <span className="font-semibold">{row.display_name}</span>
+                      {title && (
+                        <span className={`rounded border px-1.5 py-0.5 text-[10px] font-bold uppercase tracking-wide ${titleColor}`}>
+                          {title}
+                        </span>
+                      )}
+                    </div>
+                    <div className="text-xs text-[var(--muted)]">
+                      {row.exact_count} placar{row.exact_count === 1 ? "" : "es"} exato
+                      {row.exact_count === 1 ? "" : "s"} · {row.predictions_made} palpites
+                    </div>
                   </div>
                 </div>
+                <div className="text-lg font-extrabold text-[var(--accent)]">{row.points}</div>
               </div>
-              <div className="text-lg font-extrabold text-[var(--accent)]">{row.points}</div>
-            </div>
-          ))}
+            );
+          })}
         </div>
         <p className="mt-2 text-xs text-[var(--muted)]">
           Pontuação cresce nas fases finais — o jogo fica disputado até a última rodada.
