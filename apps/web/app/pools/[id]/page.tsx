@@ -20,6 +20,9 @@ export default function PoolPage({ params }: { params: Promise<{ id: string }> }
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
   const [deleting, setDeleting] = useState(false);
   const [deleteError, setDeleteError] = useState<string | null>(null);
+  const [showLeaveConfirm, setShowLeaveConfirm] = useState(false);
+  const [leaving, setLeaving] = useState(false);
+  const [leaveError, setLeaveError] = useState<string | null>(null);
 
   useEffect(() => {
     if (!loading && !user) router.replace("/login");
@@ -62,6 +65,19 @@ export default function PoolPage({ params }: { params: Promise<{ id: string }> }
       (m) => new Date(toUtc(m.kickoff_at)).toLocaleDateString("sv") === today,
     ) ?? [];
 
+  async function handleLeave() {
+    setLeaving(true);
+    setLeaveError(null);
+    try {
+      await api.leavePool(id);
+      router.refresh();
+      router.replace("/");
+    } catch (err) {
+      setLeaveError(err instanceof ApiError ? err.message : "Não foi possível sair do bolão.");
+      setLeaving(false);
+    }
+  }
+
   async function handleDelete() {
     setDeleting(true);
     setDeleteError(null);
@@ -98,6 +114,34 @@ export default function PoolPage({ params }: { params: Promise<{ id: string }> }
           <span className="hidden sm:inline">Meus palpites</span>
         </Link>
       </div>
+
+      {showLeaveConfirm && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4">
+          <div className="card flex w-full max-w-sm flex-col gap-4 p-6">
+            <h2 className="text-lg font-bold">Sair do bolão?</h2>
+            <p className="text-sm text-[var(--muted)]">
+              Você perderá acesso ao bolão <strong className="text-[var(--fg)]">{pool.name}</strong>. Seus palpites já registrados serão mantidos.
+            </p>
+            {leaveError && <p className="text-sm text-red-400">{leaveError}</p>}
+            <div className="flex gap-3">
+              <button
+                className="btn flex-1 bg-red-600 hover:bg-red-500"
+                onClick={handleLeave}
+                disabled={leaving}
+              >
+                {leaving ? "Saindo…" : "Sim, sair"}
+              </button>
+              <button
+                className="btn-ghost flex-1"
+                onClick={() => { setShowLeaveConfirm(false); setLeaveError(null); }}
+                disabled={leaving}
+              >
+                Cancelar
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
 
       {showDeleteConfirm && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4">
@@ -184,9 +228,9 @@ export default function PoolPage({ params }: { params: Promise<{ id: string }> }
         </p>
       </section>
 
-      {pool.is_creator && (
-        <section className="flex flex-col gap-2 pt-4">
-          <SectionHeader>Zona de perigo</SectionHeader>
+      <section className="flex flex-col gap-2 pt-4">
+        <SectionHeader>Zona de perigo</SectionHeader>
+        {pool.is_creator ? (
           <div className="rounded-xl border border-red-900/40 p-4 flex items-center justify-between gap-4">
             <div>
               <p className="text-sm font-medium">Excluir bolão</p>
@@ -199,8 +243,21 @@ export default function PoolPage({ params }: { params: Promise<{ id: string }> }
               Excluir
             </button>
           </div>
-        </section>
-      )}
+        ) : (
+          <div className="rounded-xl border border-red-900/40 p-4 flex items-center justify-between gap-4">
+            <div>
+              <p className="text-sm font-medium">Sair do bolão</p>
+              <p className="text-xs text-[var(--muted)]">Você deixará de participar deste bolão.</p>
+            </div>
+            <button
+              className="shrink-0 rounded-lg border border-red-700/60 px-3 py-1.5 text-sm text-red-400 hover:border-red-500 hover:text-red-300 transition-colors"
+              onClick={() => setShowLeaveConfirm(true)}
+            >
+              Sair
+            </button>
+          </div>
+        )}
+      </section>
     </div>
   );
 }
