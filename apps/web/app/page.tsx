@@ -96,21 +96,15 @@ export default function HomePage() {
                     <span className="min-w-0 flex-1 truncate font-medium">
                       {m.away_flag} {m.away_name}
                     </span>
-                    <div className="flex shrink-0 items-center gap-1.5">
-                      {inProgressMatches.length > 1 && (
-                        <span className="chip">{stageBadge(m.stage, m.group_label)}</span>
-                      )}
-                      <span className="inline-flex items-center gap-1 rounded-full bg-green-500 px-2.5 py-0.5 text-xs font-bold text-[#04210f]">
-                        <span className="h-1.5 w-1.5 animate-pulse rounded-full bg-[#04210f]" />
-                        Ao Vivo
-                      </span>
-                    </div>
+                    <span className="inline-flex shrink-0 items-center gap-1 rounded-full bg-green-500 px-2.5 py-0.5 text-xs font-bold text-[#04210f]">
+                      <span className="h-1.5 w-1.5 animate-pulse rounded-full bg-[#04210f]" />
+                      Ao Vivo
+                    </span>
                   </div>
-                  {v && (
-                    <p className="mt-1 text-center text-xs text-[var(--muted)]">
-                      {v.stadium} · {v.city}
-                    </p>
-                  )}
+                  <div className="mt-1 flex justify-between text-xs text-[var(--muted)]">
+                    <span>{stageBadge(m.stage, m.group_label)}</span>
+                    {v && <span>{v.stadium} · {v.city}</span>}
+                  </div>
                 </div>
               );
             })}
@@ -121,8 +115,7 @@ export default function HomePage() {
       {nextMatches.length > 0 && (
         <section className="flex flex-col gap-2">
           <SectionHeader>
-            {nextMatches.length === 1 ? "Próxima partida" : "Próximas partidas"}{" · "}
-            {formatKickoffTime(nextMatches[0].kickoff_at)}
+            {nextMatches.length === 1 ? "Próxima partida" : "Partidas de hoje"}
           </SectionHeader>
           <div className="card divide-y divide-[var(--border)] border-l-4 [border-left-color:var(--accent)]">
             {nextMatches.map((m) => {
@@ -137,15 +130,12 @@ export default function HomePage() {
                     <span className="min-w-0 flex-1 truncate font-medium">
                       {m.away_flag} {m.away_name}
                     </span>
-                    {nextMatches.length > 1 && (
-                      <span className="chip shrink-0">{stageBadge(m.stage, m.group_label)}</span>
-                    )}
+                    <span className="chip shrink-0">{formatKickoffTime(m.kickoff_at)}</span>
                   </div>
-                  {v && (
-                    <p className="mt-1 text-center text-xs text-[var(--muted)]">
-                      {v.stadium} · {v.city}
-                    </p>
-                  )}
+                  <div className="mt-1 flex justify-between text-xs text-[var(--muted)]">
+                    <span>{stageBadge(m.stage, m.group_label)}</span>
+                    {v && <span>{v.stadium} · {v.city}</span>}
+                  </div>
                 </div>
               );
             })}
