@@ -180,6 +180,11 @@ async def pool_leaderboard(pool_id: str, user: CurrentUser) -> LeaderboardOut:
 
 
 @router.get("/{pool_id}/leaderboard/weekly-hero", response_model=WeeklyHeroOut)
-async def pool_weekly_hero(pool_id: str, user: CurrentUser) -> WeeklyHeroOut:
+async def pool_weekly_hero(
+    pool_id: str,
+    user: CurrentUser,
+    week_start: datetime = Query(...),
+    week_end: datetime = Query(...),
+) -> WeeklyHeroOut:
     pool = await load_member_pool(pool_id, user)
-    return await compute_weekly_hero(pool)
+    return await compute_weekly_hero(pool, week_start, week_end)
