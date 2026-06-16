@@ -58,22 +58,15 @@ async def compute_leaderboard(pool: Pool) -> list[LeaderboardRowOut]:
     return rows
 
 
-def _current_week_bounds() -> tuple[datetime, datetime]:
-    """Return (Monday 00:00 UTC, next Monday 00:00 UTC) for the current week."""
-    now = datetime.now(timezone.utc)
-    week_start = (now - timedelta(days=now.weekday())).replace(
-        hour=0, minute=0, second=0, microsecond=0
-    )
-    week_end = week_start + timedelta(days=7)
-    return week_start, week_end
+async def compute_weekly_hero(pool: Pool, week_start: datetime, week_end: datetime) -> WeeklyHeroOut:
+    # Ensure UTC-aware for comparisons
+    if week_start.tzinfo is None:
+        week_start = week_start.replace(tzinfo=timezone.utc)
+    if week_end.tzinfo is None:
+        week_end = week_end.replace(tzinfo=timezone.utc)
 
-
-async def compute_weekly_hero(pool: Pool) -> WeeklyHeroOut:
-    week_start, week_end = _current_week_bounds()
-
-    week_label = (
-        f"{week_start.strftime('%-d/%m')} – {(week_end - timedelta(days=1)).strftime('%-d/%m')}"
-    )
+    week_end_sat = week_end - timedelta(days=1)  # Saturday (last day of the Sun–Sat window)
+    week_label = f"{week_start.strftime('%-d/%m')} – {week_end_sat.strftime('%-d/%m')}"
 
     final_matches: dict[PydanticObjectId, Match] = {
         m.id: m
@@ -107,7 +100,7 @@ async def compute_weekly_hero(pool: Pool) -> WeeklyHeroOut:
         points[pred.user_id] += points_for(pred, match)
 
     scored = {uid: pts for uid, pts in points.items() if uid in names}
-    if not scored:
+    if not scored or all(pts == 0 for pts in scored.values()):
         return WeeklyHeroOut(
             pool_id=str(pool.id),
             week_label=week_label,

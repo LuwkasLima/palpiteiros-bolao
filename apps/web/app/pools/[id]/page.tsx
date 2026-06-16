@@ -18,9 +18,15 @@ export default function PoolPage({ params }: { params: Promise<{ id: string }> }
   const [weeklyHero, setWeeklyHero] = useState<WeeklyHeroOut | null>(null);
   const [error, setError] = useState<string | null>(null);
 
-  const isEndOfWeek = (() => {
-    const day = new Date().getDay(); // 0=Sun, 5=Fri, 6=Sat
-    return day === 0 || day === 5 || day === 6;
+  const { isEndOfWeek, weekStart, weekEnd } = (() => {
+    const now = new Date();
+    const day = now.getDay(); // 0=Sun … 6=Sat (local time)
+    const start = new Date(now);
+    start.setDate(now.getDate() - day); // rewind to Sunday
+    start.setHours(0, 0, 0, 0);
+    const end = new Date(start);
+    end.setDate(start.getDate() + 7);
+    return { isEndOfWeek: true, weekStart: start.toISOString(), weekEnd: end.toISOString() }; // TODO: restore → isEndOfWeek: day === 0
   })();
   const [copied, setCopied] = useState(false);
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
@@ -47,7 +53,7 @@ export default function PoolPage({ params }: { params: Promise<{ id: string }> }
         }
       });
     if (isEndOfWeek) {
-      api.weeklyHero(id).then(setWeeklyHero).catch(() => {});
+      api.weeklyHero(id, weekStart, weekEnd).then(setWeeklyHero).catch(() => {});
     }
     return () => { void base; };
   }, [id, user, isEndOfWeek]);

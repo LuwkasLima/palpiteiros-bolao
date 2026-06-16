@@ -91,7 +91,10 @@ export const api = {
   pool: (id: string) => request<PoolOut>(`/pools/${id}?window_end=${encodeURIComponent(localDayEnd())}`),
   deletePool: (id: string) => request<void>(`/pools/${id}`, { method: "DELETE" }),
   leaderboard: (id: string) => request<LeaderboardOut>(`/pools/${id}/leaderboard`),
-  weeklyHero: (id: string) => request<WeeklyHeroOut>(`/pools/${id}/leaderboard/weekly-hero`),
+  weeklyHero: (id: string, weekStart: string, weekEnd: string) =>
+    request<WeeklyHeroOut>(
+      `/pools/${id}/leaderboard/weekly-hero?week_start=${encodeURIComponent(weekStart)}&week_end=${encodeURIComponent(weekEnd)}`,
+    ),
 
   // Predictions
   myPredictions: (poolId: string) =>
