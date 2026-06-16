@@ -263,8 +263,7 @@ export default function PoolPage({ params }: { params: Promise<{ id: string }> }
                   <div>
                     <div className="font-semibold">{row.display_name}</div>
                     <div className="text-xs text-[var(--muted)]">
-                      {row.exact_count} placar{row.exact_count === 1 ? "" : "es"} exato
-                      {row.exact_count === 1 ? "" : "s"} · {row.predictions_made} palpites
+                      🎯 {row.exact_count} · ↔ {row.margin_count} · ✓ {row.outcome_count}
                     </div>
                   </div>
                 </div>
@@ -281,6 +280,9 @@ export default function PoolPage({ params }: { params: Promise<{ id: string }> }
           })}
         </div>
         <p className="mt-2 text-xs text-[var(--muted)]">
+          🎯 placar exato · ↔ margem certa · ✓ resultado certo
+        </p>
+        <p className="text-xs text-[var(--muted)]">
           Pontuação cresce nas fases finais — o jogo fica disputado até a última rodada.
         </p>
       </section>

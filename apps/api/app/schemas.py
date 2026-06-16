@@ -173,6 +173,8 @@ class LeaderboardRowOut(BaseModel):
     display_name: str
     points: int
     exact_count: int
+    margin_count: int
+    outcome_count: int
     predictions_made: int
 
 

@@ -394,6 +394,10 @@ export interface components {
             points: number;
             /** Exact Count */
             exact_count: number;
+            /** Margin Count */
+            margin_count: number;
+            /** Outcome Count */
+            outcome_count: number;
             /** Predictions Made */
             predictions_made: number;
         };
