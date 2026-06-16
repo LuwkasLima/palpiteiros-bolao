@@ -26,7 +26,7 @@ export default function PoolPage({ params }: { params: Promise<{ id: string }> }
     start.setHours(0, 0, 0, 0);
     const end = new Date(start);
     end.setDate(start.getDate() + 7);
-    return { isEndOfWeek: true, weekStart: start.toISOString(), weekEnd: end.toISOString() }; // TODO: restore → isEndOfWeek: day === 0
+    return { isEndOfWeek: day === 0, weekStart: start.toISOString(), weekEnd: end.toISOString() };
   })();
   const [copied, setCopied] = useState(false);
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
