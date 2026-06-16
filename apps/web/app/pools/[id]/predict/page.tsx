@@ -1,6 +1,6 @@
 "use client";
 
-import { use, useEffect, useMemo, useState } from "react";
+import { use, useEffect, useMemo, useRef, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import type { MatchOut, PredictionOut, TeamOut } from "@bolao/contracts";
@@ -39,6 +39,8 @@ export default function PredictPage({ params }: { params: Promise<{ id: string }
   }, [poolId, user]);
 
   const tmap = useMemo(() => teamMap(teams), [teams]);
+  const today = useMemo(() => new Date().toLocaleDateString("en-CA"), []);
+  const sectionRefs = useRef<Record<string, HTMLElement | null>>({});
   const byDay = useMemo(() => {
     const groups: Record<string, MatchOut[]> = {};
     (matches ?? []).forEach((m) => (groups[matchDayKey(m.kickoff_at)] ??= []).push(m));
@@ -46,6 +48,12 @@ export default function PredictPage({ params }: { params: Promise<{ id: string }
     return groups;
   }, [matches]);
   const dayKeys = useMemo(() => Object.keys(byDay).sort(), [byDay]);
+
+  useEffect(() => {
+    if (!dayKeys.length) return;
+    const el = sectionRefs.current[today];
+    if (el) el.scrollIntoView({ behavior: "smooth", block: "start" });
+  }, [dayKeys, today]);
 
   if (error) return <p className="mt-10 text-center text-red-400">{error}</p>;
   if (!matches) return <p className="mt-10 text-center text-[var(--muted)]">Carregando jogos…</p>;
@@ -59,10 +67,12 @@ export default function PredictPage({ params }: { params: Promise<{ id: string }
         </Link>
       </div>
 
-      {dayKeys.map((day) => (
-        <section key={day}>
-          <h2 className="mb-2 font-bold text-[var(--accent-2)]">{formatMatchDay(day)}</h2>
-          <div className="card divide-y divide-[var(--border)]">
+      {dayKeys.map((day) => {
+        const isToday = day === today;
+        return (
+        <section key={day} ref={(el) => { sectionRefs.current[day] = el; }} className="scroll-mt-16">
+          <h2 className={`mb-2 font-bold ${isToday ? "text-[var(--accent)]" : "text-[var(--accent-2)]"}`}>{formatMatchDay(day)}</h2>
+          <div className={`card divide-y divide-[var(--border)]${isToday ? " ring-1 ring-[var(--accent)]" : ""}`}>
             {byDay[day].map((m) => (
               <MatchRow
                 key={m.id}
@@ -76,7 +86,8 @@ export default function PredictPage({ params }: { params: Promise<{ id: string }
             ))}
           </div>
         </section>
-      ))}
+        );
+      })}
     </div>
   );
 }
