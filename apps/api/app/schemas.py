@@ -57,6 +57,21 @@ class NextMatchTodayOut(BaseModel):
     stage: Stage
 
 
+class MatchTodayOut(BaseModel):
+    id: str
+    key: str
+    kickoff_at: datetime
+    status: MatchStatus
+    home_name: str | None
+    home_flag: str | None
+    away_name: str | None
+    away_flag: str | None
+    home_score: int | None
+    away_score: int | None
+    group_label: str | None
+    stage: Stage
+
+
 class TeamOut(BaseModel):
     id: str
     name: str

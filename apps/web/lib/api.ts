@@ -5,6 +5,7 @@ import type {
   AdminStatsOut,
   LeaderboardOut,
   MatchOut,
+  MatchTodayOut,
   NextMatchTodayOut,
   PoolOut,
   PoolSummaryOut,
@@ -83,6 +84,8 @@ export const api = {
     request<MatchOut[]>(`/matches${stage ? `?stage=${stage}` : ""}`),
   nextMatchesToday: () => request<NextMatchTodayOut[]>(`/matches/next-today?window_end=${encodeURIComponent(localDayEnd())}`),
   inProgressMatches: () => request<NextMatchTodayOut[]>("/matches/in-progress"),
+  matchesToday: (dayStart: string, dayEnd: string) =>
+    request<MatchTodayOut[]>(`/matches/today?day_start=${encodeURIComponent(dayStart)}&day_end=${encodeURIComponent(dayEnd)}`),
 
   // Pools
   myPools: () => request<PoolSummaryOut[]>(`/pools?window_end=${encodeURIComponent(localDayEnd())}`),

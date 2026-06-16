@@ -9,14 +9,6 @@ import { WhatsNewModal } from "./WhatsNewModal";
 
 type BeforeInstallPromptEvent = Event & { prompt: () => Promise<void> };
 
-function BookIcon() {
-  return (
-    <svg width="20" height="20" viewBox="0 0 20 20" fill="none" aria-hidden>
-      <path d="M4 3h9a2 2 0 0 1 2 2v11a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2z" stroke="currentColor" strokeWidth="1.5" />
-      <path d="M7 7h5M7 10h5M7 13h3" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" />
-    </svg>
-  );
-}
 
 function GearIcon() {
   return (
@@ -45,14 +37,6 @@ function DownloadIcon() {
   );
 }
 
-function SparklesIcon() {
-  return (
-    <svg width="20" height="20" viewBox="0 0 20 20" fill="none" aria-hidden>
-      <path d="M10 2l1.5 4.5L16 8l-4.5 1.5L10 14l-1.5-4.5L4 8l4.5-1.5L10 2z" stroke="currentColor" strokeWidth="1.5" strokeLinejoin="round" />
-      <path d="M16 13l.75 2.25L19 16l-2.25.75L16 19l-.75-2.25L13 16l2.25-.75L16 13z" stroke="currentColor" strokeWidth="1.2" strokeLinejoin="round" />
-    </svg>
-  );
-}
 
 export function TopBar() {
   const { user, signOut } = useAuth();
@@ -163,22 +147,6 @@ export function TopBar() {
         )}
 
         <nav className="flex flex-col gap-2 px-2">
-          <Link href="/regras" onClick={close} className={navLinkClass("/regras")}>
-            <BookIcon />
-            Regras
-          </Link>
-          {user && (
-            <button
-              onClick={() => { setShowWhatsNew(true); close(); }}
-              className="relative flex items-center gap-3 rounded-lg border-l-2 border-transparent px-4 py-3 text-left text-xl text-[var(--text)] active:bg-[var(--surface-2)]"
-            >
-              <SparklesIcon />
-              O que há de novo
-              {hasUnseenChangelog && (
-                <span className="absolute right-4 top-1/2 -translate-y-1/2 h-2 w-2 rounded-full bg-[var(--accent)]" />
-              )}
-            </button>
-          )}
           {user?.is_admin && (
             <Link href="/admin" onClick={close} className={navLinkClass("/admin")}>
               <GearIcon />
@@ -187,7 +155,6 @@ export function TopBar() {
           )}
           {(installPrompt || isIos) && (
             <>
-              <div className="mx-2 my-1 border-t border-[var(--border)]" />
               <button
                 onClick={async () => {
                   if (isIos) {
