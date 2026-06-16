@@ -158,26 +158,47 @@ export default function PoolPage({ params }: { params: Promise<{ id: string }> }
       <section className="flex flex-col gap-2">
         <SectionHeader>🏆 Classificação</SectionHeader>
         <div className="card divide-y divide-[var(--border)]">
-          {board.rows.map((row, i) => (
-            <div
-              key={row.user_id}
-              className={`flex items-center justify-between p-3.5 ${
-                row.user_id === user?.id ? "bg-[var(--surface-2)]" : ""
-              }`}
-            >
-              <div className="flex items-center gap-3">
-                <span className="w-6 text-center font-bold text-[var(--muted)]">{i + 1}</span>
-                <div>
-                  <div className="font-semibold">{row.display_name}</div>
-                  <div className="text-xs text-[var(--muted)]">
-                    {row.exact_count} placar{row.exact_count === 1 ? "" : "es"} exato
-                    {row.exact_count === 1 ? "" : "s"} · {row.predictions_made} palpites
+          {board.rows.map((row, i) => {
+            const isLast = i === board.rows.length - 1;
+            const title =
+              i === 0 ? "Profeta" :
+              i === 1 ? "Profissional" :
+              i === 2 ? "Botequeiro" :
+              (isLast && board.rows.length > 3) ? "Corneteiro" :
+              null;
+            const titleColor =
+              i === 0 ? "text-yellow-400 border-yellow-500/40 bg-yellow-500/10" :
+              i === 1 ? "text-slate-300 border-slate-400/40 bg-slate-400/10" :
+              i === 2 ? "text-orange-400 border-orange-500/40 bg-orange-500/10" :
+              "text-red-400 border-red-500/40 bg-red-500/10";
+            return (
+              <div
+                key={row.user_id}
+                className={`flex items-center justify-between p-3.5 ${
+                  row.user_id === user?.id ? "bg-[var(--surface-2)]" : ""
+                }`}
+              >
+                <div className="flex items-center gap-3">
+                  <span className="w-6 text-center font-bold text-[var(--muted)]">{i + 1}</span>
+                  <div>
+                    <div className="flex items-center gap-2 flex-wrap">
+                      <span className="font-semibold">{row.display_name}</span>
+                      {title && (
+                        <span className={`rounded border px-1.5 py-0.5 text-[10px] font-bold uppercase tracking-wide ${titleColor}`}>
+                          {title}
+                        </span>
+                      )}
+                    </div>
+                    <div className="text-xs text-[var(--muted)]">
+                      {row.exact_count} placar{row.exact_count === 1 ? "" : "es"} exato
+                      {row.exact_count === 1 ? "" : "s"} · {row.predictions_made} palpites
+                    </div>
                   </div>
                 </div>
+                <div className="text-lg font-extrabold text-[var(--accent)]">{row.points}</div>
               </div>
-              <div className="text-lg font-extrabold text-[var(--accent)]">{row.points}</div>
-            </div>
-          ))}
+            );
+          })}
         </div>
         <p className="mt-2 text-xs text-[var(--muted)]">
           Pontuação cresce nas fases finais — o jogo fica disputado até a última rodada.
