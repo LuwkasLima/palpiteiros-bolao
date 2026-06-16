@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import type { MatchOut, TeamOut } from "@bolao/contracts";
 import { api, ApiError } from "@/lib/api";
 import { useAuth } from "@/lib/auth";
@@ -23,12 +23,29 @@ export default function AdminPage() {
   }, [user]);
 
   const tmap = useMemo(() => teamMap(teams), [teams]);
+  const today = useMemo(() => new Date().toLocaleDateString("en-CA"), []);
+  const sectionRefs = useRef<Record<string, HTMLElement | null>>({});
   const byStage = useMemo(() => {
     const groups: Record<string, MatchOut[]> = {};
     (matches ?? []).forEach((m) => (groups[m.stage] ??= []).push(m));
     Object.values(groups).forEach((l) => l.sort(groupKickoffSort));
     return groups;
   }, [matches]);
+
+  const todayStage = useMemo(() => {
+    if (!matches) return null;
+    const toUtc = (iso: string) => (/Z|[+-]\d{2}:?\d{2}$/.test(iso) ? iso : iso + "Z");
+    const match = matches.find(
+      (m) => new Date(toUtc(m.kickoff_at)).toLocaleDateString("en-CA") === today,
+    );
+    return match?.stage ?? null;
+  }, [matches, today]);
+
+  useEffect(() => {
+    if (!todayStage) return;
+    const el = sectionRefs.current[todayStage];
+    if (el) el.scrollIntoView({ behavior: "smooth", block: "start" });
+  }, [todayStage]);
 
   if (error) return <p className="mt-10 text-center text-red-400">{error}</p>;
   if (!matches) return <p className="mt-10 text-center text-[var(--muted)]">Carregando…</p>;
@@ -45,8 +62,10 @@ export default function AdminPage() {
       </p>
 
       {STAGE_ORDER.filter((s) => byStage[s]?.length).map((stage) => (
-        <section key={stage}>
-          <h2 className="mb-2 font-bold text-[var(--accent-2)]">{stageLabel(stage)}</h2>
+        <section key={stage} ref={(el) => { sectionRefs.current[stage] = el; }} className="scroll-mt-16">
+          <h2 className={`mb-2 font-bold ${stage === todayStage ? "text-[var(--accent)]" : "text-[var(--accent-2)]"}`}>
+            {stageLabel(stage)}
+          </h2>
           <div className="flex flex-col gap-2">
             {byStage[stage].map((m) => (
               <ResultRow key={m.id} match={m} tmap={tmap} onSaved={update} />
