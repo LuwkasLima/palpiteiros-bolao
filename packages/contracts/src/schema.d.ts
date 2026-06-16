@@ -107,6 +107,23 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/matches/in-progress": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** In Progress Matches */
+        get: operations["in_progress_matches_matches_in_progress_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/matches": {
         parameters: {
             query?: never;
@@ -186,6 +203,23 @@ export interface paths {
         };
         /** Pool Leaderboard */
         get: operations["pool_leaderboard_pools__pool_id__leaderboard_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/pools/{pool_id}/leaderboard/weekly-hero": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Pool Weekly Hero */
+        get: operations["pool_weekly_hero_pools__pool_id__leaderboard_weekly_hero_get"];
         put?: never;
         post?: never;
         delete?: never;
@@ -624,6 +658,23 @@ export interface components {
             /** Token */
             token: string;
         };
+        /** WeeklyHeroOut */
+        WeeklyHeroOut: {
+            /** Pool Id */
+            pool_id: string;
+            /** Week Label */
+            week_label: string;
+            /** Profeta Name */
+            profeta_name: string | null;
+            /** Profeta Points */
+            profeta_points: number | null;
+            /** Corneteiro Name */
+            corneteiro_name: string | null;
+            /** Corneteiro Points */
+            corneteiro_points: number | null;
+            /** Has Data */
+            has_data: boolean;
+        };
     };
     responses: never;
     parameters: never;
@@ -819,9 +870,37 @@ export interface operations {
     next_matches_today_matches_next_today_get: {
         parameters: {
             query?: {
-                /** @description End of the caller's local calendar day (ISO 8601 UTC). Falls back to end of UTC day when omitted. */
                 window_end?: string | null;
             };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["NextMatchTodayOut"][];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    in_progress_matches_matches_in_progress_get: {
+        parameters: {
+            query?: never;
             header?: never;
             path?: never;
             cookie?: never;
@@ -873,7 +952,6 @@ export interface operations {
     my_pools_pools_get: {
         parameters: {
             query?: {
-                /** @description End of the caller's local calendar day (ISO 8601 UTC). Falls back to end of UTC day when omitted. */
                 window_end?: string | null;
             };
             header?: never;
@@ -977,7 +1055,6 @@ export interface operations {
     pool_detail_pools__pool_id__get: {
         parameters: {
             query?: {
-                /** @description End of the caller's local calendar day (ISO 8601 UTC). Falls back to end of UTC day when omitted. */
                 window_end?: string | null;
             };
             header?: never;
@@ -1061,6 +1138,39 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["LeaderboardOut"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    pool_weekly_hero_pools__pool_id__leaderboard_weekly_hero_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                pool_id: string;
+            };
+            cookie?: {
+                bolao_session?: string | null;
+            };
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["WeeklyHeroOut"];
                 };
             };
             /** @description Validation Error */

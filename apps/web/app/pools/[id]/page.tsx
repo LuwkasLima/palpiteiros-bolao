@@ -3,7 +3,7 @@
 import { use, useEffect, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import type { LeaderboardOut, MatchRevealedOut, PoolOut, RevealedPredictionsOut } from "@bolao/contracts";
+import type { LeaderboardOut, MatchRevealedOut, PoolOut, RevealedPredictionsOut, WeeklyHeroOut } from "@bolao/contracts";
 import { api, ApiError } from "@/lib/api";
 import { useAuth } from "@/lib/auth";
 import { SectionHeader } from "@/components/SectionHeader";
@@ -15,7 +15,13 @@ export default function PoolPage({ params }: { params: Promise<{ id: string }> }
   const [pool, setPool] = useState<PoolOut | null>(null);
   const [board, setBoard] = useState<LeaderboardOut | null>(null);
   const [revealed, setRevealed] = useState<RevealedPredictionsOut | null>(null);
+  const [weeklyHero, setWeeklyHero] = useState<WeeklyHeroOut | null>(null);
   const [error, setError] = useState<string | null>(null);
+
+  const isEndOfWeek = (() => {
+    const day = new Date().getDay(); // 0=Sun, 5=Fri, 6=Sat
+    return day === 0 || day === 5 || day === 6;
+  })();
   const [copied, setCopied] = useState(false);
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
   const [deleting, setDeleting] = useState(false);
@@ -27,7 +33,7 @@ export default function PoolPage({ params }: { params: Promise<{ id: string }> }
 
   useEffect(() => {
     if (!user) return;
-    Promise.all([api.pool(id), api.leaderboard(id), api.revealedPredictions(id)])
+    const base = Promise.all([api.pool(id), api.leaderboard(id), api.revealedPredictions(id)])
       .then(([p, b, r]) => {
         setPool(p);
         setBoard(b);
@@ -40,7 +46,11 @@ export default function PoolPage({ params }: { params: Promise<{ id: string }> }
           setError(err instanceof ApiError ? err.message : "Não foi possível carregar o bolão.");
         }
       });
-  }, [id, user]);
+    if (isEndOfWeek) {
+      api.weeklyHero(id).then(setWeeklyHero).catch(() => {});
+    }
+    return () => { void base; };
+  }, [id, user, isEndOfWeek]);
 
   if (error) return (
     <div className="mt-10 flex flex-col items-center gap-4 text-center">
@@ -151,6 +161,26 @@ export default function PoolPage({ params }: { params: Promise<{ id: string }> }
             {todayRevealedMatches.map((match) => (
               <MatchPredictionsCard key={match.match_id} match={match} currentUserId={user?.id} />
             ))}
+          </div>
+        </section>
+      )}
+
+      {isEndOfWeek && weeklyHero?.has_data && (
+        <section className="flex flex-col gap-2">
+          <SectionHeader>⚡ Semana {weeklyHero.week_label}</SectionHeader>
+          <div className="grid grid-cols-2 gap-3">
+            <div className="card flex flex-col items-center gap-1 p-4 text-center border-yellow-500/30">
+              <span className="text-2xl">🔮</span>
+              <span className="text-[10px] font-bold uppercase tracking-widest text-yellow-400">Profeta da Semana</span>
+              <span className="mt-1 font-bold leading-tight">{weeklyHero.profeta_name}</span>
+              <span className="text-lg font-extrabold text-[var(--accent)]">{weeklyHero.profeta_points} pts</span>
+            </div>
+            <div className="card flex flex-col items-center gap-1 p-4 text-center border-red-500/30">
+              <span className="text-2xl">📯</span>
+              <span className="text-[10px] font-bold uppercase tracking-widest text-red-400">Corneteiro da Semana</span>
+              <span className="mt-1 font-bold leading-tight">{weeklyHero.corneteiro_name}</span>
+              <span className="text-lg font-extrabold text-[var(--accent)]">{weeklyHero.corneteiro_points} pts</span>
+            </div>
           </div>
         </section>
       )}
