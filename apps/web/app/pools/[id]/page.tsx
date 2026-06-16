@@ -26,7 +26,7 @@ export default function PoolPage({ params }: { params: Promise<{ id: string }> }
     start.setHours(0, 0, 0, 0);
     const end = new Date(start);
     end.setDate(start.getDate() + 7);
-    return { isEndOfWeek: true, weekStart: start.toISOString(), weekEnd: end.toISOString() }; // TODO: restore → isEndOfWeek: day === 0
+    return { isEndOfWeek: day === 0, weekStart: start.toISOString(), weekEnd: end.toISOString() };
   })();
   const [copied, setCopied] = useState(false);
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
@@ -261,21 +261,21 @@ export default function PoolPage({ params }: { params: Promise<{ id: string }> }
                 <div className="flex items-center gap-3">
                   <span className="w-6 text-center font-bold text-[var(--muted)]">{i + 1}</span>
                   <div>
-                    <div className="flex items-center gap-2 flex-wrap">
-                      <span className="font-semibold">{row.display_name}</span>
-                      {title && (
-                        <span className={`rounded border px-1.5 py-0.5 text-[10px] font-bold uppercase tracking-wide ${titleColor}`}>
-                          {title}
-                        </span>
-                      )}
-                    </div>
+                    <div className="font-semibold">{row.display_name}</div>
                     <div className="text-xs text-[var(--muted)]">
                       {row.exact_count} placar{row.exact_count === 1 ? "" : "es"} exato
                       {row.exact_count === 1 ? "" : "s"} · {row.predictions_made} palpites
                     </div>
                   </div>
                 </div>
-                <div className="text-lg font-extrabold text-[var(--accent)]">{row.points}</div>
+                <div className="flex items-center gap-2">
+                  {title && (
+                    <span className={`rounded border px-1.5 py-0.5 text-[10px] font-bold uppercase tracking-wide ${titleColor}`}>
+                      {title}
+                    </span>
+                  )}
+                  <div className="text-lg font-extrabold text-[var(--accent)]">{row.points}</div>
+                </div>
               </div>
             );
           })}
