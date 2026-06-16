@@ -89,6 +89,7 @@ export const api = {
     }),
   pool: (id: string) => request<PoolOut>(`/pools/${id}?window_end=${encodeURIComponent(localDayEnd())}`),
   deletePool: (id: string) => request<void>(`/pools/${id}`, { method: "DELETE" }),
+  leavePool: (id: string) => request<void>(`/pools/${id}/leave`, { method: "DELETE" }),
   leaderboard: (id: string) => request<LeaderboardOut>(`/pools/${id}/leaderboard`),
 
   // Predictions
