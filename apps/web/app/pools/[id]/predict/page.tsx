@@ -88,6 +88,16 @@ export default function PredictPage({ params }: { params: Promise<{ id: string }
         </section>
         );
       })}
+
+      <Link
+        href={`/pools/${poolId}`}
+        className="fixed bottom-6 right-6 z-20 flex items-center gap-2 rounded-full border border-[var(--accent)] bg-[var(--background)]/90 px-5 py-3 text-sm font-semibold text-[var(--text)] shadow-lg backdrop-blur active:opacity-75"
+      >
+        <svg width="16" height="16" viewBox="0 0 16 16" fill="none" aria-hidden>
+          <path d="M10 3L5 8l5 5" stroke="currentColor" strokeWidth="1.75" strokeLinecap="round" strokeLinejoin="round" />
+        </svg>
+        Bolão
+      </Link>
     </div>
   );
 }
