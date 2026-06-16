@@ -491,6 +491,34 @@ export interface components {
             /** Message */
             message: string;
         };
+        /** MatchTodayOut */
+        MatchTodayOut: {
+            /** Id */
+            id: string;
+            /** Key */
+            key: string;
+            /**
+             * Kickoff At
+             * Format: date-time
+             */
+            kickoff_at: string;
+            status: components["schemas"]["MatchStatus"];
+            /** Home Name */
+            home_name: string | null;
+            /** Home Flag */
+            home_flag: string | null;
+            /** Away Name */
+            away_name: string | null;
+            /** Away Flag */
+            away_flag: string | null;
+            /** Home Score */
+            home_score: number | null;
+            /** Away Score */
+            away_score: number | null;
+            /** Group Label */
+            group_label: string | null;
+            stage: components["schemas"]["Stage"];
+        };
         /** NextMatchTodayOut */
         NextMatchTodayOut: {
             /** Id */

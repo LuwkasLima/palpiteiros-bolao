@@ -4,6 +4,7 @@ import { AuthProvider } from "@/lib/auth";
 import { SwRegister } from "@/components/SwRegister";
 import { InstallHint } from "@/components/InstallHint";
 import { TopBar } from "@/components/TopBar";
+import { BottomNav } from "@/components/BottomNav";
 
 export const metadata: Metadata = {
   title: "Social dos Palpiteiros (Beta)",
@@ -44,7 +45,8 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
       <body>
         <AuthProvider>
           <TopBar />
-          <main className="mx-auto w-full max-w-2xl px-4 pb-24 pt-4">{children}</main>
+          <main className="mx-auto w-full max-w-2xl px-4 pb-32 pt-4">{children}</main>
+          <BottomNav />
           <InstallHint />
         </AuthProvider>
         <SwRegister />
