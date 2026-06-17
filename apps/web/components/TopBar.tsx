@@ -63,12 +63,12 @@ export function TopBar() {
 
       <WhatsNewModal isOpen={showWhatsNew} onClose={() => setShowWhatsNew(false)} />
 
-      {/* Alerts panel */}
+      {/* Alerts panel — full screen */}
       <div
-        className={`fixed right-0 top-0 z-30 flex h-full w-80 flex-col bg-[var(--surface)] shadow-2xl transition-transform duration-200 ${open ? "translate-x-0" : "translate-x-full"}`}
+        className={`fixed inset-0 z-30 flex flex-col bg-[var(--background)] transition-transform duration-200 ${open ? "translate-y-0" : "translate-y-full"}`}
       >
-        <div className="flex items-center justify-between px-5 py-4 border-b border-[var(--border)]">
-          <h2 className="font-bold text-lg">Notificações</h2>
+        <div className="flex items-center justify-between border-b border-[var(--border)] px-5 py-4">
+          <h2 className="text-lg font-bold">Notificações</h2>
           <button
             onClick={close}
             className="p-2 text-[var(--muted)] active:text-[var(--text)]"
@@ -80,13 +80,24 @@ export function TopBar() {
           </button>
         </div>
 
-        <div className="flex flex-1 flex-col items-center justify-center gap-3 px-6 text-center">
-          <svg width="40" height="40" viewBox="0 0 40 40" fill="none" aria-hidden className="text-[var(--muted)] opacity-40">
-            <path d="M20 5a11 11 0 0 1 11 11v6.5l2.5 4.5H6.5L9 22.5V16A11 11 0 0 1 20 5Z" stroke="currentColor" strokeWidth="2" strokeLinejoin="round" />
-            <path d="M16 31a4 4 0 0 0 8 0" stroke="currentColor" strokeWidth="2" strokeLinecap="round" />
-          </svg>
-          <p className="text-sm font-medium text-[var(--muted)]">Nenhuma notificação</p>
-          <p className="text-xs text-[var(--muted)] opacity-70">Em breve você receberá alertas sobre jogos e bolões aqui.</p>
+        <div className="flex flex-1 flex-col gap-3 overflow-y-auto px-4 py-4">
+          {/* sample message */}
+          <div className="card flex flex-col gap-2 p-4">
+            <div className="flex items-start justify-between gap-3">
+              <p className="text-sm font-semibold">📋 Conheça as regras de pontuação</p>
+              <span className="shrink-0 text-xs text-[var(--muted)]">agora</span>
+            </div>
+            <p className="text-sm text-[var(--muted)]">
+              Sabia que acertar o placar exato vale 5 pontos? Confira como funciona o sistema de pontuação completo.
+            </p>
+            <Link
+              href="/regras"
+              onClick={close}
+              className="self-start text-sm font-medium text-[var(--accent)] underline underline-offset-2"
+            >
+              Ver regras →
+            </Link>
+          </div>
         </div>
       </div>
     </>
