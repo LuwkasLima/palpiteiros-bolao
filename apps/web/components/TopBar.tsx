@@ -6,17 +6,12 @@ import { useAuth } from "@/lib/auth";
 import { LATEST_VERSION } from "@/lib/changelog";
 import { WhatsNewModal } from "./WhatsNewModal";
 
-function WhistleIcon({ dot }: { dot?: boolean }) {
+function MailIcon({ dot }: { dot?: boolean }) {
   return (
     <span className="relative">
       <svg width="22" height="22" viewBox="0 0 22 22" fill="none" aria-hidden>
-        {/* single connected silhouette: mouthpiece left + rounded body right */}
-        <path
-          d="M2 10.5h6V8h9a4 4 0 0 1 0 8H8v-2.5H2a1.5 1.5 0 0 1 0-3Z"
-          stroke="currentColor"
-          strokeWidth="1.5"
-          strokeLinejoin="round"
-        />
+        <rect x="2" y="5" width="18" height="13" rx="2" stroke="currentColor" strokeWidth="1.5" />
+        <path d="M2 8l9 6 9-6" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
       </svg>
       {dot && (
         <span className="absolute right-0 top-0 h-2 w-2 rounded-full bg-[var(--accent)] ring-2 ring-[var(--background)]" />
@@ -53,7 +48,7 @@ export function TopBar() {
               className="-mr-1 p-2 text-[var(--muted)] active:text-[var(--text)]"
               aria-label="Abrir notificações"
             >
-              <WhistleIcon dot={false} />
+              <MailIcon dot={false} />
             </button>
           )}
         </div>
