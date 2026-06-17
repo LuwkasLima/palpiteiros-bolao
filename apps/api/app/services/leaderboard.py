@@ -13,7 +13,7 @@ from beanie import PydanticObjectId
 
 from app.models import Match, MatchStatus, Pool, Prediction
 from app.schemas import LeaderboardRowOut, WeeklyHeroOut
-from app.services.scoring import points_for
+from app.services.scoring import POINTS_EXACT, POINTS_MARGIN, base_points, points_for
 
 
 async def compute_leaderboard(pool: Pool) -> list[LeaderboardRowOut]:
@@ -24,11 +24,15 @@ async def compute_leaderboard(pool: Pool) -> list[LeaderboardRowOut]:
     # Seed a row per member so everyone shows up, even with zero predictions.
     points: dict[PydanticObjectId, int] = {}
     exact: dict[PydanticObjectId, int] = {}
+    margin: dict[PydanticObjectId, int] = {}
+    outcome: dict[PydanticObjectId, int] = {}
     made: dict[PydanticObjectId, int] = {}
     names: dict[PydanticObjectId, str] = {}
     for member in pool.members:
         points[member.user_id] = 0
         exact[member.user_id] = 0
+        margin[member.user_id] = 0
+        outcome[member.user_id] = 0
         made[member.user_id] = 0
         names[member.user_id] = member.display_name
 
@@ -41,8 +45,13 @@ async def compute_leaderboard(pool: Pool) -> list[LeaderboardRowOut]:
             continue
         pts = points_for(pred, match)
         points[pred.user_id] += pts
-        if pred.home_score == match.home_score and pred.away_score == match.away_score:
+        bp = base_points(pred.home_score, pred.away_score, match.home_score, match.away_score)
+        if bp == POINTS_EXACT:
             exact[pred.user_id] += 1
+        elif bp == POINTS_MARGIN:
+            margin[pred.user_id] += 1
+        elif bp > 0:
+            outcome[pred.user_id] += 1
 
     rows = [
         LeaderboardRowOut(
@@ -50,6 +59,8 @@ async def compute_leaderboard(pool: Pool) -> list[LeaderboardRowOut]:
             display_name=names[uid],
             points=points[uid],
             exact_count=exact[uid],
+            margin_count=margin[uid],
+            outcome_count=outcome[uid],
             predictions_made=made[uid],
         )
         for uid in points

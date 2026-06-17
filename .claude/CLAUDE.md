@@ -19,6 +19,7 @@
 
 ## Repository conventions
 
+- Branches are release branches, not feature branches. Name them `release/YYYY-MM-DD`. Never create `feat/`, `fix/`, or other topic branches.
 - `tasks/todo.md` is the user's backlog. Do not write to it unless explicitly asked.
 - For in-session task tracking, use the `TodoWrite` tool (in-memory only, never written to disk).
 - When a task requires a multi-step plan written to disk, create a named file like `tasks/plan-<topic>.md` and delete it when the work is done. Never use `tasks/todo.md` for this.

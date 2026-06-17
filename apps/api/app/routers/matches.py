@@ -8,7 +8,7 @@ from fastapi import APIRouter, Query
 
 from app.models import Match, MatchStatus, Stage, Team
 from app.models import utcnow
-from app.schemas import MatchOut, NextMatchTodayOut, TeamOut
+from app.schemas import MatchOut, MatchTodayOut, NextMatchTodayOut, TeamOut
 from app.serializers import match_to_out
 
 router = APIRouter(tags=["tournament"])
@@ -96,6 +96,41 @@ async def in_progress_matches() -> list[NextMatchTodayOut]:
             home_flag=teams[m.home_team_id].flag_emoji if m.home_team_id and m.home_team_id in teams else None,
             away_name=teams[m.away_team_id].name if m.away_team_id and m.away_team_id in teams else None,
             away_flag=teams[m.away_team_id].flag_emoji if m.away_team_id and m.away_team_id in teams else None,
+            group_label=m.group_label,
+            stage=m.stage,
+        )
+        for m in matches
+    ]
+
+
+@router.get("/matches/today", response_model=list[MatchTodayOut])
+async def matches_today(day_start: datetime, day_end: datetime) -> list[MatchTodayOut]:
+    matches = await Match.find(
+        Match.kickoff_at >= day_start,
+        Match.kickoff_at < day_end,
+        {"home_team_id": {"$ne": None}},
+    ).to_list()
+
+    if not matches:
+        return []
+
+    matches.sort(key=lambda m: m.kickoff_at)
+
+    team_ids = {tid for m in matches for tid in (m.home_team_id, m.away_team_id) if tid}
+    teams = {t.id: t for t in await Team.find({"_id": {"$in": list(team_ids)}}).to_list()}
+
+    return [
+        MatchTodayOut(
+            id=str(m.id),
+            key=m.key,
+            kickoff_at=m.kickoff_at,
+            status=m.status,
+            home_name=teams[m.home_team_id].name if m.home_team_id and m.home_team_id in teams else None,
+            home_flag=teams[m.home_team_id].flag_emoji if m.home_team_id and m.home_team_id in teams else None,
+            away_name=teams[m.away_team_id].name if m.away_team_id and m.away_team_id in teams else None,
+            away_flag=teams[m.away_team_id].flag_emoji if m.away_team_id and m.away_team_id in teams else None,
+            home_score=m.home_score,
+            away_score=m.away_score,
             group_label=m.group_label,
             stage=m.stage,
         )

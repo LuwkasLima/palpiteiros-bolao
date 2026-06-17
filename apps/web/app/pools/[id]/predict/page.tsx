@@ -20,6 +20,13 @@ export default function PredictPage({ params }: { params: Promise<{ id: string }
   const [teams, setTeams] = useState<TeamOut[]>([]);
   const [preds, setPreds] = useState<Record<string, PredictionOut>>({});
   const [error, setError] = useState<string | null>(null);
+  const [showFab, setShowFab] = useState(false);
+
+  useEffect(() => {
+    const onScroll = () => setShowFab(window.scrollY > 80);
+    window.addEventListener("scroll", onScroll, { passive: true });
+    return () => window.removeEventListener("scroll", onScroll);
+  }, []);
 
   useEffect(() => {
     if (!loading && !user) router.replace("/login");
@@ -88,6 +95,16 @@ export default function PredictPage({ params }: { params: Promise<{ id: string }
         </section>
         );
       })}
+
+      <Link
+        href={`/pools/${poolId}`}
+        className={`fixed bottom-24 left-1/2 z-20 -translate-x-1/2 flex items-center gap-2 rounded-full border border-[var(--accent)] bg-[var(--background)]/90 px-5 py-3 text-sm font-semibold text-[var(--text)] shadow-lg backdrop-blur transition-opacity duration-200 active:opacity-75 ${showFab ? "opacity-100 pointer-events-auto" : "opacity-0 pointer-events-none"}`}
+      >
+        <svg width="16" height="16" viewBox="0 0 16 16" fill="none" aria-hidden>
+          <path d="M10 3L5 8l5 5" stroke="currentColor" strokeWidth="1.75" strokeLinecap="round" strokeLinejoin="round" />
+        </svg>
+        Bolão
+      </Link>
     </div>
   );
 }
