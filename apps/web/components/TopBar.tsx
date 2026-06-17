@@ -2,63 +2,39 @@
 
 import Link from "next/link";
 import { useEffect, useState } from "react";
-import { usePathname } from "next/navigation";
 import { useAuth } from "@/lib/auth";
 import { LATEST_VERSION } from "@/lib/changelog";
 import { WhatsNewModal } from "./WhatsNewModal";
 
-type BeforeInstallPromptEvent = Event & { prompt: () => Promise<void> };
+const SAMPLE_NOTIFICATIONS = [
+  {
+    id: "release-2026-06-17",
+    title: "🆕 Nova atualização disponível",
+    body: "Nova barra de navegação, jogos do dia, palpites ao vivo e muito mais.",
+    cta: { label: "Ver o que há de novo →" },
+    time: "agora",
+  },
+];
 
-function BookIcon() {
+function MailIcon({ dot }: { dot?: boolean }) {
   return (
-    <svg width="20" height="20" viewBox="0 0 20 20" fill="none" aria-hidden>
-      <path d="M4 3h9a2 2 0 0 1 2 2v11a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2z" stroke="currentColor" strokeWidth="1.5" />
-      <path d="M7 7h5M7 10h5M7 13h3" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" />
-    </svg>
-  );
-}
-
-function GearIcon() {
-  return (
-    <svg width="20" height="20" viewBox="0 0 20 20" fill="none" aria-hidden>
-      <circle cx="10" cy="10" r="2.5" stroke="currentColor" strokeWidth="1.5" />
-      <path d="M10 2v2M10 16v2M2 10h2M16 10h2M4.2 4.2l1.4 1.4M14.4 14.4l1.4 1.4M4.2 15.8l1.4-1.4M14.4 5.6l1.4-1.4" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" />
-    </svg>
-  );
-}
-
-function SignOutIcon() {
-  return (
-    <svg width="20" height="20" viewBox="0 0 20 20" fill="none" aria-hidden>
-      <path d="M8 3H4a1 1 0 0 0-1 1v12a1 1 0 0 0 1 1h4" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" />
-      <path d="M13 14l4-4-4-4M17 10H8" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
-    </svg>
-  );
-}
-
-function DownloadIcon() {
-  return (
-    <svg width="20" height="20" viewBox="0 0 20 20" fill="none" aria-hidden>
-      <path d="M10 3v10M6 9l4 4 4-4" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
-      <path d="M3 15h14" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" />
-    </svg>
-  );
-}
-
-function SparklesIcon() {
-  return (
-    <svg width="20" height="20" viewBox="0 0 20 20" fill="none" aria-hidden>
-      <path d="M10 2l1.5 4.5L16 8l-4.5 1.5L10 14l-1.5-4.5L4 8l4.5-1.5L10 2z" stroke="currentColor" strokeWidth="1.5" strokeLinejoin="round" />
-      <path d="M16 13l.75 2.25L19 16l-2.25.75L16 19l-.75-2.25L13 16l2.25-.75L16 13z" stroke="currentColor" strokeWidth="1.2" strokeLinejoin="round" />
-    </svg>
+    <span className="relative">
+      <svg width="22" height="22" viewBox="0 0 22 22" fill="none" aria-hidden>
+        <rect x="2" y="5" width="18" height="13" rx="2" stroke="currentColor" strokeWidth="1.5" />
+        <path d="M2 8l9 6 9-6" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
+      </svg>
+      {dot && (
+        <span className="absolute right-0 top-0 h-2 w-2 rounded-full bg-[var(--accent)] ring-2 ring-[var(--background)]" />
+      )}
+    </span>
   );
 }
 
 export function TopBar() {
-  const { user, signOut } = useAuth();
+  const { user } = useAuth();
   const [open, setOpen] = useState(false);
   const [showWhatsNew, setShowWhatsNew] = useState(false);
-  const pathname = usePathname();
+  const [dismissed, setDismissed] = useState<Set<string>>(new Set());
   const close = () => setOpen(false);
 
   const hasUnseenChangelog = !!user && user.last_viewed_changelog_version !== LATEST_VERSION;
@@ -67,41 +43,12 @@ export function TopBar() {
     if (hasUnseenChangelog) setShowWhatsNew(true);
   }, [hasUnseenChangelog]);
 
-  const [installPrompt, setInstallPrompt] = useState<BeforeInstallPromptEvent | null>(null);
-  const [isIos, setIsIos] = useState(false);
-  const [showIosHint, setShowIosHint] = useState(false);
+  const visible = SAMPLE_NOTIFICATIONS.filter((n) => !dismissed.has(n.id));
+  const hasUnread = visible.length > 0;
 
-  useEffect(() => {
-    const standalone =
-      window.matchMedia("(display-mode: standalone)").matches ||
-      (window.navigator as { standalone?: boolean }).standalone === true;
-    if (standalone) return;
-
-    // Prefer the native install prompt over UA sniffing — works on Chrome desktop/Android.
-    const w = window as typeof window & { __pwa_prompt?: BeforeInstallPromptEvent | null };
-    if (w.__pwa_prompt) {
-      setInstallPrompt(w.__pwa_prompt);
-      return;
-    }
-
-    // iOS Safari has no beforeinstallprompt; fall back to manual instructions.
-    if (/iphone|ipad|ipod/i.test(window.navigator.userAgent)) {
-      setIsIos(true);
-      return;
-    }
-
-    const onPrompt = (e: Event) => {
-      e.preventDefault();
-      setInstallPrompt(e as BeforeInstallPromptEvent);
-    };
-    window.addEventListener("beforeinstallprompt", onPrompt);
-    return () => window.removeEventListener("beforeinstallprompt", onPrompt);
-  }, []);
-
-  const navLinkClass = (href: string) =>
-    pathname === href
-      ? "flex items-center gap-3 rounded-lg border-l-2 border-[var(--accent)] bg-[var(--surface-2)] px-4 py-3 text-xl text-[var(--accent)] active:opacity-75"
-      : "flex items-center gap-3 rounded-lg border-l-2 border-transparent px-4 py-3 text-xl text-[var(--text)] active:bg-[var(--surface-2)]";
+  function dismiss(id: string) {
+    setDismissed((prev) => new Set([...prev, id]));
+  }
 
   return (
     <>
@@ -113,38 +60,30 @@ export function TopBar() {
               Social dos <span className="text-[var(--accent)]">Palpiteiros</span>
             </span>
           </Link>
-          <button
-            onClick={() => setOpen(true)}
-            className="-mr-1 p-2 text-[var(--muted)] active:text-[var(--text)]"
-            aria-label="Abrir menu"
-          >
-            <svg width="22" height="22" viewBox="0 0 22 22" fill="none" aria-hidden>
-              <rect y="4" width="22" height="2" rx="1" fill="currentColor" />
-              <rect y="10" width="22" height="2" rx="1" fill="currentColor" />
-              <rect y="16" width="22" height="2" rx="1" fill="currentColor" />
-            </svg>
-          </button>
+          {user && (
+            <button
+              onClick={() => setOpen(true)}
+              className="-mr-1 p-2 text-[var(--muted)] active:text-[var(--text)]"
+              aria-label="Abrir notificações"
+            >
+              <MailIcon dot={hasUnread} />
+            </button>
+          )}
         </div>
       </header>
 
-      {/* Backdrop */}
-      <div
-        className={`fixed inset-0 z-20 bg-black/50 transition-opacity duration-200 ${open ? "opacity-100" : "pointer-events-none opacity-0"}`}
-        onClick={close}
-        aria-hidden
-      />
-
       <WhatsNewModal isOpen={showWhatsNew} onClose={() => setShowWhatsNew(false)} />
 
-      {/* Drawer panel */}
+      {/* Alerts panel — full screen */}
       <div
-        className={`fixed right-0 top-0 z-30 flex h-full w-72 flex-col bg-[var(--surface)] shadow-2xl transition-transform duration-200 ${open ? "translate-x-0" : "translate-x-full"}`}
+        className={`fixed inset-0 z-30 flex flex-col bg-[var(--background)] transition-transform duration-200 ${open ? "translate-y-0" : "translate-y-full"}`}
       >
-        <div className="flex items-center justify-end px-4 py-4">
+        <div className="flex items-center justify-between border-b border-[var(--border)] px-5 py-4">
+          <h2 className="text-lg font-bold">Notificações</h2>
           <button
             onClick={close}
             className="p-2 text-[var(--muted)] active:text-[var(--text)]"
-            aria-label="Fechar menu"
+            aria-label="Fechar"
           >
             <svg width="18" height="18" viewBox="0 0 18 18" fill="none" aria-hidden>
               <path d="M1 1l16 16M17 1L1 17" stroke="currentColor" strokeWidth="2" strokeLinecap="round" />
@@ -152,77 +91,43 @@ export function TopBar() {
           </button>
         </div>
 
-        {user && (
-          <>
-            <div className="px-6 pb-5">
-              <p className="text-lg font-semibold text-[var(--text)]">{user.display_name}</p>
-              <p className="text-sm text-[var(--muted)]">{user.email}</p>
+        <div className="flex flex-1 flex-col gap-3 overflow-y-auto px-4 py-4">
+          {visible.length === 0 ? (
+            <div className="flex flex-1 flex-col items-center justify-center gap-2 text-center">
+              <p className="text-sm font-medium text-[var(--muted)]">Nenhuma notificação</p>
+              <p className="text-xs text-[var(--muted)] opacity-70">Em breve você receberá alertas sobre jogos e bolões aqui.</p>
             </div>
-            <div className="mx-4 mb-3 border-t border-[var(--border)]" />
-          </>
-        )}
-
-        <nav className="flex flex-col gap-2 px-2">
-          <Link href="/regras" onClick={close} className={navLinkClass("/regras")}>
-            <BookIcon />
-            Regras
-          </Link>
-          {user && (
-            <button
-              onClick={() => { setShowWhatsNew(true); close(); }}
-              className="relative flex items-center gap-3 rounded-lg border-l-2 border-transparent px-4 py-3 text-left text-xl text-[var(--text)] active:bg-[var(--surface-2)]"
-            >
-              <SparklesIcon />
-              O que há de novo
-              {hasUnseenChangelog && (
-                <span className="absolute right-4 top-1/2 -translate-y-1/2 h-2 w-2 rounded-full bg-[var(--accent)]" />
-              )}
-            </button>
+          ) : (
+            visible.map((n) => (
+              <div key={n.id} className="card flex flex-col gap-2 p-4">
+                <div className="flex items-start justify-between gap-3">
+                  <p className="text-sm font-semibold">{n.title}</p>
+                  <div className="flex shrink-0 items-center gap-2">
+                    <span className="text-xs text-[var(--muted)]">{n.time}</span>
+                    <button
+                      onClick={() => dismiss(n.id)}
+                      className="text-[var(--muted)] hover:text-[var(--text)]"
+                      aria-label="Dispensar notificação"
+                    >
+                      <svg width="14" height="14" viewBox="0 0 14 14" fill="none" aria-hidden>
+                        <path d="M1 1l12 12M13 1L1 13" stroke="currentColor" strokeWidth="1.75" strokeLinecap="round" />
+                      </svg>
+                    </button>
+                  </div>
+                </div>
+                <p className="text-sm text-[var(--muted)]">{n.body}</p>
+                {n.cta && (
+                  <button
+                    onClick={() => { close(); setShowWhatsNew(true); }}
+                    className="self-start text-sm font-medium text-[var(--accent)] underline underline-offset-2"
+                  >
+                    {n.cta.label}
+                  </button>
+                )}
+              </div>
+            ))
           )}
-          {user?.is_admin && (
-            <Link href="/admin" onClick={close} className={navLinkClass("/admin")}>
-              <GearIcon />
-              Admin
-            </Link>
-          )}
-          {(installPrompt || isIos) && (
-            <>
-              <div className="mx-2 my-1 border-t border-[var(--border)]" />
-              <button
-                onClick={async () => {
-                  if (isIos) {
-                    setShowIosHint((v) => !v);
-                  } else if (installPrompt) {
-                    await installPrompt.prompt();
-                    setInstallPrompt(null);
-                    close();
-                  }
-                }}
-                className="flex items-center gap-3 rounded-lg border-l-2 border-transparent px-4 py-3 text-left text-xl text-[var(--text)] active:bg-[var(--surface-2)]"
-              >
-                <DownloadIcon />
-                Baixar App
-              </button>
-              {showIosHint && (
-                <p className="px-4 pb-2 text-sm text-[var(--muted)]">
-                  Toque em <b>Compartilhar</b> e depois <b>Adicionar à Tela de Início</b>.
-                </p>
-              )}
-            </>
-          )}
-          {user && (
-            <>
-              <div className="mx-2 my-1 border-t border-[var(--border)]" />
-              <button
-                onClick={() => { signOut(); close(); }}
-                className="flex items-center gap-3 rounded-lg border-l-2 border-transparent px-4 py-3 text-left text-xl text-[var(--muted)] active:bg-[var(--surface-2)] active:text-[var(--text)]"
-              >
-                <SignOutIcon />
-                Sair
-              </button>
-            </>
-          )}
-        </nav>
+        </div>
       </div>
     </>
   );
