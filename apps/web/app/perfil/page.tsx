@@ -88,13 +88,22 @@ export default function PerfilPage() {
           <span>Regras de pontuação</span>
           <span className="text-[var(--muted)]">›</span>
         </Link>
+        {user.is_admin && (
+          <Link
+            href="/admin"
+            className="flex items-center justify-between px-4 py-3 text-sm hover:bg-[var(--surface-2)]"
+          >
+            <span>Painel de admin</span>
+            <span className="text-[var(--muted)]">›</span>
+          </Link>
+        )}
       </div>
 
       <button
         onClick={() => { signOut(); router.replace("/login"); }}
         className="btn-ghost py-3 text-red-400 hover:text-red-300"
       >
-        Sair da conta
+        Sair
       </button>
 
       <WhatsNewModal isOpen={showWhatsNew} onClose={() => setShowWhatsNew(false)} />

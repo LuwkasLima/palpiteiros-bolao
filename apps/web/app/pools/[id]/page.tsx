@@ -7,6 +7,7 @@ import type { LeaderboardOut, MatchRevealedOut, PoolOut, RevealedPredictionsOut,
 import { api, ApiError } from "@/lib/api";
 import { useAuth } from "@/lib/auth";
 import { SectionHeader } from "@/components/SectionHeader";
+import { InProgressBanner } from "@/components/InProgressBanner";
 
 export default function PoolPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = use(params);
@@ -74,12 +75,19 @@ export default function PoolPage({ params }: { params: Promise<{ id: string }> }
       ? `${window.location.origin}/join/${pool.invite_code}`
       : pool.invite_url;
 
-  const today = new Date().toLocaleDateString("sv");
+  const now = new Date();
+  const today = now.toLocaleDateString("sv");
   const toUtc = (iso: string) => (/Z|[+-]\d{2}:?\d{2}$/.test(iso) ? iso : iso + "Z");
   const todayRevealedMatches =
     revealed?.matches.filter(
       (m) => new Date(toUtc(m.kickoff_at)).toLocaleDateString("sv") === today,
     ) ?? [];
+  const liveRevealedMatches = todayRevealedMatches.filter(
+    (m) => m.status !== "final" && new Date(toUtc(m.kickoff_at)) <= now,
+  );
+  const finishedRevealedMatches = todayRevealedMatches.filter(
+    (m) => m.status === "final",
+  );
 
   async function handleLeave() {
     setLeaving(true);
@@ -120,15 +128,9 @@ export default function PoolPage({ params }: { params: Promise<{ id: string }> }
 
   return (
     <div className="flex flex-col gap-5">
-      <div className="flex items-start justify-between gap-3">
-        <div>
-          <h1 className="text-2xl font-extrabold">{pool.name}</h1>
-          <p className="text-sm text-[var(--muted)]">{pool.members.length} participantes</p>
-        </div>
-        <Link href={`/pools/${id}/predict`} className="btn">
-          <span className="sm:hidden">Palpites</span>
-          <span className="hidden sm:inline">Meus palpites</span>
-        </Link>
+      <div>
+        <h1 className="text-2xl font-extrabold">{pool.name}</h1>
+        <p className="text-sm text-[var(--muted)]">{pool.members.length} participantes</p>
       </div>
 
       {showLeaveConfirm && (
@@ -204,11 +206,28 @@ export default function PoolPage({ params }: { params: Promise<{ id: string }> }
         </button>
       </div>
 
-      {todayRevealedMatches.length > 0 && (
+      <Link href={`/pools/${id}/predict`} className="btn text-center">
+        Meus palpites
+      </Link>
+
+      <InProgressBanner />
+
+      {liveRevealedMatches.length > 0 && (
+        <section className="flex flex-col gap-2">
+          <SectionHeader>Palpites · Ao vivo</SectionHeader>
+          <div className="flex flex-col gap-3">
+            {liveRevealedMatches.map((match) => (
+              <MatchPredictionsCard key={match.match_id} match={match} currentUserId={user?.id} />
+            ))}
+          </div>
+        </section>
+      )}
+
+      {finishedRevealedMatches.length > 0 && (
         <section className="flex flex-col gap-2">
           <SectionHeader>Palpites da partida</SectionHeader>
           <div className="flex flex-col gap-3">
-            {todayRevealedMatches.map((match) => (
+            {finishedRevealedMatches.map((match) => (
               <MatchPredictionsCard key={match.match_id} match={match} currentUserId={user?.id} />
             ))}
           </div>

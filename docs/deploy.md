@@ -36,7 +36,7 @@ Environment variables:
 | `MONGODB_URI` | Atlas `mongodb+srv://…` |
 | `MONGODB_DB` | `bolao` |
 | `SESSION_SECRET` | output of `openssl rand -hex 32` |
-| `ADMIN_EMAILS` | `lucas.m.s.lima+claude@gmail.com` |
+| `ADMIN_EMAILS` | `your@email.com` |
 | `WEB_BASE_URL` | `https://<web>.vercel.app` *(fill after step 5)* |
 | `API_BASE_URL` | `https://<api>.vercel.app` *(this project's URL; drives the Secure cookie flag)* |
 | `SMTP_HOST` | `smtp.resend.com` |

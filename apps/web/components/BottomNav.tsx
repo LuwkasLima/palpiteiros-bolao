@@ -26,11 +26,12 @@ function CalendarIcon() {
   );
 }
 
-function PlusIcon() {
+function NewsIcon() {
   return (
     <svg width="22" height="22" viewBox="0 0 22 22" fill="none" aria-hidden>
-      <circle cx="11" cy="11" r="8.5" stroke="currentColor" strokeWidth="1.5" />
-      <path d="M11 7v8M7 11h8" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" />
+      <rect x="2" y="4" width="13" height="14" rx="1.5" stroke="currentColor" strokeWidth="1.5" />
+      <path d="M6 8h5M6 11h5M6 14h3" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" />
+      <path d="M15 7h3a1 1 0 0 1 1 1v7a1 1 0 0 1-1 1h-3" stroke="currentColor" strokeWidth="1.5" />
     </svg>
   );
 }
@@ -47,7 +48,7 @@ function ProfileIcon() {
 const TABS = [
   { href: "/", label: "Bolões", Icon: PoolsIcon, matchExact: true },
   { href: "/jogos", label: "Jogos", Icon: CalendarIcon, matchExact: false },
-  { href: "/novo-bolao", label: "Novo", Icon: PlusIcon, matchExact: false },
+  { href: "/news", label: "Notícias", Icon: NewsIcon, matchExact: false },
   { href: "/perfil", label: "Perfil", Icon: ProfileIcon, matchExact: false },
 ] as const;
 
