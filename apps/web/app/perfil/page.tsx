@@ -7,6 +7,8 @@ import { api, ApiError } from "@/lib/api";
 import { useAuth } from "@/lib/auth";
 import { WhatsNewModal } from "@/components/WhatsNewModal";
 
+type BeforeInstallPromptEvent = Event & { prompt: () => Promise<void> };
+
 export default function PerfilPage() {
   const { user, loading, signOut } = useAuth();
   const router = useRouter();
@@ -15,6 +17,9 @@ export default function PerfilPage() {
   const [saved, setSaved] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [showWhatsNew, setShowWhatsNew] = useState(false);
+  const [installPrompt, setInstallPrompt] = useState<BeforeInstallPromptEvent | null>(null);
+  const [isIos, setIsIos] = useState(false);
+  const [showIosHint, setShowIosHint] = useState(false);
 
   useEffect(() => {
     if (!loading && !user) router.replace("/login");
@@ -23,6 +28,22 @@ export default function PerfilPage() {
   useEffect(() => {
     if (user) setName(user.display_name);
   }, [user]);
+
+  useEffect(() => {
+    const standalone =
+      window.matchMedia("(display-mode: standalone)").matches ||
+      (window.navigator as { standalone?: boolean }).standalone === true;
+    if (standalone) return;
+
+    const w = window as typeof window & { __pwa_prompt?: BeforeInstallPromptEvent | null };
+    if (w.__pwa_prompt) { setInstallPrompt(w.__pwa_prompt); return; }
+
+    if (/iphone|ipad|ipod/i.test(window.navigator.userAgent)) { setIsIos(true); return; }
+
+    const onPrompt = (e: Event) => { e.preventDefault(); setInstallPrompt(e as BeforeInstallPromptEvent); };
+    window.addEventListener("beforeinstallprompt", onPrompt);
+    return () => window.removeEventListener("beforeinstallprompt", onPrompt);
+  }, []);
 
   if (loading || !user) {
     return <p className="mt-10 text-center text-[var(--muted)]">Carregando…</p>;
@@ -88,6 +109,29 @@ export default function PerfilPage() {
           <span>Regras de pontuação</span>
           <span className="text-[var(--muted)]">›</span>
         </Link>
+        {(installPrompt || isIos) && (
+          <>
+            <button
+              onClick={async () => {
+                if (isIos) {
+                  setShowIosHint((v) => !v);
+                } else if (installPrompt) {
+                  await installPrompt.prompt();
+                  setInstallPrompt(null);
+                }
+              }}
+              className="flex w-full items-center justify-between px-4 py-3 text-left text-sm hover:bg-[var(--surface-2)]"
+            >
+              <span>Baixar app</span>
+              <span className="text-[var(--muted)]">›</span>
+            </button>
+            {showIosHint && (
+              <p className="px-4 pb-3 text-xs text-[var(--muted)]">
+                Toque em <b>Compartilhar</b> e depois <b>Adicionar à Tela de Início</b>.
+              </p>
+            )}
+          </>
+        )}
         {user.is_admin && (
           <Link
             href="/admin"
