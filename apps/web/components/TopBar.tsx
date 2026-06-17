@@ -8,10 +8,10 @@ import { WhatsNewModal } from "./WhatsNewModal";
 
 const SAMPLE_NOTIFICATIONS = [
   {
-    id: "rules-intro",
-    title: "📋 Conheça as regras de pontuação",
-    body: "Sabia que acertar o placar exato vale 5 pontos? Confira como funciona o sistema de pontuação completo.",
-    cta: { label: "Ver regras →", href: "/regras" },
+    id: "release-2026-06-17",
+    title: "🆕 Nova atualização disponível",
+    body: "Nova barra de navegação, jogos do dia, palpites ao vivo e muito mais.",
+    cta: { label: "Ver o que há de novo →" },
     time: "agora",
   },
 ];
@@ -117,13 +117,12 @@ export function TopBar() {
                 </div>
                 <p className="text-sm text-[var(--muted)]">{n.body}</p>
                 {n.cta && (
-                  <Link
-                    href={n.cta.href}
-                    onClick={close}
+                  <button
+                    onClick={() => { close(); setShowWhatsNew(true); }}
                     className="self-start text-sm font-medium text-[var(--accent)] underline underline-offset-2"
                   >
                     {n.cta.label}
-                  </Link>
+                  </button>
                 )}
               </div>
             ))
