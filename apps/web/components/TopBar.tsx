@@ -6,12 +6,12 @@ import { useAuth } from "@/lib/auth";
 import { LATEST_VERSION } from "@/lib/changelog";
 import { WhatsNewModal } from "./WhatsNewModal";
 
-function MegaphoneIcon({ dot }: { dot?: boolean }) {
+function MailIcon({ dot }: { dot?: boolean }) {
   return (
     <span className="relative">
       <svg width="22" height="22" viewBox="0 0 22 22" fill="none" aria-hidden>
-        <path d="M3 8.5v5h3l7 4V4.5l-7 4H3Z" stroke="currentColor" strokeWidth="1.5" strokeLinejoin="round" />
-        <path d="M17 7.5c1.333 1 1.333 6 0 7" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" />
+        <rect x="2" y="5" width="18" height="13" rx="2" stroke="currentColor" strokeWidth="1.5" />
+        <path d="M2 8l9 6 9-6" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
       </svg>
       {dot && (
         <span className="absolute right-0 top-0 h-2 w-2 rounded-full bg-[var(--accent)] ring-2 ring-[var(--background)]" />
@@ -48,7 +48,7 @@ export function TopBar() {
               className="-mr-1 p-2 text-[var(--muted)] active:text-[var(--text)]"
               aria-label="Abrir notificações"
             >
-              <MegaphoneIcon dot={false} />
+              <MailIcon dot={false} />
             </button>
           )}
         </div>
