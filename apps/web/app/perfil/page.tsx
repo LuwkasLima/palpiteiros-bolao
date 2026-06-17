@@ -109,26 +109,28 @@ export default function PerfilPage() {
           <span>Regras de pontuação</span>
           <span className="text-[var(--muted)]">›</span>
         </Link>
-        <button
-          onClick={async () => {
-            if (installPrompt) {
-              await installPrompt.prompt();
-              setInstallPrompt(null);
-            } else {
-              setShowIosHint((v) => !v);
-            }
-          }}
-          className="flex w-full items-center justify-between px-4 py-3 text-left text-sm hover:bg-[var(--surface-2)]"
-        >
-          <span>Baixar app</span>
-          <span className="text-[var(--muted)]">›</span>
-        </button>
-        {showIosHint && (
-          <p className="px-4 pb-3 text-xs text-[var(--muted)]">
-            {isIos
-              ? <>Toque em <b>Compartilhar</b> e depois <b>Adicionar à Tela de Início</b>.</>
-              : "Abra o app no celular para instalar."}
-          </p>
+        {(installPrompt || isIos) && (
+          <>
+            <button
+              onClick={async () => {
+                if (isIos) {
+                  setShowIosHint((v) => !v);
+                } else if (installPrompt) {
+                  await installPrompt.prompt();
+                  setInstallPrompt(null);
+                }
+              }}
+              className="flex w-full items-center justify-between px-4 py-3 text-left text-sm hover:bg-[var(--surface-2)]"
+            >
+              <span>Baixar app</span>
+              <span className="text-[var(--muted)]">›</span>
+            </button>
+            {showIosHint && (
+              <p className="px-4 pb-3 text-xs text-[var(--muted)]">
+                Toque em <b>Compartilhar</b> e depois <b>Adicionar à Tela de Início</b>.
+              </p>
+            )}
+          </>
         )}
         {user.is_admin && (
           <Link
