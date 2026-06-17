@@ -11,6 +11,7 @@ from beanie.operators import In
 
 from app.deps import CurrentUser
 from app.models import Match, MatchStatus, Prediction, Stage, Team, utcnow
+from app.services.scoring import points_for
 from app.schemas import (
     MatchRevealedOut,
     PredictionEntryOut,
@@ -103,7 +104,6 @@ async def revealed_predictions(pool_id: str, user: CurrentUser) -> RevealedPredi
     matches = await Match.find(
         In(Match.id, match_ids),
         Match.kickoff_at <= now,
-        Match.status != MatchStatus.FINAL,
     ).to_list()
 
     if not matches:
@@ -122,6 +122,7 @@ async def revealed_predictions(pool_id: str, user: CurrentUser) -> RevealedPredi
 
     result = []
     for match in sorted(matches, key=lambda m: m.kickoff_at):
+        is_final = match.status == MatchStatus.FINAL
         entries = [
             PredictionEntryOut(
                 user_id=str(p.user_id),
@@ -129,7 +130,7 @@ async def revealed_predictions(pool_id: str, user: CurrentUser) -> RevealedPredi
                 home_score=p.home_score,
                 away_score=p.away_score,
                 advancing_team_id=str(p.advancing_team_id) if p.advancing_team_id else None,
-                points=None,
+                points=points_for(p, match) if is_final else None,
             )
             for p in preds_by_match.get(match.id, [])
         ]
