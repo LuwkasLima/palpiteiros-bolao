@@ -10,13 +10,13 @@ function WhistleIcon({ dot }: { dot?: boolean }) {
   return (
     <span className="relative">
       <svg width="22" height="22" viewBox="0 0 22 22" fill="none" aria-hidden>
-        {/* body */}
-        <path d="M6 9h9a3.5 3.5 0 0 1 0 7H6V9Z" stroke="currentColor" strokeWidth="1.5" strokeLinejoin="round" />
-        {/* mouthpiece */}
-        <path d="M2 12.5h4" stroke="currentColor" strokeWidth="2" strokeLinecap="round" />
-        {/* air hole on top */}
-        <path d="M10 9V6.5" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" />
-        <path d="M8 6.5h4" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" />
+        {/* single connected silhouette: mouthpiece left + rounded body right */}
+        <path
+          d="M2 10.5h6V8h9a4 4 0 0 1 0 8H8v-2.5H2a1.5 1.5 0 0 1 0-3Z"
+          stroke="currentColor"
+          strokeWidth="1.5"
+          strokeLinejoin="round"
+        />
       </svg>
       {dot && (
         <span className="absolute right-0 top-0 h-2 w-2 rounded-full bg-[var(--accent)] ring-2 ring-[var(--background)]" />
