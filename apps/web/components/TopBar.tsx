@@ -2,47 +2,28 @@
 
 import Link from "next/link";
 import { useEffect, useState } from "react";
-import { usePathname } from "next/navigation";
 import { useAuth } from "@/lib/auth";
 import { LATEST_VERSION } from "@/lib/changelog";
 import { WhatsNewModal } from "./WhatsNewModal";
 
-type BeforeInstallPromptEvent = Event & { prompt: () => Promise<void> };
-
-
-function GearIcon() {
+function BellIcon({ dot }: { dot?: boolean }) {
   return (
-    <svg width="20" height="20" viewBox="0 0 20 20" fill="none" aria-hidden>
-      <circle cx="10" cy="10" r="2.5" stroke="currentColor" strokeWidth="1.5" />
-      <path d="M10 2v2M10 16v2M2 10h2M16 10h2M4.2 4.2l1.4 1.4M14.4 14.4l1.4 1.4M4.2 15.8l1.4-1.4M14.4 5.6l1.4-1.4" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" />
-    </svg>
+    <span className="relative">
+      <svg width="22" height="22" viewBox="0 0 22 22" fill="none" aria-hidden>
+        <path d="M11 3a6 6 0 0 1 6 6v3.5l1.5 2.5H3.5L5 12.5V9a6 6 0 0 1 6-6Z" stroke="currentColor" strokeWidth="1.5" strokeLinejoin="round" />
+        <path d="M9 17a2 2 0 0 0 4 0" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" />
+      </svg>
+      {dot && (
+        <span className="absolute right-0 top-0 h-2 w-2 rounded-full bg-[var(--accent)] ring-2 ring-[var(--background)]" />
+      )}
+    </span>
   );
 }
-
-function SignOutIcon() {
-  return (
-    <svg width="20" height="20" viewBox="0 0 20 20" fill="none" aria-hidden>
-      <path d="M8 3H4a1 1 0 0 0-1 1v12a1 1 0 0 0 1 1h4" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" />
-      <path d="M13 14l4-4-4-4M17 10H8" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
-    </svg>
-  );
-}
-
-function DownloadIcon() {
-  return (
-    <svg width="20" height="20" viewBox="0 0 20 20" fill="none" aria-hidden>
-      <path d="M10 3v10M6 9l4 4 4-4" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
-      <path d="M3 15h14" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" />
-    </svg>
-  );
-}
-
 
 export function TopBar() {
-  const { user, signOut } = useAuth();
+  const { user } = useAuth();
   const [open, setOpen] = useState(false);
   const [showWhatsNew, setShowWhatsNew] = useState(false);
-  const pathname = usePathname();
   const close = () => setOpen(false);
 
   const hasUnseenChangelog = !!user && user.last_viewed_changelog_version !== LATEST_VERSION;
@@ -50,42 +31,6 @@ export function TopBar() {
   useEffect(() => {
     if (hasUnseenChangelog) setShowWhatsNew(true);
   }, [hasUnseenChangelog]);
-
-  const [installPrompt, setInstallPrompt] = useState<BeforeInstallPromptEvent | null>(null);
-  const [isIos, setIsIos] = useState(false);
-  const [showIosHint, setShowIosHint] = useState(false);
-
-  useEffect(() => {
-    const standalone =
-      window.matchMedia("(display-mode: standalone)").matches ||
-      (window.navigator as { standalone?: boolean }).standalone === true;
-    if (standalone) return;
-
-    // Prefer the native install prompt over UA sniffing — works on Chrome desktop/Android.
-    const w = window as typeof window & { __pwa_prompt?: BeforeInstallPromptEvent | null };
-    if (w.__pwa_prompt) {
-      setInstallPrompt(w.__pwa_prompt);
-      return;
-    }
-
-    // iOS Safari has no beforeinstallprompt; fall back to manual instructions.
-    if (/iphone|ipad|ipod/i.test(window.navigator.userAgent)) {
-      setIsIos(true);
-      return;
-    }
-
-    const onPrompt = (e: Event) => {
-      e.preventDefault();
-      setInstallPrompt(e as BeforeInstallPromptEvent);
-    };
-    window.addEventListener("beforeinstallprompt", onPrompt);
-    return () => window.removeEventListener("beforeinstallprompt", onPrompt);
-  }, []);
-
-  const navLinkClass = (href: string) =>
-    pathname === href
-      ? "flex items-center gap-3 rounded-lg border-l-2 border-[var(--accent)] bg-[var(--surface-2)] px-4 py-3 text-xl text-[var(--accent)] active:opacity-75"
-      : "flex items-center gap-3 rounded-lg border-l-2 border-transparent px-4 py-3 text-xl text-[var(--text)] active:bg-[var(--surface-2)]";
 
   return (
     <>
@@ -97,17 +42,15 @@ export function TopBar() {
               Social dos <span className="text-[var(--accent)]">Palpiteiros</span>
             </span>
           </Link>
-          <button
-            onClick={() => setOpen(true)}
-            className="-mr-1 p-2 text-[var(--muted)] active:text-[var(--text)]"
-            aria-label="Abrir menu"
-          >
-            <svg width="22" height="22" viewBox="0 0 22 22" fill="none" aria-hidden>
-              <rect y="4" width="22" height="2" rx="1" fill="currentColor" />
-              <rect y="10" width="22" height="2" rx="1" fill="currentColor" />
-              <rect y="16" width="22" height="2" rx="1" fill="currentColor" />
-            </svg>
-          </button>
+          {user && (
+            <button
+              onClick={() => setOpen(true)}
+              className="-mr-1 p-2 text-[var(--muted)] active:text-[var(--text)]"
+              aria-label="Abrir notificações"
+            >
+              <BellIcon dot={false} />
+            </button>
+          )}
         </div>
       </header>
 
@@ -120,15 +63,16 @@ export function TopBar() {
 
       <WhatsNewModal isOpen={showWhatsNew} onClose={() => setShowWhatsNew(false)} />
 
-      {/* Drawer panel */}
+      {/* Alerts panel */}
       <div
-        className={`fixed right-0 top-0 z-30 flex h-full w-72 flex-col bg-[var(--surface)] shadow-2xl transition-transform duration-200 ${open ? "translate-x-0" : "translate-x-full"}`}
+        className={`fixed right-0 top-0 z-30 flex h-full w-80 flex-col bg-[var(--surface)] shadow-2xl transition-transform duration-200 ${open ? "translate-x-0" : "translate-x-full"}`}
       >
-        <div className="flex items-center justify-end px-4 py-4">
+        <div className="flex items-center justify-between px-5 py-4 border-b border-[var(--border)]">
+          <h2 className="font-bold text-lg">Notificações</h2>
           <button
             onClick={close}
             className="p-2 text-[var(--muted)] active:text-[var(--text)]"
-            aria-label="Fechar menu"
+            aria-label="Fechar"
           >
             <svg width="18" height="18" viewBox="0 0 18 18" fill="none" aria-hidden>
               <path d="M1 1l16 16M17 1L1 17" stroke="currentColor" strokeWidth="2" strokeLinecap="round" />
@@ -136,60 +80,14 @@ export function TopBar() {
           </button>
         </div>
 
-        {user && (
-          <>
-            <div className="px-6 pb-5">
-              <p className="text-lg font-semibold text-[var(--text)]">{user.display_name}</p>
-              <p className="text-sm text-[var(--muted)]">{user.email}</p>
-            </div>
-            <div className="mx-4 mb-3 border-t border-[var(--border)]" />
-          </>
-        )}
-
-        <nav className="flex flex-col gap-2 px-2">
-          {user?.is_admin && (
-            <Link href="/admin" onClick={close} className={navLinkClass("/admin")}>
-              <GearIcon />
-              Admin
-            </Link>
-          )}
-          {(installPrompt || isIos) && (
-            <>
-              <button
-                onClick={async () => {
-                  if (isIos) {
-                    setShowIosHint((v) => !v);
-                  } else if (installPrompt) {
-                    await installPrompt.prompt();
-                    setInstallPrompt(null);
-                    close();
-                  }
-                }}
-                className="flex items-center gap-3 rounded-lg border-l-2 border-transparent px-4 py-3 text-left text-xl text-[var(--text)] active:bg-[var(--surface-2)]"
-              >
-                <DownloadIcon />
-                Baixar App
-              </button>
-              {showIosHint && (
-                <p className="px-4 pb-2 text-sm text-[var(--muted)]">
-                  Toque em <b>Compartilhar</b> e depois <b>Adicionar à Tela de Início</b>.
-                </p>
-              )}
-            </>
-          )}
-          {user && (
-            <>
-              <div className="mx-2 my-1 border-t border-[var(--border)]" />
-              <button
-                onClick={() => { signOut(); close(); }}
-                className="flex items-center gap-3 rounded-lg border-l-2 border-transparent px-4 py-3 text-left text-xl text-[var(--muted)] active:bg-[var(--surface-2)] active:text-[var(--text)]"
-              >
-                <SignOutIcon />
-                Sair
-              </button>
-            </>
-          )}
-        </nav>
+        <div className="flex flex-1 flex-col items-center justify-center gap-3 px-6 text-center">
+          <svg width="40" height="40" viewBox="0 0 40 40" fill="none" aria-hidden className="text-[var(--muted)] opacity-40">
+            <path d="M20 5a11 11 0 0 1 11 11v6.5l2.5 4.5H6.5L9 22.5V16A11 11 0 0 1 20 5Z" stroke="currentColor" strokeWidth="2" strokeLinejoin="round" />
+            <path d="M16 31a4 4 0 0 0 8 0" stroke="currentColor" strokeWidth="2" strokeLinecap="round" />
+          </svg>
+          <p className="text-sm font-medium text-[var(--muted)]">Nenhuma notificação</p>
+          <p className="text-xs text-[var(--muted)] opacity-70">Em breve você receberá alertas sobre jogos e bolões aqui.</p>
+        </div>
       </div>
     </>
   );
