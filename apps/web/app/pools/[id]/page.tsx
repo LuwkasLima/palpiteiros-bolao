@@ -225,7 +225,7 @@ export default function PoolPage({ params }: { params: Promise<{ id: string }> }
 
       {finishedRevealedMatches.length > 0 && (
         <section className="flex flex-col gap-2">
-          <SectionHeader>Palpites da partida</SectionHeader>
+          <SectionHeader>{finishedRevealedMatches.length > 1 ? "Palpites das partidas" : "Palpites da partida"}</SectionHeader>
           <div className="flex flex-col gap-3">
             {finishedRevealedMatches.map((match) => (
               <MatchPredictionsCard key={match.match_id} match={match} currentUserId={user?.id} />
