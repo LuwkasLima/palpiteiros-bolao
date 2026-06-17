@@ -6,6 +6,16 @@ import { useAuth } from "@/lib/auth";
 import { LATEST_VERSION } from "@/lib/changelog";
 import { WhatsNewModal } from "./WhatsNewModal";
 
+const SAMPLE_NOTIFICATIONS = [
+  {
+    id: "rules-intro",
+    title: "📋 Conheça as regras de pontuação",
+    body: "Sabia que acertar o placar exato vale 5 pontos? Confira como funciona o sistema de pontuação completo.",
+    cta: { label: "Ver regras →", href: "/regras" },
+    time: "agora",
+  },
+];
+
 function MailIcon({ dot }: { dot?: boolean }) {
   return (
     <span className="relative">
@@ -24,6 +34,7 @@ export function TopBar() {
   const { user } = useAuth();
   const [open, setOpen] = useState(false);
   const [showWhatsNew, setShowWhatsNew] = useState(false);
+  const [dismissed, setDismissed] = useState<Set<string>>(new Set());
   const close = () => setOpen(false);
 
   const hasUnseenChangelog = !!user && user.last_viewed_changelog_version !== LATEST_VERSION;
@@ -31,6 +42,13 @@ export function TopBar() {
   useEffect(() => {
     if (hasUnseenChangelog) setShowWhatsNew(true);
   }, [hasUnseenChangelog]);
+
+  const visible = SAMPLE_NOTIFICATIONS.filter((n) => !dismissed.has(n.id));
+  const hasUnread = visible.length > 0;
+
+  function dismiss(id: string) {
+    setDismissed((prev) => new Set([...prev, id]));
+  }
 
   return (
     <>
@@ -48,18 +66,11 @@ export function TopBar() {
               className="-mr-1 p-2 text-[var(--muted)] active:text-[var(--text)]"
               aria-label="Abrir notificações"
             >
-              <MailIcon dot={false} />
+              <MailIcon dot={hasUnread} />
             </button>
           )}
         </div>
       </header>
-
-      {/* Backdrop */}
-      <div
-        className={`fixed inset-0 z-20 bg-black/50 transition-opacity duration-200 ${open ? "opacity-100" : "pointer-events-none opacity-0"}`}
-        onClick={close}
-        aria-hidden
-      />
 
       <WhatsNewModal isOpen={showWhatsNew} onClose={() => setShowWhatsNew(false)} />
 
@@ -81,23 +92,42 @@ export function TopBar() {
         </div>
 
         <div className="flex flex-1 flex-col gap-3 overflow-y-auto px-4 py-4">
-          {/* sample message */}
-          <div className="card flex flex-col gap-2 p-4">
-            <div className="flex items-start justify-between gap-3">
-              <p className="text-sm font-semibold">📋 Conheça as regras de pontuação</p>
-              <span className="shrink-0 text-xs text-[var(--muted)]">agora</span>
+          {visible.length === 0 ? (
+            <div className="flex flex-1 flex-col items-center justify-center gap-2 text-center">
+              <p className="text-sm font-medium text-[var(--muted)]">Nenhuma notificação</p>
+              <p className="text-xs text-[var(--muted)] opacity-70">Em breve você receberá alertas sobre jogos e bolões aqui.</p>
             </div>
-            <p className="text-sm text-[var(--muted)]">
-              Sabia que acertar o placar exato vale 5 pontos? Confira como funciona o sistema de pontuação completo.
-            </p>
-            <Link
-              href="/regras"
-              onClick={close}
-              className="self-start text-sm font-medium text-[var(--accent)] underline underline-offset-2"
-            >
-              Ver regras →
-            </Link>
-          </div>
+          ) : (
+            visible.map((n) => (
+              <div key={n.id} className="card flex flex-col gap-2 p-4">
+                <div className="flex items-start justify-between gap-3">
+                  <p className="text-sm font-semibold">{n.title}</p>
+                  <div className="flex shrink-0 items-center gap-2">
+                    <span className="text-xs text-[var(--muted)]">{n.time}</span>
+                    <button
+                      onClick={() => dismiss(n.id)}
+                      className="text-[var(--muted)] hover:text-[var(--text)]"
+                      aria-label="Dispensar notificação"
+                    >
+                      <svg width="14" height="14" viewBox="0 0 14 14" fill="none" aria-hidden>
+                        <path d="M1 1l12 12M13 1L1 13" stroke="currentColor" strokeWidth="1.75" strokeLinecap="round" />
+                      </svg>
+                    </button>
+                  </div>
+                </div>
+                <p className="text-sm text-[var(--muted)]">{n.body}</p>
+                {n.cta && (
+                  <Link
+                    href={n.cta.href}
+                    onClick={close}
+                    className="self-start text-sm font-medium text-[var(--accent)] underline underline-offset-2"
+                  >
+                    {n.cta.label}
+                  </Link>
+                )}
+              </div>
+            ))
+          )}
         </div>
       </div>
     </>
