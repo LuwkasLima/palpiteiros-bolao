@@ -63,19 +63,16 @@ export default function JogosPage() {
   }
 
   const now = new Date();
-  const IN_PROGRESS_WINDOW_MS = 2 * 60 * 60 * 1000;
+  const IN_PROGRESS_MS = 2 * 60 * 60 * 1000;
 
   const inProgress = (matches ?? []).filter((m) => {
     const ko = new Date(m.kickoff_at);
-    return m.status !== "final" && ko <= now && now.getTime() - ko.getTime() < IN_PROGRESS_WINDOW_MS;
+    return m.status !== "final" && ko <= now && now.getTime() - ko.getTime() < IN_PROGRESS_MS;
   });
-  const upcoming = (matches ?? []).filter((m) => {
-    const ko = new Date(m.kickoff_at);
-    return m.status !== "final" && ko > now;
-  });
+  const upcoming = (matches ?? []).filter((m) => new Date(m.kickoff_at) > now && m.status !== "final");
   const finished = (matches ?? []).filter((m) => m.status === "final");
 
-  const empty = matches !== null && matches.length === 0;
+  const noMatches = matches !== null && matches.length === 0;
 
   return (
     <div className="flex flex-col gap-6">
@@ -87,25 +84,24 @@ export default function JogosPage() {
       </div>
 
       {matches === null && (
-        <p className="text-[var(--muted)]">Carregando jogos…</p>
+        <p className="text-[var(--muted)]">Carregando…</p>
       )}
 
-      {empty && (
+      {noMatches && (
         <div className="card p-5 text-sm text-[var(--muted)]">
-          Nenhum jogo hoje. Aproveite para conferir os resultados anteriores.
+          Nenhum jogo hoje.
         </div>
       )}
 
       {inProgress.length > 0 && (
         <section className="flex flex-col gap-2">
           <SectionHeader>
-            Em andamento
-            {inProgress.length > 1 && ` · ${inProgress.length} partidas`}
+            Em andamento{inProgress.length > 1 && ` · ${inProgress.length} partidas`}
           </SectionHeader>
           <div className="divide-y divide-[var(--border)] overflow-hidden rounded-2xl border border-green-500/30 border-l-4 border-l-green-500 bg-[var(--surface-2)]">
             {inProgress.map((m) => (
               <div key={m.id} className="relative">
-                <span className="absolute right-4 top-3 inline-flex items-center gap-1 rounded-full bg-green-500 px-2.5 py-0.5 text-xs font-bold text-[#04210f]">
+                <span className="absolute right-4 top-3.5 inline-flex items-center gap-1 rounded-full bg-green-500 px-2.5 py-0.5 text-xs font-bold text-[#04210f]">
                   <span className="h-1.5 w-1.5 animate-pulse rounded-full bg-[#04210f]" />
                   Ao Vivo
                 </span>
