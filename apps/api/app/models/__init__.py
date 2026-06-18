@@ -55,6 +55,7 @@ class User(Document):
     last_viewed_changelog_version: str | None = None
     created_at: datetime = Field(default_factory=utcnow)
     last_seen_at: datetime | None = None
+    deleted_at: datetime | None = None
 
     class Settings:
         name = "users"

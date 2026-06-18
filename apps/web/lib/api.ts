@@ -66,6 +66,7 @@ export const api = {
       body: JSON.stringify({ token }),
     }),
   logout: () => request<{ message: string }>("/auth/logout", { method: "POST" }),
+  deleteAccount: () => request<void>("/auth/me", { method: "DELETE" }),
   me: () => request<UserOut>("/auth/me"),
   updateProfile: (displayName: string) =>
     request<UserOut>("/auth/me", {

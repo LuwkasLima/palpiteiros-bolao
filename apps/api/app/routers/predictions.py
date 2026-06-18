@@ -95,7 +95,10 @@ async def revealed_predictions(pool_id: str, user: CurrentUser) -> RevealedPredi
 
     member_names = {m.user_id: m.display_name for m in pool.members}
 
-    all_preds = await Prediction.find(Prediction.pool_id == pool.id).to_list()
+    all_preds = await Prediction.find(
+        Prediction.pool_id == pool.id,
+        In(Prediction.user_id, list(member_names.keys())),
+    ).to_list()
     if not all_preds:
         return RevealedPredictionsOut(pool_id=pool_id, matches=[])
 
