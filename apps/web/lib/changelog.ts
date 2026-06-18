@@ -9,7 +9,7 @@ export interface ChangelogEntry {
 export const CHANGELOG: ChangelogEntry[] = [
   {
     version: "2026-06-18",
-    title: "Nova pontuação — 4 níveis",
+    title: "Nova pontuação na segunda rodada — 4 níveis",
     items: [
       "Novo nível 'quase exato' (4 pts): um lado exato, o outro errado por 1 gol. Em empates, vale 4 pts se errar por 1 gol em cada lado.",
       "O nível de 3 pts agora premia quem acertou a diferença de gols — você torce pelo placar até o apito final.",
