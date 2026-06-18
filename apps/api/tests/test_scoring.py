@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+from datetime import datetime
 from types import SimpleNamespace
 
 from beanie import PydanticObjectId
@@ -9,47 +10,72 @@ from beanie import PydanticObjectId
 from app.models import MatchStatus, Stage
 from app.services import scoring
 
+# Convenience datetimes for cutover tests — anchored to the Uzbekistan vs Colombia match.
+# Naive UTC — matches how kickoff_at is stored and retrieved from MongoDB.
+_V1_KICKOFF = datetime(2026, 6, 18, 1, 0)   # before UZB-COL → V1 rules
+_V2_KICKOFF = datetime(2026, 6, 18, 2, 0)   # UZB-COL kickoff → V2 rules
+
+
+# ---------------------------------------------------------------------------
+# base_points — V2 (default, no kickoff_at)
+# ---------------------------------------------------------------------------
 
 def test_base_points_exact():
     assert scoring.base_points(2, 1, 2, 1) == scoring.POINTS_EXACT
 
 
-def test_base_points_correct_margin_non_draw():
-    # Off by exactly 1 total goal (one side exact, other off by 1) -> margin tier.
-    assert scoring.base_points(1, 0, 2, 0) == scoring.POINTS_MARGIN  # away exact, home +1
-    assert scoring.base_points(2, 1, 2, 0) == scoring.POINTS_MARGIN  # home exact, away +1
+def test_base_points_near_wins():
+    # L1=1 (one side exact, other off by 1) → POINTS_NEAR for wins.
+    assert scoring.base_points(1, 0, 2, 0) == scoring.POINTS_NEAR  # away exact, home -1
+    assert scoring.base_points(3, 0, 2, 0) == scoring.POINTS_NEAR  # away exact, home +1
+    assert scoring.base_points(2, 1, 2, 0) == scoring.POINTS_NEAR  # home exact, away +1
+    assert scoring.base_points(2, 1, 3, 1) == scoring.POINTS_NEAR  # away exact, home +1
 
 
-def test_base_points_correct_outcome_only():
-    # Both sides off by 1 each (L1=2) — correct outcome but not close enough for margin.
-    assert scoring.base_points(2, 1, 3, 2) == scoring.POINTS_OUTCOME
-    # Home off by 2 (L1=2) — also outcome only.
-    assert scoring.base_points(3, 0, 1, 0) == scoring.POINTS_OUTCOME
+def test_base_points_margin_wins():
+    # Correct goal difference but L1 > 1 → POINTS_MARGIN for wins.
+    assert scoring.base_points(2, 0, 3, 1) == scoring.POINTS_MARGIN  # diff +2 = +2, L1=2
+    assert scoring.base_points(4, 2, 3, 1) == scoring.POINTS_MARGIN  # diff +2 = +2, L1=2
+    assert scoring.base_points(2, 1, 3, 2) == scoring.POINTS_MARGIN  # diff +1 = +1, L1=2
 
 
-def test_base_points_non_exact_draw_close_is_margin():
-    # Off by 1 per side (L1=2, minimum non-exact draw error) -> margin tier.
-    assert scoring.base_points(1, 1, 2, 2) == scoring.POINTS_MARGIN
-    assert scoring.base_points(0, 0, 1, 1) == scoring.POINTS_MARGIN
+def test_base_points_outcome_wins():
+    # Correct outcome, wrong diff, L1 > 1 → POINTS_OUTCOME.
+    assert scoring.base_points(3, 0, 1, 0) == scoring.POINTS_OUTCOME  # diff +3 ≠ +1, L1=2
+    assert scoring.base_points(4, 0, 1, 0) == scoring.POINTS_OUTCOME  # diff +4 ≠ +1, L1=3
 
 
-def test_base_points_non_exact_draw_far_is_outcome():
-    # Off by 2+ per side -> outcome only.
-    assert scoring.base_points(1, 1, 3, 3) == scoring.POINTS_OUTCOME
+def test_base_points_near_draws():
+    # L1=2 is the minimum non-exact draw error → POINTS_NEAR.
+    assert scoring.base_points(0, 0, 1, 1) == scoring.POINTS_NEAR
+    assert scoring.base_points(2, 2, 1, 1) == scoring.POINTS_NEAR
+
+
+def test_base_points_outcome_draws_when_far():
+    # L1 > 2 for draws → POINTS_OUTCOME.
+    assert scoring.base_points(0, 0, 2, 2) == scoring.POINTS_OUTCOME
+    assert scoring.base_points(3, 3, 1, 1) == scoring.POINTS_OUTCOME
 
 
 def test_base_points_wrong_outcome():
     assert scoring.base_points(2, 1, 0, 1) == 0
+    assert scoring.base_points(0, 0, 1, 0) == 0  # draw vs home win
 
 
-# points_for only reads attributes, so lightweight stand-ins keep these tests DB-free.
-def _match(stage: Stage, home: int, away: int, advancing: PydanticObjectId | None = None):
+# ---------------------------------------------------------------------------
+# points_for — weight, bonuses, status
+# ---------------------------------------------------------------------------
+
+# kickoff_at defaults to V2 so existing tests exercise the new rules without extra args.
+def _match(stage: Stage, home: int, away: int, advancing: PydanticObjectId | None = None,
+           kickoff_at: datetime = _V2_KICKOFF):
     return SimpleNamespace(
         stage=stage,
         status=MatchStatus.FINAL,
         home_score=home,
         away_score=away,
         advancing_team_id=advancing,
+        kickoff_at=kickoff_at,
     )
 
 
@@ -62,8 +88,6 @@ def _pred(home: int, away: int, advancing: PydanticObjectId | None = None):
 
 
 def test_points_for_applies_round_weight():
-    # Exact prediction in a group game vs the final: final is worth far more.
-    # Use a no-zero scoreline so the clean-sheet bonus doesn't mix in.
     group = scoring.points_for(_pred(2, 1), _match(Stage.GROUP, 2, 1))
     final = scoring.points_for(_pred(2, 1), _match(Stage.FINAL, 2, 1))
     assert group == scoring.POINTS_EXACT * 1
@@ -81,7 +105,6 @@ def test_points_for_advancing_bonus_knockout():
     team = PydanticObjectId()
     weight = scoring.round_weight(Stage.QF)
     m = _match(Stage.QF, 2, 1, advancing=team)
-    # Correct exact score + correct advancing pick.
     pts = scoring.points_for(_pred(2, 1, advancing=team), m)
     assert pts == scoring.POINTS_EXACT * weight + scoring.ADVANCE_BONUS * weight
 
@@ -92,40 +115,76 @@ def test_points_for_advancing_bonus_only_when_correct():
     assert pts == scoring.POINTS_EXACT * scoring.round_weight(Stage.QF)
 
 
-def test_clean_sheet_both_sides():
-    # Predicting 0-0, actual 0-0 — exact base + 2 clean-sheet bonuses.
+def test_exact_with_zero_scores():
+    # 0-0 exact earns POINTS_EXACT — no bonus for zeros in V2.
     weight = scoring.round_weight(Stage.GROUP)
     pts = scoring.points_for(_pred(0, 0), _match(Stage.GROUP, 0, 0))
-    expected = scoring.POINTS_EXACT * weight + 2 * scoring.POINTS_CLEAN_SHEET * weight
-    assert pts == expected
+    assert pts == scoring.POINTS_EXACT * weight
 
 
-def test_clean_sheet_away_only():
-    # Predict 1-0, actual 2-0 — L1=1 so margin tier, plus away clean sheet.
+def test_near_with_zero_score():
+    # Predict 3-0, actual 2-0: L1=1 → POINTS_NEAR, no extra bonus for the zero.
     weight = scoring.round_weight(Stage.GROUP)
-    pts = scoring.points_for(_pred(1, 0), _match(Stage.GROUP, 2, 0))
-    expected = scoring.POINTS_MARGIN * weight + 1 * scoring.POINTS_CLEAN_SHEET * weight
-    assert pts == expected
+    pts = scoring.points_for(_pred(3, 0), _match(Stage.GROUP, 2, 0))
+    assert pts == scoring.POINTS_NEAR * weight
 
 
-def test_clean_sheet_no_bonus_on_wrong_outcome():
-    # Predicted 0-1 (away win), actual 1-0 (home win) — wrong outcome, no bonus despite 0s.
-    pts = scoring.points_for(_pred(0, 1), _match(Stage.GROUP, 1, 0))
-    assert pts == 0
+# ---------------------------------------------------------------------------
+# V1 rules (pre-cutover)
+# ---------------------------------------------------------------------------
+
+def test_v1_base_points_goal_difference_tier():
+    # Pre-cutover: same goal difference earns margin tier (old rule).
+    assert scoring.base_points(2, 1, 3, 2, _V1_KICKOFF) == scoring.POINTS_MARGIN
+    # Pre-cutover: L1=1 earns only outcome tier (no POINTS_NEAR in V1).
+    assert scoring.base_points(2, 1, 3, 1, _V1_KICKOFF) == scoring.POINTS_OUTCOME
 
 
-def test_clean_sheet_scales_with_round_weight():
-    # Same prediction earns more clean-sheet bonus points in the final than in the group stage.
-    group_pts = scoring.points_for(_pred(1, 0), _match(Stage.GROUP, 1, 0))
-    final_pts = scoring.points_for(_pred(1, 0), _match(Stage.FINAL, 1, 0))
-    # Both earn 1 clean-sheet hit; final weight (13) > group weight (1).
-    assert final_pts > group_pts
+def test_v1_base_points_non_exact_draw_is_outcome():
+    # Pre-cutover: any non-exact draw is outcome only.
+    assert scoring.base_points(0, 0, 1, 1, _V1_KICKOFF) == scoring.POINTS_OUTCOME
+    assert scoring.base_points(2, 2, 1, 1, _V1_KICKOFF) == scoring.POINTS_OUTCOME
+
+
+def test_v1_clean_sheet_bonus_applied():
+    weight = scoring.round_weight(Stage.GROUP)
+    pts = scoring.points_for(_pred(0, 0), _match(Stage.GROUP, 0, 0, kickoff_at=_V1_KICKOFF))
+    assert pts == (scoring.POINTS_EXACT + 2) * weight  # exact + 2 clean sheets
+
+
+def test_v2_no_clean_sheet_bonus():
+    weight = scoring.round_weight(Stage.GROUP)
+    pts = scoring.points_for(_pred(0, 0), _match(Stage.GROUP, 0, 0, kickoff_at=_V2_KICKOFF))
+    assert pts == scoring.POINTS_EXACT * weight
+
+
+# ---------------------------------------------------------------------------
+# Cutover boundary — V1 vs V2 differences
+# ---------------------------------------------------------------------------
+
+def test_cutover_near_tier_is_v2_only():
+    # L1=1 win: V1 gives OUTCOME (no near tier), V2 gives POINTS_NEAR.
+    assert scoring.base_points(2, 1, 3, 1, _V1_KICKOFF) == scoring.POINTS_OUTCOME
+    assert scoring.base_points(2, 1, 3, 1, _V2_KICKOFF) == scoring.POINTS_NEAR
+
+
+def test_cutover_goal_diff_match_earns_margin_in_both():
+    # Same goal diff: both V1 and V2 award POINTS_MARGIN.
+    assert scoring.base_points(2, 0, 3, 1, _V1_KICKOFF) == scoring.POINTS_MARGIN
+    assert scoring.base_points(2, 0, 3, 1, _V2_KICKOFF) == scoring.POINTS_MARGIN
+
+
+def test_cutover_near_draws_is_v2_only():
+    # L1=2 draw (minimum non-exact): V1 gives OUTCOME, V2 gives POINTS_NEAR.
+    weight = scoring.round_weight(Stage.GROUP)
+    v1 = scoring.points_for(_pred(0, 0), _match(Stage.GROUP, 1, 1, kickoff_at=_V1_KICKOFF))
+    v2 = scoring.points_for(_pred(0, 0), _match(Stage.GROUP, 1, 1, kickoff_at=_V2_KICKOFF))
+    assert v1 == scoring.POINTS_OUTCOME * weight
+    assert v2 == scoring.POINTS_NEAR * weight
 
 
 def test_late_round_can_overturn_group_lead():
-    # A trails B by 20 points from the group stage. One exact-final prediction (65 pts)
-    # is enough for A to overtake — the race stays alive to the end.
     final = _match(Stage.FINAL, 3, 1)
-    a_gain = scoring.points_for(_pred(3, 1), final)  # exact
-    b_gain = scoring.points_for(_pred(0, 0), final)  # wrong outcome -> 0
+    a_gain = scoring.points_for(_pred(3, 1), final)   # exact
+    b_gain = scoring.points_for(_pred(0, 0), final)   # wrong outcome -> 0
     assert a_gain - b_gain > 20

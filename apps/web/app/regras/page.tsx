@@ -1,4 +1,12 @@
+"use client";
+
+import { useState } from "react";
+
+type Tab = "v2" | "v1";
+
 export default function RegrasPage() {
+  const [tab, setTab] = useState<Tab>("v2");
+
   return (
     <div className="flex flex-col gap-6">
       <div>
@@ -7,6 +15,21 @@ export default function RegrasPage() {
           Cada palpite vale pontos de acordo com o quão certo você chegou — e os jogos do mata-mata valem muito mais.
         </p>
       </div>
+
+      <nav className="flex gap-1">
+        <button
+          className={`btn px-4 py-2 text-sm ${tab === "v2" ? "" : "btn-ghost"}`}
+          onClick={() => setTab("v2")}
+        >
+          Rodada 2
+        </button>
+        <button
+          className={`btn px-4 py-2 text-sm ${tab === "v1" ? "" : "btn-ghost"}`}
+          onClick={() => setTab("v1")}
+        >
+          Rodada 1
+        </button>
+      </nav>
 
       {/* Base tiers */}
       <section>
@@ -20,13 +43,32 @@ export default function RegrasPage() {
             note="Acertou o placar na mosca"
             highlight
           />
-          <TierRow
-            label="Placar próximo"
-            pts={3}
-            pred="1 × 0"
-            actual="2 × 0"
-            note="Um lado exato, o outro errado por 1 gol"
-          />
+          {tab === "v2" && (
+            <TierRow
+              label="Quase exato"
+              pts={4}
+              pred="3 × 0"
+              actual="2 × 0"
+              note="Um lado exato, o outro errado por 1 gol"
+            />
+          )}
+          {tab === "v2" ? (
+            <TierRow
+              label="Diferença certa"
+              pts={3}
+              pred="2 × 0"
+              actual="3 × 1"
+              note="Mesma diferença de gols, placar diferente"
+            />
+          ) : (
+            <TierRow
+              label="Diferença certa"
+              pts={3}
+              pred="3 × 1"
+              actual="2 × 0"
+              note="Mesma diferença de gols, placar diferente"
+            />
+          )}
           <TierRow
             label="Só o resultado"
             pts={2}
@@ -43,9 +85,15 @@ export default function RegrasPage() {
             muted
           />
         </div>
-        <p className="mt-2 text-xs text-[var(--muted)]">
-          Empates: valem 3 pts se o erro for de exatamente 1 gol por lado (ex: 1×1 previsto, 2×2 real). Erro maior vale 2 pts.
-        </p>
+        {tab === "v2" ? (
+          <p className="mt-2 text-xs text-[var(--muted)]">
+            Empates: valem 4 pts se o erro for de exatamente 1 gol por lado (ex: 0×0 previsto, 1×1 real) — não existe nível de 3 pts. Erro maior vale 2 pts.
+          </p>
+        ) : (
+          <p className="mt-2 text-xs text-[var(--muted)]">
+            Empates nunca chegam ao nível de "diferença certa" — qualquer empate com placar diferente vale 2 pts.
+          </p>
+        )}
       </section>
 
       {/* Round weight */}
@@ -76,35 +124,28 @@ export default function RegrasPage() {
         <h2 className="mb-3 font-bold text-[var(--accent-2)]">Bônus</h2>
         <div className="flex flex-col gap-3">
           <div className="card p-4">
-            <div className="flex items-start justify-between gap-4">
-              <div>
-                <p className="font-semibold">Goleiro em branco</p>
-                <p className="mt-0.5 text-sm text-[var(--muted)]">
-                  +1 × multiplicador para cada time que você previu não tomar gol e de fato não tomou.
-                  Pode ganhar até 2 bônus por jogo (um por lado). Só vale se o resultado geral estiver certo.
-                </p>
-                <div className="mt-3 flex flex-wrap gap-2 text-xs">
-                  <ExamplePill pred="0 × 2" actual="0 × 3" note="+1 bônus (mandante em branco)" />
-                  <ExamplePill pred="0 × 0" actual="0 × 0" note="+2 bônus (placar exato + ambos em branco)" />
-                </div>
-              </div>
+            <p className="font-semibold">Classificado correto</p>
+            <p className="mt-0.5 text-sm text-[var(--muted)]">
+              Disponível nos jogos do mata-mata. Acertar quem avança vale +2 × multiplicador,
+              independentemente do placar.
+            </p>
+            <div className="mt-3 flex flex-wrap gap-2 text-xs">
+              <ExamplePill pred="Errou placar + acertou classificado (QF)" note="+10 pts só pelo classificado" />
             </div>
           </div>
 
-          <div className="card p-4">
-            <div className="flex items-start justify-between gap-4">
-              <div>
-                <p className="font-semibold">Classificado correto</p>
-                <p className="mt-0.5 text-sm text-[var(--muted)]">
-                  Disponível nos jogos do mata-mata. Acertar quem avança vale +2 × multiplicador,
-                  independentemente do placar.
-                </p>
-                <div className="mt-3 flex flex-wrap gap-2 text-xs">
-                  <ExamplePill pred="Errou placar + acertou classificado (QF)" actual="" note="+10 pts só pelo classificado" />
-                </div>
+          {tab === "v1" && (
+            <div className="card p-4">
+              <p className="font-semibold">Goleiro em branco</p>
+              <p className="mt-0.5 text-sm text-[var(--muted)]">
+                Previu 0 gols para um lado e o time realmente não marcou? Vale +1 × multiplicador por lado. Soma em cima do nível de placar acertado.
+              </p>
+              <div className="mt-3 flex flex-wrap gap-2 text-xs">
+                <ExamplePill pred="0 × 0" actual="0 × 0" note="+2 pts (dois lados)" />
+                <ExamplePill pred="0 × 1" actual="0 × 2" note="+1 pt (lado esquerdo)" />
               </div>
             </div>
-          </div>
+          )}
         </div>
       </section>
 
@@ -113,9 +154,9 @@ export default function RegrasPage() {
         <p className="text-sm font-semibold text-[var(--accent-2)]">Máximo possível por jogo</p>
         <div className="mt-2 flex flex-wrap gap-3 text-sm">
           {[
-            { fase: "Fase de grupos", max: "7 pts" },
-            { fase: "Quartas de final", max: "45 pts" },
-            { fase: "Final", max: "117 pts" },
+            { fase: "Fase de grupos", max: "5 pts" },
+            { fase: "Quartas de final", max: "35 pts" },
+            { fase: "Final", max: "91 pts" },
           ].map(({ fase, max }) => (
             <div key={fase} className="flex flex-col items-center rounded-xl border border-[var(--border)] bg-[var(--surface-2)] px-4 py-2">
               <span className="text-[var(--muted)]">{fase}</span>
@@ -124,7 +165,7 @@ export default function RegrasPage() {
           ))}
         </div>
         <p className="mt-3 text-xs text-[var(--muted)]">
-          Placar exato + 2 goleiros em branco + classificado certo, com o multiplicador máximo.
+          Placar exato + classificado certo, com o multiplicador máximo.
         </p>
       </section>
     </div>
@@ -171,16 +212,13 @@ function TierRow({
 
 function ScoreChip({ label, dim }: { label: string; dim?: boolean }) {
   return (
-    <span
-      className="chip"
-      style={dim ? { opacity: 0.6 } : undefined}
-    >
+    <span className="chip" style={dim ? { opacity: 0.6 } : undefined}>
       {label}
     </span>
   );
 }
 
-function ExamplePill({ pred, actual, note }: { pred: string; actual: string; note: string }) {
+function ExamplePill({ pred, actual, note }: { pred: string; actual?: string; note: string }) {
   return (
     <div className="flex items-center gap-1.5 rounded-full border border-[var(--border)] bg-[var(--surface-2)] px-3 py-1">
       {pred && <span className="chip">{pred}</span>}

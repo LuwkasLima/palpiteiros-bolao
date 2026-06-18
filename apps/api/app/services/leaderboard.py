@@ -13,7 +13,7 @@ from beanie import PydanticObjectId
 
 from app.models import Match, MatchStatus, Pool, Prediction
 from app.schemas import LeaderboardRowOut, WeeklyHeroOut
-from app.services.scoring import POINTS_EXACT, POINTS_MARGIN, base_points, points_for
+from app.services.scoring import POINTS_EXACT, POINTS_MARGIN, POINTS_NEAR, base_points, points_for
 
 
 async def compute_leaderboard(pool: Pool) -> list[LeaderboardRowOut]:
@@ -45,10 +45,10 @@ async def compute_leaderboard(pool: Pool) -> list[LeaderboardRowOut]:
             continue
         pts = points_for(pred, match)
         points[pred.user_id] += pts
-        bp = base_points(pred.home_score, pred.away_score, match.home_score, match.away_score)
+        bp = base_points(pred.home_score, pred.away_score, match.home_score, match.away_score, match.kickoff_at)
         if bp == POINTS_EXACT:
             exact[pred.user_id] += 1
-        elif bp == POINTS_MARGIN:
+        elif bp >= POINTS_MARGIN:  # POINTS_NEAR or POINTS_MARGIN
             margin[pred.user_id] += 1
         elif bp > 0:
             outcome[pred.user_id] += 1

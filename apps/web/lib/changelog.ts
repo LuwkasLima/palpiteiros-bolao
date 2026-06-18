@@ -1,4 +1,4 @@
-export const LATEST_VERSION = "2026-06-17";
+export const LATEST_VERSION = "2026-06-18";
 
 export interface ChangelogEntry {
   version: string;
@@ -7,6 +7,15 @@ export interface ChangelogEntry {
 }
 
 export const CHANGELOG: ChangelogEntry[] = [
+  {
+    version: "2026-06-18",
+    title: "Nova pontuação — 4 níveis",
+    items: [
+      "Novo nível 'quase exato' (4 pts): um lado exato, o outro errado por 1 gol. Em empates, vale 4 pts se errar por 1 gol em cada lado.",
+      "O nível de 3 pts agora premia quem acertou a diferença de gols — você torce pelo placar até o apito final.",
+      "O bônus de goleiro em branco foi removido. Prever 0 gols já é recompensado pela proximidade do placar.",
+    ],
+  },
   {
     version: "2026-06-17",
     title: "Nova navegação e palpites ao vivo",
