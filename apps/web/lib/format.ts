@@ -94,11 +94,14 @@ export function stageBadge(stage: string, groupLabel: string | null): string {
   return STAGE_BADGE[stage] ?? stage;
 }
 
+// Matches from Uzbekistan vs Colombia (G-K-1-UZBCOL) onwards use V2 rules.
+const SCORING_V2_SINCE = new Date("2026-06-18T02:00:00Z");
+
 function _outcome(home: number, away: number) {
   return home > away ? "home" : away > home ? "away" : "draw";
 }
 
-function _basePoints(ph: number, pa: number, ah: number, aa: number): number {
+function _basePointsV1(ph: number, pa: number, ah: number, aa: number): number {
   if (ph === ah && pa === aa) return 5;
   if (_outcome(ph, pa) !== _outcome(ah, aa)) return 0;
   if (_outcome(ah, aa) === "draw") return 2;
@@ -106,10 +109,22 @@ function _basePoints(ph: number, pa: number, ah: number, aa: number): number {
   return 2;
 }
 
+function _basePointsV2(ph: number, pa: number, ah: number, aa: number): number {
+  if (ph === ah && pa === aa) return 5;
+  if (_outcome(ph, pa) !== _outcome(ah, aa)) return 0;
+  const totalError = Math.abs(ph - ah) + Math.abs(pa - aa);
+  if (_outcome(ah, aa) === "draw") return totalError === 2 ? 4 : 2;
+  if (totalError === 1) return 4;
+  if (ph - pa === ah - aa) return 3;
+  return 2;
+}
+
 export function matchPoints(pred: PredictionOut, match: MatchOut): number {
   if (match.status !== "final" || match.home_score == null || match.away_score == null) return 0;
-  let pts = _basePoints(pred.home_score, pred.away_score, match.home_score, match.away_score) * match.round_weight;
-  if (pts > 0) {
+  const isV2 = new Date(match.kickoff_at) >= SCORING_V2_SINCE;
+  const baseFn = isV2 ? _basePointsV2 : _basePointsV1;
+  let pts = baseFn(pred.home_score, pred.away_score, match.home_score, match.away_score) * match.round_weight;
+  if (!isV2 && pts > 0) {
     const cleanSheetHits =
       (pred.home_score === 0 && match.home_score === 0 ? 1 : 0) +
       (pred.away_score === 0 && match.away_score === 0 ? 1 : 0);

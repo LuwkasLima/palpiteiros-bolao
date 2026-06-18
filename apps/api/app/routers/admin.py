@@ -14,7 +14,7 @@ from fastapi import APIRouter, HTTPException, status
 
 from app.deps import AdminUser
 from app.models import Match, MatchStatus, Pool, Prediction, Stage, User
-from app.schemas import AdminStatsOut, MatchOut, MatchStatusCountsOut, ResultIn
+from app.schemas import AdminStatsOut, MatchOut, MatchStatusCountsOut, ResultIn, UserOut
 from app.serializers import match_to_out
 from app.services.access import parse_object_id
 
@@ -118,3 +118,22 @@ async def clear_result(match_id: str, _: AdminUser) -> MatchOut:
     match.advancing_team_id = None
     await match.save()
     return match_to_out(match)
+
+
+@router.post("/users/{user_id}/restore", response_model=UserOut)
+async def restore_user(user_id: str, _: AdminUser) -> UserOut:
+    user = await User.get(parse_object_id(user_id, not_found="User not found"))
+    if user is None:
+        raise HTTPException(status.HTTP_404_NOT_FOUND, "User not found")
+    if user.deleted_at is None:
+        raise HTTPException(status.HTTP_409_CONFLICT, "User is not deleted")
+    user.deleted_at = None
+    await user.save()
+    return UserOut(
+        id=str(user.id),
+        email=user.email,
+        display_name=user.display_name,
+        is_admin=user.is_admin,
+        onboarding_done=user.onboarding_done if user.onboarding_done is not None else True,
+        last_viewed_changelog_version=user.last_viewed_changelog_version,
+    )

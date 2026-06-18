@@ -31,6 +31,8 @@ async def get_current_user(
     user = await User.get(session.user_id)
     if user is None:
         raise HTTPException(status.HTTP_401_UNAUTHORIZED, "User not found")
+    if user.deleted_at is not None:
+        raise HTTPException(status.HTTP_401_UNAUTHORIZED, "Account deleted")
     now = datetime.now(timezone.utc)
     seen = user.last_seen_at
     if seen is None or (now - (seen if seen.tzinfo else seen.replace(tzinfo=timezone.utc))).total_seconds() > 28800:

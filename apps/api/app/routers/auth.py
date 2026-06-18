@@ -14,7 +14,7 @@ from fastapi import APIRouter, Cookie, HTTPException, Response, status
 
 from app.config import get_settings
 from app.deps import CurrentUser
-from app.models import MagicLink, Session, User
+from app.models import MagicLink, Pool, Session, User
 from app.schemas import ChangelogSeenIn, MessageOut, RequestLinkIn, UpdateProfileIn, UserOut, VerifyIn
 from app.security import SESSION_COOKIE, hash_token, new_token
 from app.services.email import send_magic_link
@@ -74,6 +74,7 @@ async def verify(payload: VerifyIn, response: Response) -> UserOut:
 
     email = link.email.lower()
     user = await User.find_one(User.email == email)
+
     if user is None:
         user = User(
             email=email,
@@ -140,6 +141,24 @@ async def changelog_seen(payload: ChangelogSeenIn, user: CurrentUser) -> UserOut
     user.last_viewed_changelog_version = payload.version
     await user.save()
     return _user_out(user)
+
+
+@router.delete("/me", status_code=status.HTTP_204_NO_CONTENT)
+async def delete_me(
+    response: Response,
+    user: CurrentUser,
+    bolao_session: Annotated[str | None, Cookie(alias=SESSION_COOKIE)] = None,
+) -> None:
+    user.deleted_at = datetime.now(timezone.utc)
+    await user.save()
+
+    async for pool in Pool.find({"members.user_id": user.id}):
+        pool.members = [m for m in pool.members if m.user_id != user.id]
+        await pool.save()
+
+    await Session.find(Session.user_id == user.id).delete()
+
+    response.delete_cookie(SESSION_COOKIE, path="/")
 
 
 def _invalid() -> HTTPException:

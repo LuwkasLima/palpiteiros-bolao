@@ -6,6 +6,7 @@ import { useRouter } from "next/navigation";
 import { api, ApiError } from "@/lib/api";
 import { useAuth } from "@/lib/auth";
 import { WhatsNewModal } from "@/components/WhatsNewModal";
+import { SectionHeader } from "@/components/SectionHeader";
 
 type BeforeInstallPromptEvent = Event & { prompt: () => Promise<void> };
 
@@ -17,6 +18,9 @@ export default function PerfilPage() {
   const [saved, setSaved] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [showWhatsNew, setShowWhatsNew] = useState(false);
+  const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
+  const [deleting, setDeleting] = useState(false);
+  const [deleteError, setDeleteError] = useState<string | null>(null);
   const [installPrompt, setInstallPrompt] = useState<BeforeInstallPromptEvent | null>(null);
   const [isIos, setIsIos] = useState(false);
   const [showIosHint, setShowIosHint] = useState(false);
@@ -47,6 +51,19 @@ export default function PerfilPage() {
 
   if (loading || !user) {
     return <p className="mt-10 text-center text-[var(--muted)]">Carregando…</p>;
+  }
+
+  async function handleDeleteAccount() {
+    setDeleting(true);
+    setDeleteError(null);
+    try {
+      await api.deleteAccount();
+      await signOut();
+      router.replace("/login");
+    } catch (err) {
+      setDeleteError(err instanceof ApiError ? err.message : "Erro ao excluir conta.");
+      setDeleting(false);
+    }
   }
 
   async function saveName(e: React.FormEvent) {
@@ -149,6 +166,48 @@ export default function PerfilPage() {
       >
         Sair
       </button>
+
+      <SectionHeader>Zona de perigo</SectionHeader>
+      <div className="rounded-xl border border-red-900/40 p-4 flex items-center justify-between gap-4">
+        <div>
+          <p className="text-sm font-medium">Excluir conta</p>
+          <p className="text-xs text-[var(--muted)]">Remove sua conta e te retira de todos os bolões permanentemente.</p>
+        </div>
+        <button
+          className="shrink-0 rounded-lg border border-red-700/60 px-3 py-1.5 text-sm text-red-400 hover:border-red-500 hover:text-red-300 transition-colors"
+          onClick={() => setShowDeleteConfirm(true)}
+        >
+          Excluir
+        </button>
+      </div>
+
+      {showDeleteConfirm && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4">
+          <div className="card flex w-full max-w-sm flex-col gap-4 p-6">
+            <h2 className="text-lg font-bold">Excluir conta?</h2>
+            <p className="text-sm text-[var(--muted)]">
+              Esta ação é permanente. Você será removido de todos os bolões e não poderá mais acessar o app com este e-mail.
+            </p>
+            {deleteError && <p className="text-sm text-red-400">{deleteError}</p>}
+            <div className="flex gap-3">
+              <button
+                className="btn flex-1 bg-red-600 hover:bg-red-500"
+                onClick={handleDeleteAccount}
+                disabled={deleting}
+              >
+                {deleting ? "Excluindo…" : "Sim, excluir"}
+              </button>
+              <button
+                className="btn-ghost flex-1"
+                onClick={() => { setShowDeleteConfirm(false); setDeleteError(null); }}
+                disabled={deleting}
+              >
+                Cancelar
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
 
       <WhatsNewModal isOpen={showWhatsNew} onClose={() => setShowWhatsNew(false)} />
     </div>

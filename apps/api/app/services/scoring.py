@@ -8,18 +8,27 @@ group-stage leader can never coast, and trailing players can always catch up.
 All tunable constants live here. Knockout matches are scored on the 90-minute regulation
 score; a separate "advancing team" pick earns a small bonus so the bracket stays meaningful
 even when the score is missed.
+
+Scoring versions
+----------------
+V1 (kickoff_at < SCORING_V2_SINCE): goal-difference tier + per-side clean-sheet bonus.
+V2 (kickoff_at >= SCORING_V2_SINCE): L1-distance tier, no clean-sheet bonus.
+  - Margin tier: wins off by exactly 1 total goal; draws off by exactly 1 per side.
+  - Predicting 0 goals for a side earns no special bonus beyond the base tier.
 """
 
 from __future__ import annotations
 
+from datetime import datetime
+
 from app.models import Match, MatchStatus, Prediction, Stage
 
 # Base points (before the round-weight multiplier).
-POINTS_EXACT = 5  # exact scoreline
-POINTS_MARGIN = 3  # correct winner AND correct goal margin (non-draws), but not exact
-POINTS_OUTCOME = 2  # correct outcome only (incl. any non-exact draw)
-ADVANCE_BONUS = 2  # knockout only: correct "who advances" pick
-POINTS_CLEAN_SHEET = 1  # per side: predicted 0 goals and the team actually scored 0
+POINTS_EXACT = 5    # exact scoreline
+POINTS_NEAR = 4     # closest possible non-exact (V2 only): L1=1 for wins, L1=2 for draws
+POINTS_MARGIN = 3   # correct goal difference, wins only (both V1 and V2)
+POINTS_OUTCOME = 2  # correct outcome only
+ADVANCE_BONUS = 2   # knockout only: correct "who advances" pick
 
 # Escalating per-round weight — the anti-runaway mechanic.
 ROUND_WEIGHT: dict[Stage, int] = {
@@ -31,6 +40,10 @@ ROUND_WEIGHT: dict[Stage, int] = {
     Stage.THIRD: 13,
     Stage.FINAL: 13,
 }
+
+# Matches that kick off at or after Uzbekistan vs Colombia (G-K-1-UZBCOL) use V2 rules.
+# Naive UTC — matches how kickoff_at is stored and retrieved from MongoDB.
+SCORING_V2_SINCE = datetime(2026, 6, 18, 2, 0)
 
 
 def round_weight(stage: Stage) -> int:
@@ -45,25 +58,61 @@ def _outcome(home: int, away: int) -> str:
     return "draw"
 
 
-def _clean_sheet_hits(pred_home: int, pred_away: int, act_home: int, act_away: int) -> int:
-    """Number of sides where the player correctly predicted a clean sheet (0 or 1 or 2)."""
+# ---------------------------------------------------------------------------
+# V1 internals (pre-cutover matches only)
+# ---------------------------------------------------------------------------
+
+def _clean_sheet_hits_v1(pred_home: int, pred_away: int, act_home: int, act_away: int) -> int:
     return (pred_home == 0 and act_home == 0) + (pred_away == 0 and act_away == 0)
 
 
-def base_points(pred_home: int, pred_away: int, act_home: int, act_away: int) -> int:
-    """Points for a single prediction vs an actual scoreline, before round weighting."""
+def _base_points_v1(pred_home: int, pred_away: int, act_home: int, act_away: int) -> int:
     if pred_home == act_home and pred_away == act_away:
         return POINTS_EXACT
-
     pred_out = _outcome(pred_home, pred_away)
     act_out = _outcome(act_home, act_away)
     if pred_out != act_out:
         return 0
-
-    # Same outcome, not exact.
     if act_out == "draw":
-        # Any non-exact draw is "outcome only" — goal margin is trivially 0 for all draws.
         return POINTS_OUTCOME
+    if (pred_home - pred_away) == (act_home - act_away):
+        return POINTS_MARGIN
+    return POINTS_OUTCOME
+
+
+# ---------------------------------------------------------------------------
+# Public API
+# ---------------------------------------------------------------------------
+
+def base_points(
+    pred_home: int,
+    pred_away: int,
+    act_home: int,
+    act_away: int,
+    kickoff_at: datetime | None = None,
+) -> int:
+    """Points for a single prediction vs an actual scoreline, before round weighting.
+
+    Pass kickoff_at to get version-correct results; omitting it applies V2 rules.
+    """
+    if kickoff_at is not None and kickoff_at < SCORING_V2_SINCE:
+        return _base_points_v1(pred_home, pred_away, act_home, act_away)
+
+    # V2: 4-tier system.
+    if pred_home == act_home and pred_away == act_away:
+        return POINTS_EXACT
+    pred_out = _outcome(pred_home, pred_away)
+    act_out = _outcome(act_home, act_away)
+    if pred_out != act_out:
+        return 0
+    total_error = abs(pred_home - act_home) + abs(pred_away - act_away)
+    if act_out == "draw":
+        # L1=2 is the minimum non-exact draw error — same "near" concept as L1=1 for wins.
+        # No tier-3 for draws: goal diff is always 0 for both, so it can't distinguish.
+        return POINTS_NEAR if total_error == 2 else POINTS_OUTCOME
+    # Non-draw wins:
+    if total_error == 1:
+        return POINTS_NEAR
     if (pred_home - pred_away) == (act_home - act_away):
         return POINTS_MARGIN
     return POINTS_OUTCOME
@@ -75,15 +124,18 @@ def points_for(prediction: Prediction, match: Match) -> int:
         return 0
 
     weight = round_weight(match.stage)
+    is_v2 = match.kickoff_at >= SCORING_V2_SINCE
+
     points = base_points(
         prediction.home_score,
         prediction.away_score,
         match.home_score,
         match.away_score,
+        match.kickoff_at,
     ) * weight
 
-    if points > 0:
-        points += _clean_sheet_hits(
+    if not is_v2 and points > 0:
+        points += _clean_sheet_hits_v1(
             prediction.home_score,
             prediction.away_score,
             match.home_score,
