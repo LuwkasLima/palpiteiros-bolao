@@ -31,7 +31,10 @@ export function TopBar() {
     if (typeof window === "undefined") return new Set();
     try {
       const raw = localStorage.getItem(DISMISSED_KEY);
-      return raw ? new Set(JSON.parse(raw) as string[]) : new Set();
+      if (!raw) return new Set();
+      const stored = new Set(JSON.parse(raw) as string[]);
+      const valid = new Set(NOTIFICATIONS.map((n) => n.id));
+      return new Set([...stored].filter((id) => valid.has(id)));
     } catch {
       return new Set();
     }
