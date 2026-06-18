@@ -9,7 +9,7 @@ from fastapi.middleware.cors import CORSMiddleware
 
 from app.config import get_settings
 from app.db import close_db, ensure_db
-from app.routers import admin, auth, matches, pools, predictions
+from app.routers import admin, auth, matches, news, pools, predictions
 
 
 @asynccontextmanager
@@ -41,6 +41,7 @@ def create_app() -> FastAPI:
 
     app.include_router(auth.router)
     app.include_router(matches.router)
+    app.include_router(news.router)
     app.include_router(pools.router)
     app.include_router(predictions.router)
     app.include_router(admin.router)

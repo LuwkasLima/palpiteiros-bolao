@@ -44,6 +44,12 @@ class MemberRole(StrEnum):
     MEMBER = "member"
 
 
+class NewsSource(StrEnum):
+    ESPN = "espn"
+    GE = "ge"
+    TRIVELA = "trivela"
+
+
 # --- Auth & users -------------------------------------------------------------
 
 
@@ -194,5 +200,33 @@ class Prediction(Document):
         ]
 
 
+# --- News ---------------------------------------------------------------------
+
+
+class NewsItem(Document):
+    """A single article aggregated from an external sports RSS feed.
+
+    Items are upserted by ``link`` so re-fetching the same feed is idempotent. A TTL index on
+    ``fetched_at`` prunes the rolling window so the collection never grows unbounded.
+    """
+
+    source: NewsSource
+    title: str
+    link: str  # canonical article URL; unique dedup key
+    summary: str = ""
+    image_url: str | None = None
+    published_at: datetime
+    fetched_at: datetime = Field(default_factory=utcnow)
+
+    class Settings:
+        name = "news_items"
+        indexes = [
+            IndexModel([("link", pymongo.ASCENDING)], unique=True),
+            IndexModel([("published_at", pymongo.DESCENDING)]),
+            # TTL: drop articles a week after they were last seen in a feed.
+            IndexModel([("fetched_at", pymongo.ASCENDING)], expireAfterSeconds=7 * 24 * 3600),
+        ]
+
+
 # Every Document subclass, for init_beanie.
-ALL_DOCUMENTS = [User, MagicLink, Session, Team, Match, Pool, Prediction]
+ALL_DOCUMENTS = [User, MagicLink, Session, Team, Match, Pool, Prediction, NewsItem]

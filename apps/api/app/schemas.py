@@ -8,7 +8,7 @@ from datetime import datetime
 
 from pydantic import BaseModel, EmailStr, Field
 
-from app.models import MatchStatus, MemberRole, Stage
+from app.models import MatchStatus, MemberRole, NewsSource, Stage
 
 # --- Auth ---------------------------------------------------------------------
 
@@ -95,6 +95,18 @@ class MatchOut(BaseModel):
     away_score: int | None
     advancing_team_id: str | None
     is_locked: bool
+
+
+# --- News ---------------------------------------------------------------------
+
+
+class NewsItemOut(BaseModel):
+    source: NewsSource
+    title: str
+    link: str
+    summary: str
+    image_url: str | None
+    published_at: datetime
 
 
 # --- Pools --------------------------------------------------------------------

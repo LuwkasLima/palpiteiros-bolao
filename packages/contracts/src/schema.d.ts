@@ -66,7 +66,8 @@ export interface paths {
         get: operations["me_auth_me_get"];
         put?: never;
         post?: never;
-        delete?: never;
+        /** Delete Me */
+        delete: operations["delete_me_auth_me_delete"];
         options?: never;
         head?: never;
         /** Update Me */
@@ -141,6 +142,23 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/matches/today": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Matches Today */
+        get: operations["matches_today_matches_today_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/matches": {
         parameters: {
             query?: never;
@@ -150,6 +168,23 @@ export interface paths {
         };
         /** List Matches */
         get: operations["list_matches_matches_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/news": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** List News */
+        get: operations["list_news_news_get"];
         put?: never;
         post?: never;
         delete?: never;
@@ -206,6 +241,23 @@ export interface paths {
         post?: never;
         /** Delete Pool */
         delete: operations["delete_pool_pools__pool_id__delete"];
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/pools/{pool_id}/leave": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        /** Leave Pool */
+        delete: operations["leave_pool_pools__pool_id__leave_delete"];
         options?: never;
         head?: never;
         patch?: never;
@@ -331,6 +383,23 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/admin/users/{user_id}/restore": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Restore User */
+        post: operations["restore_user_admin_users__user_id__restore_post"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/health": {
         parameters: {
             query?: never;
@@ -371,6 +440,11 @@ export interface components {
                 [key: string]: number;
             };
             match_counts: components["schemas"]["MatchStatusCountsOut"];
+        };
+        /** ChangelogSeenIn */
+        ChangelogSeenIn: {
+            /** Version */
+            version: string;
         };
         /** HTTPValidationError */
         HTTPValidationError: {
@@ -468,29 +542,6 @@ export interface components {
             /** Final */
             final: number;
         };
-        /** MemberOut */
-        MemberOut: {
-            /** User Id */
-            user_id: string;
-            /** Display Name */
-            display_name: string;
-            role: components["schemas"]["MemberRole"];
-            /**
-             * Joined At
-             * Format: date-time
-             */
-            joined_at: string;
-        };
-        /**
-         * MemberRole
-         * @enum {string}
-         */
-        MemberRole: "creator" | "member";
-        /** MessageOut */
-        MessageOut: {
-            /** Message */
-            message: string;
-        };
         /** MatchTodayOut */
         MatchTodayOut: {
             /** Id */
@@ -519,6 +570,51 @@ export interface components {
             group_label: string | null;
             stage: components["schemas"]["Stage"];
         };
+        /** MemberOut */
+        MemberOut: {
+            /** User Id */
+            user_id: string;
+            /** Display Name */
+            display_name: string;
+            role: components["schemas"]["MemberRole"];
+            /**
+             * Joined At
+             * Format: date-time
+             */
+            joined_at: string;
+        };
+        /**
+         * MemberRole
+         * @enum {string}
+         */
+        MemberRole: "creator" | "member";
+        /** MessageOut */
+        MessageOut: {
+            /** Message */
+            message: string;
+        };
+        /** NewsItemOut */
+        NewsItemOut: {
+            source: components["schemas"]["NewsSource"];
+            /** Title */
+            title: string;
+            /** Link */
+            link: string;
+            /** Summary */
+            summary: string;
+            /** Image Url */
+            image_url: string | null;
+            /**
+             * Published At
+             * Format: date-time
+             */
+            published_at: string;
+        };
+        /**
+         * NewsSource
+         * @enum {string}
+         */
+        NewsSource: "espn" | "ge" | "trivela";
         /** NextMatchTodayOut */
         NextMatchTodayOut: {
             /** Id */
@@ -690,11 +786,6 @@ export interface components {
             onboarding_done: boolean;
             /** Last Viewed Changelog Version */
             last_viewed_changelog_version: string | null;
-        };
-        /** ChangelogSeenIn */
-        ChangelogSeenIn: {
-            /** Version */
-            version: string;
         };
         /** ValidationError */
         ValidationError: {
@@ -868,6 +959,35 @@ export interface operations {
             };
         };
     };
+    delete_me_auth_me_delete: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: {
+                bolao_session?: string | null;
+            };
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
     update_me_auth_me_patch: {
         parameters: {
             query?: never;
@@ -1009,6 +1129,38 @@ export interface operations {
             };
         };
     };
+    matches_today_matches_today_get: {
+        parameters: {
+            query: {
+                day_start: string;
+                day_end: string;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["MatchTodayOut"][];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
     list_matches_matches_get: {
         parameters: {
             query?: {
@@ -1027,6 +1179,38 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["MatchOut"][];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    list_news_news_get: {
+        parameters: {
+            query?: {
+                day_start?: string | null;
+                limit?: number;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["NewsItemOut"][];
                 };
             };
             /** @description Validation Error */
@@ -1209,6 +1393,37 @@ export interface operations {
             };
         };
     };
+    leave_pool_pools__pool_id__leave_delete: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                pool_id: string;
+            };
+            cookie?: {
+                bolao_session?: string | null;
+            };
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            204: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
     pool_leaderboard_pools__pool_id__leaderboard_get: {
         parameters: {
             query?: never;
@@ -1244,7 +1459,10 @@ export interface operations {
     };
     pool_weekly_hero_pools__pool_id__leaderboard_weekly_hero_get: {
         parameters: {
-            query?: never;
+            query: {
+                week_start: string;
+                week_end: string;
+            };
             header?: never;
             path: {
                 pool_id: string;
@@ -1467,6 +1685,39 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["MatchOut"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    restore_user_admin_users__user_id__restore_post: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                user_id: string;
+            };
+            cookie?: {
+                bolao_session?: string | null;
+            };
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["UserOut"];
                 };
             };
             /** @description Validation Error */

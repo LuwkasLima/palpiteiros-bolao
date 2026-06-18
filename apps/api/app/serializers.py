@@ -4,8 +4,8 @@ from __future__ import annotations
 
 from datetime import datetime, timezone
 
-from app.models import Match, MatchStatus
-from app.schemas import MatchOut
+from app.models import Match, MatchStatus, NewsItem
+from app.schemas import MatchOut, NewsItemOut
 
 
 def _as_utc(value: datetime) -> datetime:
@@ -36,4 +36,15 @@ def match_to_out(match: Match, now: datetime | None = None) -> MatchOut:
         away_score=match.away_score,
         advancing_team_id=str(match.advancing_team_id) if match.advancing_team_id else None,
         is_locked=is_match_locked(match, now),
+    )
+
+
+def news_item_to_out(item: NewsItem) -> NewsItemOut:
+    return NewsItemOut(
+        source=item.source,
+        title=item.title,
+        link=item.link,
+        summary=item.summary,
+        image_url=item.image_url,
+        published_at=item.published_at,
     )

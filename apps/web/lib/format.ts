@@ -76,6 +76,20 @@ export function formatKickoffTime(iso: string): string {
   return new Date(utc).toLocaleTimeString("pt-BR", { hour: "2-digit", minute: "2-digit" });
 }
 
+/** Compact "time ago" label in pt-BR (e.g. "há 12 min", "há 3 h"), falling back to a date. */
+export function relativeTime(iso: string): string {
+  const utc = /Z|[+-]\d{2}:?\d{2}$/.test(iso) ? iso : iso + "Z";
+  const then = new Date(utc);
+  const min = Math.round((Date.now() - then.getTime()) / 60000);
+  if (min < 1) return "agora";
+  if (min < 60) return `há ${min} min`;
+  const h = Math.round(min / 60);
+  if (h < 24) return `há ${h} h`;
+  const d = Math.round(h / 24);
+  if (d < 7) return `há ${d} d`;
+  return then.toLocaleDateString("pt-BR", { day: "2-digit", month: "short" });
+}
+
 /** Formats a YYYY-MM-DD day key as a human-readable section header in pt-BR. */
 export function formatMatchDay(dayKey: string): string {
   // Parse at local noon to avoid any DST/timezone edge on date boundaries.
