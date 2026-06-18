@@ -38,8 +38,8 @@ export default function RegrasPage() {
           <TierRow
             label="Placar exato"
             pts={5}
-            pred="2 × 1"
-            actual="2 × 1"
+            pred="3 × 1"
+            actual="3 × 1"
             note="Acertou o placar na mosca"
             highlight
           />
@@ -47,40 +47,30 @@ export default function RegrasPage() {
             <TierRow
               label="Quase exato"
               pts={4}
-              pred="3 × 0"
-              actual="2 × 0"
+              pred="4 × 1"
+              actual="3 × 1"
               note="Um lado exato, o outro errado por 1 gol"
             />
           )}
-          {tab === "v2" ? (
-            <TierRow
-              label="Diferença certa"
-              pts={3}
-              pred="2 × 0"
-              actual="3 × 1"
-              note="Mesma diferença de gols, placar diferente"
-            />
-          ) : (
-            <TierRow
-              label="Diferença certa"
-              pts={3}
-              pred="3 × 1"
-              actual="2 × 0"
-              note="Mesma diferença de gols, placar diferente"
-            />
-          )}
+          <TierRow
+            label="Diferença certa"
+            pts={3}
+            pred="2 × 0"
+            actual="3 × 1"
+            note="Mesma diferença de gols, placar diferente"
+          />
           <TierRow
             label="Só o resultado"
             pts={2}
-            pred="2 × 0"
-            actual="1 × 0"
+            pred="1 × 0"
+            actual="3 × 1"
             note="Acertou quem ganhou, errou a diferença"
           />
           <TierRow
             label="Errou"
             pts={0}
-            pred="1 × 0"
-            actual="0 × 1"
+            pred="1 × 3"
+            actual="3 × 1"
             note="Resultado errado"
             muted
           />
