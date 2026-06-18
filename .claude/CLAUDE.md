@@ -40,6 +40,8 @@ After completing any user-facing feature, do both of the following before consid
 
 2. **Update the changelog** (if relevant): Add a new entry to the top of `CHANGELOG` in `apps/web/lib/changelog.ts` and bump `LATEST_VERSION` to today's date (`YYYY-MM-DD`). The entry must have a short `title` and 1–3 `items` written from the user's perspective — what they can now do, not what changed in the code.
 
+3. **Add a notification** (if changelog was updated): Add a corresponding entry to the top of `NOTIFICATIONS` in `apps/web/lib/notifications.ts`. Use `id: "release-{version}"`, a short `title`, and a one-sentence `body` summarising the release. This is what users see in the notifications panel before opening the full changelog.
+
 ## Architecture
 
 - Monorepo with three apps: `apps/web`, `apps/api`, `apps/worker`.
