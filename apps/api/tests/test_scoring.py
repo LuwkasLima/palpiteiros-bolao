@@ -15,18 +15,27 @@ def test_base_points_exact():
 
 
 def test_base_points_correct_margin_non_draw():
-    # Predict home win by 1, actual home win by 1 (different scoreline) -> margin tier.
-    assert scoring.base_points(2, 1, 3, 2) == scoring.POINTS_MARGIN
+    # Off by exactly 1 total goal (one side exact, other off by 1) -> margin tier.
+    assert scoring.base_points(1, 0, 2, 0) == scoring.POINTS_MARGIN  # away exact, home +1
+    assert scoring.base_points(2, 1, 2, 0) == scoring.POINTS_MARGIN  # home exact, away +1
 
 
 def test_base_points_correct_outcome_only():
-    # Home win predicted (margin 2) and actual home win (margin 1) — right outcome, wrong margin.
-    assert scoring.base_points(2, 0, 1, 0) == scoring.POINTS_OUTCOME
+    # Both sides off by 1 each (L1=2) — correct outcome but not close enough for margin.
+    assert scoring.base_points(2, 1, 3, 2) == scoring.POINTS_OUTCOME
+    # Home off by 2 (L1=2) — also outcome only.
+    assert scoring.base_points(3, 0, 1, 0) == scoring.POINTS_OUTCOME
 
 
-def test_base_points_non_exact_draw_is_outcome_only():
-    # All draws share margin 0, so a non-exact draw is only the outcome tier, not margin.
-    assert scoring.base_points(1, 1, 2, 2) == scoring.POINTS_OUTCOME
+def test_base_points_non_exact_draw_close_is_margin():
+    # Off by 1 per side (L1=2, minimum non-exact draw error) -> margin tier.
+    assert scoring.base_points(1, 1, 2, 2) == scoring.POINTS_MARGIN
+    assert scoring.base_points(0, 0, 1, 1) == scoring.POINTS_MARGIN
+
+
+def test_base_points_non_exact_draw_far_is_outcome():
+    # Off by 2+ per side -> outcome only.
+    assert scoring.base_points(1, 1, 3, 3) == scoring.POINTS_OUTCOME
 
 
 def test_base_points_wrong_outcome():
@@ -92,10 +101,10 @@ def test_clean_sheet_both_sides():
 
 
 def test_clean_sheet_away_only():
-    # Predict 1-0, actual 2-0 — correct outcome but different margin, plus away clean sheet.
+    # Predict 1-0, actual 2-0 — L1=1 so margin tier, plus away clean sheet.
     weight = scoring.round_weight(Stage.GROUP)
     pts = scoring.points_for(_pred(1, 0), _match(Stage.GROUP, 2, 0))
-    expected = scoring.POINTS_OUTCOME * weight + 1 * scoring.POINTS_CLEAN_SHEET * weight
+    expected = scoring.POINTS_MARGIN * weight + 1 * scoring.POINTS_CLEAN_SHEET * weight
     assert pts == expected
 
 

@@ -101,9 +101,11 @@ function _outcome(home: number, away: number) {
 function _basePoints(ph: number, pa: number, ah: number, aa: number): number {
   if (ph === ah && pa === aa) return 5;
   if (_outcome(ph, pa) !== _outcome(ah, aa)) return 0;
-  if (_outcome(ah, aa) === "draw") return 2;
-  if (ph - pa === ah - aa) return 3;
-  return 2;
+  const totalError = Math.abs(ph - ah) + Math.abs(pa - aa);
+  // Draws: margin tier when off by exactly 1 per side (minimum non-exact draw error).
+  // Wins:  margin tier when off by exactly 1 total goal (one side exact, other off by 1).
+  if (_outcome(ah, aa) === "draw") return totalError === 2 ? 3 : 2;
+  return totalError === 1 ? 3 : 2;
 }
 
 export function matchPoints(pred: PredictionOut, match: MatchOut): number {

@@ -21,11 +21,11 @@ export default function RegrasPage() {
             highlight
           />
           <TierRow
-            label="Diferença certa"
+            label="Placar próximo"
             pts={3}
-            pred="3 × 1"
+            pred="1 × 0"
             actual="2 × 0"
-            note="Mesma diferença de gols (+2), mas placar diferente"
+            note="Um lado exato, o outro errado por 1 gol"
           />
           <TierRow
             label="Só o resultado"
@@ -44,7 +44,7 @@ export default function RegrasPage() {
           />
         </div>
         <p className="mt-2 text-xs text-[var(--muted)]">
-          Empates nunca chegam ao nível de "diferença certa" — qualquer empate com placar diferente vale 2 pts.
+          Empates: valem 3 pts se o erro for de exatamente 1 gol por lado (ex: 1×1 previsto, 2×2 real). Erro maior vale 2 pts.
         </p>
       </section>
 

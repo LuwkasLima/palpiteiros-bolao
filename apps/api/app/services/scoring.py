@@ -60,13 +60,14 @@ def base_points(pred_home: int, pred_away: int, act_home: int, act_away: int) ->
     if pred_out != act_out:
         return 0
 
-    # Same outcome, not exact.
+    # Same outcome, not exact. Award the margin tier based on total absolute goal error (L1).
+    total_error = abs(pred_home - act_home) + abs(pred_away - act_away)
     if act_out == "draw":
-        # Any non-exact draw is "outcome only" — goal margin is trivially 0 for all draws.
-        return POINTS_OUTCOME
-    if (pred_home - pred_away) == (act_home - act_away):
-        return POINTS_MARGIN
-    return POINTS_OUTCOME
+        # Draws are symmetric, so the minimum non-exact error is 2 (e.g. 1–1 vs 2–2).
+        # Give the margin tier when off by exactly one goal per side.
+        return POINTS_MARGIN if total_error == 2 else POINTS_OUTCOME
+    # Non-draw: margin tier when off by exactly one total goal (one side exact, other off by 1).
+    return POINTS_MARGIN if total_error == 1 else POINTS_OUTCOME
 
 
 def points_for(prediction: Prediction, match: Match) -> int:
