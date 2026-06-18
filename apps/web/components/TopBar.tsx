@@ -4,17 +4,10 @@ import Link from "next/link";
 import { useEffect, useState } from "react";
 import { useAuth } from "@/lib/auth";
 import { LATEST_VERSION } from "@/lib/changelog";
+import { NOTIFICATIONS } from "@/lib/notifications";
 import { WhatsNewModal } from "./WhatsNewModal";
 
-const SAMPLE_NOTIFICATIONS = [
-  {
-    id: "release-2026-06-17",
-    title: "🆕 Nova atualização disponível",
-    body: "Nova barra de navegação, jogos do dia, palpites ao vivo e muito mais.",
-    cta: { label: "Ver o que há de novo →" },
-    time: "agora",
-  },
-];
+const DISMISSED_KEY = "bolao-dismissed-notifications";
 
 function MailIcon({ dot }: { dot?: boolean }) {
   return (
@@ -34,7 +27,15 @@ export function TopBar() {
   const { user } = useAuth();
   const [open, setOpen] = useState(false);
   const [showWhatsNew, setShowWhatsNew] = useState(false);
-  const [dismissed, setDismissed] = useState<Set<string>>(new Set());
+  const [dismissed, setDismissed] = useState<Set<string>>(() => {
+    if (typeof window === "undefined") return new Set();
+    try {
+      const raw = localStorage.getItem(DISMISSED_KEY);
+      return raw ? new Set(JSON.parse(raw) as string[]) : new Set();
+    } catch {
+      return new Set();
+    }
+  });
   const close = () => setOpen(false);
 
   const hasUnseenChangelog = !!user && user.last_viewed_changelog_version !== LATEST_VERSION;
@@ -43,11 +44,15 @@ export function TopBar() {
     if (hasUnseenChangelog) setShowWhatsNew(true);
   }, [hasUnseenChangelog]);
 
-  const visible = SAMPLE_NOTIFICATIONS.filter((n) => !dismissed.has(n.id));
+  const visible = NOTIFICATIONS.filter((n) => !dismissed.has(n.id));
   const hasUnread = visible.length > 0;
 
   function dismiss(id: string) {
-    setDismissed((prev) => new Set([...prev, id]));
+    setDismissed((prev) => {
+      const next = new Set([...prev, id]);
+      try { localStorage.setItem(DISMISSED_KEY, JSON.stringify([...next])); } catch { /* ignore */ }
+      return next;
+    });
   }
 
   return (
