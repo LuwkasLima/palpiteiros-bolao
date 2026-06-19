@@ -10,6 +10,13 @@ export interface AppNotification {
 // id must be "release-{version}" so it can be keyed to the changelog.
 export const NOTIFICATIONS: AppNotification[] = [
   {
+    id: "release-2026-06-20",
+    title: "🆕 Palpites dos participantes",
+    body: "Toque no nome de qualquer participante na classificação para ver o histórico de palpites e pontos dele.",
+    cta: { label: "Ver o que há de novo →" },
+    time: "hoje",
+  },
+  {
     id: "release-2026-06-19",
     title: "🆕 Notícias da Copa",
     body: "Nova aba Notícias reúne as últimas da Copa do Mundo de ESPN, ge e Trivela em um só lugar.",

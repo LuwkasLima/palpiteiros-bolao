@@ -1,4 +1,4 @@
-export const LATEST_VERSION = "2026-06-19";
+export const LATEST_VERSION = "2026-06-20";
 
 export interface ChangelogEntry {
   version: string;
@@ -7,6 +7,14 @@ export interface ChangelogEntry {
 }
 
 export const CHANGELOG: ChangelogEntry[] = [
+  {
+    version: "2026-06-20",
+    title: "Palpites dos participantes",
+    items: [
+      "Toque no nome de qualquer participante na classificação para ver todos os palpites revelados dele.",
+      "Veja o placar previsto, o resultado real e os pontos ganhos em cada jogo — incluindo o multiplicador por fase.",
+    ],
+  },
   {
     version: "2026-06-19",
     title: "Notícias da Copa",

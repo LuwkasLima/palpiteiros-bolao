@@ -468,6 +468,8 @@ export interface components {
             points: number;
             /** Exact Count */
             exact_count: number;
+            /** Near Count */
+            near_count: number;
             /** Margin Count */
             margin_count: number;
             /** Outcome Count */
@@ -1196,7 +1198,6 @@ export interface operations {
         parameters: {
             query?: {
                 day_start?: string | null;
-                limit?: number;
             };
             header?: never;
             path?: never;

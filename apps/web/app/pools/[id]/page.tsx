@@ -279,12 +279,12 @@ export default function PoolPage({ params }: { params: Promise<{ id: string }> }
               >
                 <div className="flex items-center gap-3">
                   <span className="w-6 text-center font-bold text-[var(--muted)]">{i + 1}</span>
-                  <div>
+                  <Link href={`/pools/${id}/members/${row.user_id}`} className="hover:opacity-75 transition-opacity">
                     <div className="font-semibold">{row.display_name}</div>
                     <div className="text-xs text-[var(--muted)]">
-                      🎯 {row.exact_count} · ↔ {row.margin_count} · ✓ {row.outcome_count}
+                      🎯 {row.exact_count} · ✨ {row.near_count} · ↔ {row.margin_count} · ✓ {row.outcome_count}
                     </div>
-                  </div>
+                  </Link>
                 </div>
                 <div className="flex items-center gap-2">
                   {title && (
@@ -299,7 +299,7 @@ export default function PoolPage({ params }: { params: Promise<{ id: string }> }
           })}
         </div>
         <p className="mt-2 text-xs text-[var(--muted)]">
-          🎯 placar exato · ↔ margem certa · ✓ resultado certo
+          🎯 placar exato · ✨ quase exato · ↔ diferença certa · ✓ resultado certo
         </p>
         <p className="text-xs text-[var(--muted)]">
           Pontuação cresce nas fases finais — o jogo fica disputado até a última rodada.

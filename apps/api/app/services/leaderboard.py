@@ -24,6 +24,7 @@ async def compute_leaderboard(pool: Pool) -> list[LeaderboardRowOut]:
     # Seed a row per member so everyone shows up, even with zero predictions.
     points: dict[PydanticObjectId, int] = {}
     exact: dict[PydanticObjectId, int] = {}
+    near: dict[PydanticObjectId, int] = {}
     margin: dict[PydanticObjectId, int] = {}
     outcome: dict[PydanticObjectId, int] = {}
     made: dict[PydanticObjectId, int] = {}
@@ -31,6 +32,7 @@ async def compute_leaderboard(pool: Pool) -> list[LeaderboardRowOut]:
     for member in pool.members:
         points[member.user_id] = 0
         exact[member.user_id] = 0
+        near[member.user_id] = 0
         margin[member.user_id] = 0
         outcome[member.user_id] = 0
         made[member.user_id] = 0
@@ -48,7 +50,9 @@ async def compute_leaderboard(pool: Pool) -> list[LeaderboardRowOut]:
         bp = base_points(pred.home_score, pred.away_score, match.home_score, match.away_score, match.kickoff_at)
         if bp == POINTS_EXACT:
             exact[pred.user_id] += 1
-        elif bp >= POINTS_MARGIN:  # POINTS_NEAR or POINTS_MARGIN
+        elif bp == POINTS_NEAR:
+            near[pred.user_id] += 1
+        elif bp == POINTS_MARGIN:
             margin[pred.user_id] += 1
         elif bp > 0:
             outcome[pred.user_id] += 1
@@ -59,6 +63,7 @@ async def compute_leaderboard(pool: Pool) -> list[LeaderboardRowOut]:
             display_name=names[uid],
             points=points[uid],
             exact_count=exact[uid],
+            near_count=near[uid],
             margin_count=margin[uid],
             outcome_count=outcome[uid],
             predictions_made=made[uid],
