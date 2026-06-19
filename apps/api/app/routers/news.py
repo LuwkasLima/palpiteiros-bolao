@@ -16,7 +16,6 @@ router = APIRouter(tags=["news"])
 @router.get("/news", response_model=list[NewsItemOut])
 async def list_news(
     day_start: datetime | None = Query(None),
-    limit: int = Query(40, ge=1, le=100),
 ) -> list[NewsItemOut]:
-    items = await news.list_news(day_start=day_start, limit=limit)
+    items = await news.list_news(day_start=day_start)
     return [news_item_to_out(it) for it in items]

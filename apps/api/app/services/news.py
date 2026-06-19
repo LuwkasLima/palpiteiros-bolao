@@ -14,7 +14,7 @@ from __future__ import annotations
 import asyncio
 import logging
 import re
-from dataclasses import dataclass
+from dataclasses import dataclass, replace
 from datetime import datetime, timedelta, timezone
 
 import feedparser
@@ -135,11 +135,33 @@ def parse_feed(source: NewsSource, content: str | bytes) -> list[ParsedItem]:
     return items
 
 
+_OG_IMAGE_RE = re.compile(
+    r'<meta[^>]+property=["\']og:image["\'][^>]+content=["\']([^"\']+)["\']'
+    r'|<meta[^>]+content=["\']([^"\']+)["\'][^>]+property=["\']og:image["\']',
+)
+_OG_FETCH_TIMEOUT = 5.0
+
+
+async def _fetch_og_image(client: httpx.AsyncClient, url: str) -> str | None:
+    try:
+        resp = await client.get(url, timeout=_OG_FETCH_TIMEOUT)
+        resp.raise_for_status()
+        m = _OG_IMAGE_RE.search(resp.text)
+        return (m.group(1) or m.group(2)) if m else None
+    except Exception:
+        return None
+
+
 async def _fetch_source(client: httpx.AsyncClient, src: FeedSource) -> list[ParsedItem]:
     try:
         resp = await client.get(src.url)
         resp.raise_for_status()
-        return parse_feed(src.source, resp.content)
+        items = parse_feed(src.source, resp.content)
+        # ESPN's feed carries no images; backfill from each article's OG tag.
+        if src.source == NewsSource.ESPN and items:
+            og_images = await asyncio.gather(*(_fetch_og_image(client, it.link) for it in items))
+            items = [replace(it, image_url=og) if og else it for it, og in zip(items, og_images)]
+        return items
     except Exception:  # one bad feed must not blank the whole page
         logger.warning("news: failed to fetch %s (%s)", src.source, src.url, exc_info=True)
         return []
@@ -195,9 +217,23 @@ async def refresh_if_stale() -> None:
         await _upsert(items)
 
 
-async def list_news(day_start: datetime | None = None, limit: int = 40) -> list[NewsItem]:
-    """Latest items, newest first. When ``day_start`` is given, only items published on or
-    after it are returned (the page passes the user's local midnight to show "today's news")."""
+_PER_SOURCE_LIMIT = 5
+
+
+async def list_news(day_start: datetime | None = None) -> list[NewsItem]:
+    """5 latest items per source (15 total), newest first overall.
+
+    When ``day_start`` is given, only items published on or after it are returned.
+    """
     await refresh_if_stale()
-    query = NewsItem.find(NewsItem.published_at >= day_start) if day_start else NewsItem.find_all()
-    return await query.sort(-NewsItem.published_at).limit(limit).to_list()
+
+    async def _fetch_source_items(source: NewsSource) -> list[NewsItem]:
+        q = NewsItem.find(NewsItem.source == source)
+        if day_start:
+            q = q.find(NewsItem.published_at >= day_start)
+        return await q.sort(-NewsItem.published_at).limit(_PER_SOURCE_LIMIT).to_list()
+
+    results = await asyncio.gather(*(_fetch_source_items(src) for src in NewsSource))
+    items = [it for batch in results for it in batch]
+    items.sort(key=lambda it: it.published_at, reverse=True)
+    return items

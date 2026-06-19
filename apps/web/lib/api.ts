@@ -95,9 +95,9 @@ export const api = {
   matchesToday: (dayStart: string, dayEnd: string) =>
     request<MatchTodayOut[]>(`/matches/today?day_start=${encodeURIComponent(dayStart)}&day_end=${encodeURIComponent(dayEnd)}`),
 
-  // News — only the current local day's items.
-  news: (limit = 40) =>
-    request<NewsItemOut[]>(`/news?day_start=${encodeURIComponent(localDayStart())}&limit=${limit}`),
+  // News — current local day, 5 per source (15 total).
+  news: () =>
+    request<NewsItemOut[]>(`/news?day_start=${encodeURIComponent(localDayStart())}`),
 
   // Pools
   myPools: () => request<PoolSummaryOut[]>(`/pools?window_end=${encodeURIComponent(localDayEnd())}`),

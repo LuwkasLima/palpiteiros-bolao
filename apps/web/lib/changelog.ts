@@ -11,7 +11,7 @@ export const CHANGELOG: ChangelogEntry[] = [
     version: "2026-06-19",
     title: "Notícias da Copa",
     items: [
-      "Nova aba Notícias com as notícias do dia da Copa do Mundo, reunidas de ESPN, ge e Trivela.",
+      "Nova aba Notícias com as notícias do dia da Copa do Mundo, reunidas de ESPN, GE e Trivela.",
       "Toque em qualquer notícia para ler a matéria completa na fonte original.",
     ],
   },
