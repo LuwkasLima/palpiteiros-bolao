@@ -1,4 +1,4 @@
-export const LATEST_VERSION = "2026-06-20";
+export const LATEST_VERSION = "2026-06-21";
 
 export interface ChangelogEntry {
   version: string;
@@ -7,6 +7,13 @@ export interface ChangelogEntry {
 }
 
 export const CHANGELOG: ChangelogEntry[] = [
+  {
+    version: "2026-06-21",
+    title: "Resenha da Semana",
+    items: [
+      "Todo domingo, uma resenha narrada do bolão fecha a semana, exaltando o profeta e zoando o corneteiro.",
+    ],
+  },
   {
     version: "2026-06-20",
     title: "Palpites e títulos dos participantes",

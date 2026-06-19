@@ -95,4 +95,23 @@ existing factual `compute_weekly_hero` output, displayed on the pool detail page
 
 ## Review / results
 
-_(fill in as work completes; delete this file when the feature is merged.)_
+Implemented and verified (2026-06-19):
+- `llm.py` (lazy `anthropic` import, `None` on missing key/SDK/error), `Narrative` model,
+  `narrative.py` (pure `build_weekly_prompt` / `inputs_hash` / `period_key` + cached
+  `get_weekly_narrative`), optional `narrative` on `WeeklyHeroOut`, wired into the
+  weekly-hero route. Contracts regenerated; web renders the resenha; changelog +
+  notification added for `2026-06-21`.
+- `USE_SYSTEM_TRUST_STORE` (truststore) added to handle corporate TLS interception that
+  was breaking outbound HTTPS (Anthropic SDK + RSS). Default off; on in local `.env`.
+- Tests: 30 passed (pure prompt/hash/period-key + llm no-key + early-return). The cache
+  miss/hit/regenerate path was verified end-to-end against real Mongo (mongomock-motor
+  0.0.34 is incompatible with Beanie 2.x's `init_beanie`).
+- E2E: with TLS fixed, the real Haiku call reaches Anthropic and authenticates; generation
+  is currently blocked only by the account's credit balance (400). When unavailable, the
+  endpoint returns `narrative: null` and the pool falls back to the hero card (verified).
+- Temporary dev scaffolding (a templated stub + a `?devhero` UI override) was used during
+  development and has since been removed.
+
+Open: UI gate — the weekly card renders only on Sundays (`isEndOfWeek`) for the *current*
+week, so it won't show until a real Sunday whose week contains finals. Decide whether to
+adjust the gate before merge; delete this file when merged.

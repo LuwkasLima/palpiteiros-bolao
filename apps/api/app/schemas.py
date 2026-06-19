@@ -219,6 +219,8 @@ class WeeklyHeroOut(BaseModel):
     corneteiro_name: str | None
     corneteiro_points: int | None
     has_data: bool
+    # LLM-generated wrap-up; null when unavailable (no data, LLM off/failed).
+    narrative: str | None = None
 
 
 class WeeklyTitleCountOut(BaseModel):

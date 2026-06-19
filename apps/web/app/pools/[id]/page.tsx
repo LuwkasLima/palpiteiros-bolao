@@ -239,6 +239,11 @@ export default function PoolPage({ params }: { params: Promise<{ id: string }> }
       {isEndOfWeek && weeklyHero?.has_data && (
         <section className="flex flex-col gap-2">
           <SectionHeader>⚡ Semana {weeklyHero.week_label}</SectionHeader>
+          {weeklyHero.narrative && (
+            <p className="card p-4 text-sm italic leading-relaxed text-[var(--muted)]">
+              {weeklyHero.narrative}
+            </p>
+          )}
           <div className="grid grid-cols-2 gap-3">
             <div className="card flex flex-col items-center gap-1 p-4 text-center border-yellow-500/30">
               <span className="text-2xl">🔮</span>

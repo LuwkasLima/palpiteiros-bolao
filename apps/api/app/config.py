@@ -37,6 +37,15 @@ class Settings(BaseSettings):
     web_base_url: str = "http://localhost:3000"
     api_base_url: str = "http://localhost:8000"
 
+    # When true, make Python's SSL use the OS trust store (truststore) instead of certifi.
+    # Needed on networks that do TLS interception with a corporate root CA (the SDK/httpx
+    # otherwise rejects the intercepted cert). Default off so prod TLS is unchanged.
+    use_system_trust_store: bool = False
+
+    # LLM narratives (weekly wrap-ups)
+    anthropic_api_key: str = ""
+    narrative_model: str = "claude-haiku-4-5"
+
     @property
     def admin_email_set(self) -> set[str]:
         return {e.strip().lower() for e in self.admin_emails.split(",") if e.strip()}

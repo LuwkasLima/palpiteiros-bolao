@@ -228,5 +228,38 @@ class NewsItem(Document):
         ]
 
 
+# --- Narratives -------------------------------------------------------------------
+
+
+class Narrative(Document):
+    """A cached LLM-generated wrap-up of a pool's results for one period.
+
+    Cached per ``(pool_id, kind, period_key)`` so the same week is generated once. The
+    ``inputs_hash`` captures the stats the prose was built from, so a late-corrected result
+    invalidates a stale narrative and triggers regeneration.
+    """
+
+    pool_id: PydanticObjectId
+    kind: str  # "weekly"
+    period_key: str  # e.g. "2026-W25"
+    body: str
+    inputs_hash: str
+    model: str
+    created_at: datetime = Field(default_factory=utcnow)
+
+    class Settings:
+        name = "narratives"
+        indexes = [
+            IndexModel(
+                [
+                    ("pool_id", pymongo.ASCENDING),
+                    ("kind", pymongo.ASCENDING),
+                    ("period_key", pymongo.ASCENDING),
+                ],
+                unique=True,
+            ),
+        ]
+
+
 # Every Document subclass, for init_beanie.
-ALL_DOCUMENTS = [User, MagicLink, Session, Team, Match, Pool, Prediction, NewsItem]
+ALL_DOCUMENTS = [User, MagicLink, Session, Team, Match, Pool, Prediction, NewsItem, Narrative]
