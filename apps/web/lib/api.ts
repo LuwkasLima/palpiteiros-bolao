@@ -6,6 +6,7 @@ import type {
   LeaderboardOut,
   MatchOut,
   MatchTodayOut,
+  NewsItemOut,
   NextMatchTodayOut,
   PoolOut,
   PoolSummaryOut,
@@ -23,6 +24,12 @@ const BASE = process.env.NEXT_PUBLIC_API_BASE_URL || "/api";
 function localDayEnd(): string {
   const d = new Date();
   d.setHours(23, 59, 59, 999);
+  return d.toISOString();
+}
+
+function localDayStart(): string {
+  const d = new Date();
+  d.setHours(0, 0, 0, 0);
   return d.toISOString();
 }
 
@@ -87,6 +94,10 @@ export const api = {
   inProgressMatches: () => request<NextMatchTodayOut[]>("/matches/in-progress"),
   matchesToday: (dayStart: string, dayEnd: string) =>
     request<MatchTodayOut[]>(`/matches/today?day_start=${encodeURIComponent(dayStart)}&day_end=${encodeURIComponent(dayEnd)}`),
+
+  // News — current local day, 5 per source (15 total).
+  news: () =>
+    request<NewsItemOut[]>(`/news?day_start=${encodeURIComponent(localDayStart())}`),
 
   // Pools
   myPools: () => request<PoolSummaryOut[]>(`/pools?window_end=${encodeURIComponent(localDayEnd())}`),

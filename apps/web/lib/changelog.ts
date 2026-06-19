@@ -1,4 +1,4 @@
-export const LATEST_VERSION = "2026-06-18";
+export const LATEST_VERSION = "2026-06-19";
 
 export interface ChangelogEntry {
   version: string;
@@ -7,6 +7,14 @@ export interface ChangelogEntry {
 }
 
 export const CHANGELOG: ChangelogEntry[] = [
+  {
+    version: "2026-06-19",
+    title: "Notícias da Copa",
+    items: [
+      "Nova aba Notícias com as notícias do dia da Copa do Mundo, reunidas de ESPN, GE e Trivela.",
+      "Toque em qualquer notícia para ler a matéria completa na fonte original.",
+    ],
+  },
   {
     version: "2026-06-18",
     title: "Nova pontuação na segunda rodada — 4 níveis",

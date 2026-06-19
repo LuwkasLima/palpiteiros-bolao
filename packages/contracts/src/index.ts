@@ -27,3 +27,5 @@ export type MatchStatusCountsOut = Schemas["MatchStatusCountsOut"];
 export type NextMatchTodayOut = Schemas["NextMatchTodayOut"];
 export type MatchTodayOut = Schemas["MatchTodayOut"];
 export type WeeklyHeroOut = Schemas["WeeklyHeroOut"];
+export type NewsItemOut = Schemas["NewsItemOut"];
+export type NewsSource = Schemas["NewsSource"];
