@@ -17,6 +17,7 @@ import type {
   TeamOut,
   UserOut,
   WeeklyHeroOut,
+  WeeklyTitlesOut,
 } from "@bolao/contracts";
 
 const BASE = process.env.NEXT_PUBLIC_API_BASE_URL || "/api";
@@ -116,6 +117,7 @@ export const api = {
     request<WeeklyHeroOut>(
       `/pools/${id}/leaderboard/weekly-hero?week_start=${encodeURIComponent(weekStart)}&week_end=${encodeURIComponent(weekEnd)}`,
     ),
+  weeklyTitles: (id: string) => request<WeeklyTitlesOut>(`/pools/${id}/leaderboard/weekly-titles`),
 
   // Predictions
   myPredictions: (poolId: string) =>

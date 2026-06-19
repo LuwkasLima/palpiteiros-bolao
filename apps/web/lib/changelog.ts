@@ -9,10 +9,11 @@ export interface ChangelogEntry {
 export const CHANGELOG: ChangelogEntry[] = [
   {
     version: "2026-06-20",
-    title: "Palpites dos participantes",
+    title: "Palpites e títulos dos participantes",
     items: [
       "Toque no nome de qualquer participante na classificação para ver todos os palpites revelados dele.",
       "Veja o placar previsto, o resultado real e os pontos ganhos em cada jogo — incluindo o multiplicador por fase.",
+      "Nova seção 'Títulos Semanais': veja quantas vezes cada participante foi 🥇 Profeta, 🥈 Profissional, 🥉 Botequeiro ou 📯 Corneteiro da semana.",
     ],
   },
   {

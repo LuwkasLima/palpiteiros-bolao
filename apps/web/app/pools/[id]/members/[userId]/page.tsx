@@ -3,7 +3,7 @@
 import { use, useEffect, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import type { LeaderboardOut, MatchOut, RevealedPredictionsOut } from "@bolao/contracts";
+import type { LeaderboardOut, MatchOut, RevealedPredictionsOut, WeeklyTitlesOut } from "@bolao/contracts";
 import { api, ApiError } from "@/lib/api";
 import { useAuth } from "@/lib/auth";
 
@@ -75,6 +75,7 @@ export default function MemberPage({
   const [leaderboard, setLeaderboard] = useState<LeaderboardOut | null>(null);
   const [revealed, setRevealed] = useState<RevealedPredictionsOut | null>(null);
   const [allMatches, setAllMatches] = useState<MatchOut[] | null>(null);
+  const [titles, setTitles] = useState<WeeklyTitlesOut | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [showFab, setShowFab] = useState(false);
 
@@ -90,11 +91,12 @@ export default function MemberPage({
 
   useEffect(() => {
     if (!user) return;
-    Promise.all([api.leaderboard(id), api.revealedPredictions(id), api.matches()])
-      .then(([lb, rv, ms]) => {
+    Promise.all([api.leaderboard(id), api.revealedPredictions(id), api.matches(), api.weeklyTitles(id)])
+      .then(([lb, rv, ms, wt]) => {
         setLeaderboard(lb);
         setRevealed(rv);
         setAllMatches(ms);
+        setTitles(wt);
       })
       .catch((err) => {
         if (err instanceof ApiError && (err.status === 404 || err.status === 403)) {
@@ -133,6 +135,14 @@ export default function MemberPage({
   const title = rankTitle(rank, leaderboard.rows.length);
   const matchMeta = new Map(allMatches.map((m) => [m.id, m]));
   const isOwnProfile = user?.id === userId;
+  const playerTitles = titles?.weeks_counted ? titles.rows.find((r) => r.user_id === userId) : null;
+
+  const WEEKLY_TITLES = [
+    { key: "profeta_count" as const,      icon: "🥇", label: "Profeta",      color: "text-yellow-400 border-yellow-500/40 bg-yellow-500/10" },
+    { key: "profissional_count" as const, icon: "🥈", label: "Profissional", color: "text-slate-300 border-slate-400/40 bg-slate-400/10" },
+    { key: "botequeiro_count" as const,   icon: "🥉", label: "Botequeiro",   color: "text-orange-400 border-orange-500/40 bg-orange-500/10" },
+    { key: "corneteiro_count" as const,   icon: "📯", label: "Corneteiro",   color: "text-red-400 border-red-500/40 bg-red-500/10" },
+  ];
 
   const playerMatches = revealed.matches
     .map((m) => ({
@@ -151,7 +161,7 @@ export default function MemberPage({
     );
 
   return (
-    <main className="mx-auto max-w-lg space-y-6 px-4 py-6">
+    <div className="flex flex-col gap-6">
       {/* Top bar — same pattern as predict page */}
       <div className="flex items-start justify-between">
         <div className="flex flex-col gap-1.5">
@@ -162,28 +172,28 @@ export default function MemberPage({
             )}
           </h1>
           {title && (
-            <span
-              className={`self-start rounded border px-1.5 py-0.5 text-[10px] font-bold uppercase tracking-wide ${title.color}`}
-            >
+            <span className={`self-start rounded border px-1.5 py-0.5 text-[10px] font-bold uppercase tracking-wide ${title.color}`}>
               {title.label}
             </span>
           )}
+          {playerTitles && (
+            <div className="flex gap-3">
+              {WEEKLY_TITLES.filter(({ key }) => playerTitles[key] > 0).map(({ key, icon }) => (
+                <span key={key} className="text-sm font-semibold">
+                  {icon} ×{playerTitles[key]}
+                </span>
+              ))}
+            </div>
+          )}
         </div>
-        <Link
-          href={`/pools/${id}`}
-          className="text-sm text-[var(--muted)] hover:text-[var(--text)]"
-        >
-          ← Bolão
-        </Link>
-      </div>
-
-      {/* Rank + Points together on the right */}
-      <div className="flex justify-end">
-        <div className="text-right">
-          <div className="text-3xl font-extrabold text-[var(--accent)]">
-            {playerRow.points} pts
+        <div className="flex flex-col items-end gap-1">
+          <Link href={`/pools/${id}`} className="text-sm text-[var(--muted)] hover:text-[var(--text)]">
+            ← Bolão
+          </Link>
+          <div className="text-right">
+            <div className="text-3xl font-extrabold text-[var(--accent)]">{playerRow.points} pts</div>
+            <div className="text-sm text-[var(--muted)]">#{rank} na classificação</div>
           </div>
-          <div className="text-sm text-[var(--muted)]">#{rank} na classificação</div>
         </div>
       </div>
 
@@ -286,6 +296,6 @@ export default function MemberPage({
         </svg>
         Bolão
       </Link>
-    </main>
+    </div>
   );
 }

@@ -11,8 +11,8 @@ export interface AppNotification {
 export const NOTIFICATIONS: AppNotification[] = [
   {
     id: "release-2026-06-20",
-    title: "🆕 Palpites dos participantes",
-    body: "Toque no nome de qualquer participante na classificação para ver o histórico de palpites e pontos dele.",
+    title: "🆕 Palpites e títulos dos participantes",
+    body: "Toque em qualquer participante para ver os palpites dele e quantas vezes foi Profeta, Profissional, Botequeiro ou Corneteiro da semana.",
     cta: { label: "Ver o que há de novo →" },
     time: "hoje",
   },

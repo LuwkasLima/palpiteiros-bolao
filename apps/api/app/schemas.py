@@ -221,6 +221,21 @@ class WeeklyHeroOut(BaseModel):
     has_data: bool
 
 
+class WeeklyTitleCountOut(BaseModel):
+    user_id: str
+    display_name: str
+    profeta_count: int
+    profissional_count: int
+    botequeiro_count: int
+    corneteiro_count: int
+
+
+class WeeklyTitlesOut(BaseModel):
+    pool_id: str
+    weeks_counted: int
+    rows: list[WeeklyTitleCountOut]
+
+
 # --- Admin --------------------------------------------------------------------
 
 

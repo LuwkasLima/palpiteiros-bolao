@@ -3,7 +3,7 @@
 import { use, useEffect, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import type { LeaderboardOut, MatchRevealedOut, PoolOut, RevealedPredictionsOut, WeeklyHeroOut } from "@bolao/contracts";
+import type { LeaderboardOut, MatchRevealedOut, PoolOut, RevealedPredictionsOut, WeeklyHeroOut, WeeklyTitlesOut } from "@bolao/contracts";
 import { api, ApiError } from "@/lib/api";
 import { useAuth } from "@/lib/auth";
 import { SectionHeader } from "@/components/SectionHeader";
@@ -17,6 +17,7 @@ export default function PoolPage({ params }: { params: Promise<{ id: string }> }
   const [board, setBoard] = useState<LeaderboardOut | null>(null);
   const [revealed, setRevealed] = useState<RevealedPredictionsOut | null>(null);
   const [weeklyHero, setWeeklyHero] = useState<WeeklyHeroOut | null>(null);
+  const [weeklyTitles, setWeeklyTitles] = useState<WeeklyTitlesOut | null>(null);
   const [error, setError] = useState<string | null>(null);
 
   const { isEndOfWeek, weekStart, weekEnd } = (() => {
@@ -59,6 +60,7 @@ export default function PoolPage({ params }: { params: Promise<{ id: string }> }
     if (isEndOfWeek) {
       api.weeklyHero(id, weekStart, weekEnd).then(setWeeklyHero).catch(() => {});
     }
+    api.weeklyTitles(id).then(setWeeklyTitles).catch(() => {});
     return () => { void base; };
   }, [id, user, isEndOfWeek]);
 
@@ -304,6 +306,32 @@ export default function PoolPage({ params }: { params: Promise<{ id: string }> }
         <p className="text-xs text-[var(--muted)]">
           Pontuação cresce nas fases finais — o jogo fica disputado até a última rodada.
         </p>
+      </section>
+
+      <section className="flex flex-col gap-2">
+        <SectionHeader>🏅 Títulos Semanais</SectionHeader>
+        {!weeklyTitles || weeklyTitles.weeks_counted === 0 ? (
+          <div className="card p-4 text-center text-sm text-[var(--muted)]">
+            Ainda não há semanas com dados.
+          </div>
+        ) : (
+          <div className="card divide-y divide-[var(--border)]">
+            {weeklyTitles.rows.map((row) => (
+              <div key={row.user_id} className={`flex items-center justify-between p-3.5 ${row.user_id === user?.id ? "bg-[var(--surface-2)]" : ""}`}>
+                <Link href={`/pools/${id}/members/${row.user_id}`} className="text-sm font-semibold hover:opacity-75 transition-opacity">
+                  {row.display_name}
+                </Link>
+                <div className="flex items-center gap-3 text-center text-sm">
+                  <div><span className="font-bold">{row.profeta_count}</span><span className="ml-1 text-[10px] text-[var(--muted)]">🥇</span></div>
+                  <div><span className="font-bold">{row.profissional_count}</span><span className="ml-1 text-[10px] text-[var(--muted)]">🥈</span></div>
+                  <div><span className="font-bold">{row.botequeiro_count}</span><span className="ml-1 text-[10px] text-[var(--muted)]">🥉</span></div>
+                  <div><span className="font-bold">{row.corneteiro_count}</span><span className="ml-1 text-[10px] text-[var(--muted)]">📯</span></div>
+                </div>
+              </div>
+            ))}
+          </div>
+        )}
+        <p className="text-xs text-[var(--muted)]">🥇 Profeta · 🥈 Profissional · 🥉 Botequeiro · 📯 Corneteiro · contagem por semana</p>
       </section>
 
       <section className="flex flex-col gap-2 pt-4">

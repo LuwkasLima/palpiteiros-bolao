@@ -12,7 +12,7 @@ from datetime import datetime, timedelta, timezone
 from beanie import PydanticObjectId
 
 from app.models import Match, MatchStatus, Pool, Prediction
-from app.schemas import LeaderboardRowOut, WeeklyHeroOut
+from app.schemas import LeaderboardRowOut, WeeklyHeroOut, WeeklyTitleCountOut, WeeklyTitlesOut
 from app.services.scoring import POINTS_EXACT, POINTS_MARGIN, POINTS_NEAR, base_points, points_for
 
 
@@ -139,3 +139,71 @@ async def compute_weekly_hero(pool: Pool, week_start: datetime, week_end: dateti
         corneteiro_points=scored[worst_uid],
         has_data=True,
     )
+
+
+def _week_start_for(dt: datetime) -> datetime:
+    """Return the UTC Sunday 00:00 that begins the week containing dt."""
+    offset = (dt.weekday() + 1) % 7  # Mon=0…Sun=6 → Sun offset=0, Mon=1…
+    sunday = dt - timedelta(days=offset)
+    return sunday.replace(hour=0, minute=0, second=0, microsecond=0, tzinfo=None)
+
+
+async def compute_weekly_titles(pool: Pool) -> WeeklyTitlesOut:
+    total_members = len(pool.members)
+    names: dict[PydanticObjectId, str] = {m.user_id: m.display_name for m in pool.members}
+
+    # Load all finished matches once.
+    final_matches: dict[PydanticObjectId, Match] = {
+        m.id: m async for m in Match.find(Match.status == MatchStatus.FINAL)
+    }
+
+    # Accumulate per-(week, user) points using a single pass over predictions.
+    # week_points[week_start][user_id] = total points that week
+    week_points: dict[datetime, dict[PydanticObjectId, int]] = {}
+
+    async for pred in Prediction.find(Prediction.pool_id == pool.id):
+        if pred.user_id not in names:
+            continue
+        match = final_matches.get(pred.match_id)
+        if match is None:
+            continue
+        week = _week_start_for(match.kickoff_at)
+        week_points.setdefault(week, {uid: 0 for uid in names})
+        week_points[week][pred.user_id] += points_for(pred, match)
+
+    # Award titles week by week.
+    profeta: dict[PydanticObjectId, int] = {uid: 0 for uid in names}
+    profissional: dict[PydanticObjectId, int] = {uid: 0 for uid in names}
+    botequeiro: dict[PydanticObjectId, int] = {uid: 0 for uid in names}
+    corneteiro: dict[PydanticObjectId, int] = {uid: 0 for uid in names}
+    weeks_counted = 0
+
+    for scores in week_points.values():
+        if all(pts == 0 for pts in scores.values()):
+            continue  # no matches resolved this week
+        weeks_counted += 1
+
+        ranked = sorted(scores.keys(), key=lambda uid: (-scores[uid], names[uid].lower()))
+
+        profeta[ranked[0]] += 1
+        if len(ranked) >= 2:
+            profissional[ranked[1]] += 1
+        if len(ranked) >= 3:
+            botequeiro[ranked[2]] += 1
+        if total_members > 3:
+            corneteiro[ranked[-1]] += 1
+
+    rows = [
+        WeeklyTitleCountOut(
+            user_id=str(uid),
+            display_name=names[uid],
+            profeta_count=profeta[uid],
+            profissional_count=profissional[uid],
+            botequeiro_count=botequeiro[uid],
+            corneteiro_count=corneteiro[uid],
+        )
+        for uid in names
+    ]
+    rows.sort(key=lambda r: (-r.profeta_count, -r.profissional_count, -r.botequeiro_count, r.display_name.lower()))
+
+    return WeeklyTitlesOut(pool_id=str(pool.id), weeks_counted=weeks_counted, rows=rows)
