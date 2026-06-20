@@ -70,7 +70,7 @@ async def compute_leaderboard(pool: Pool) -> list[LeaderboardRowOut]:
         )
         for uid in points
     ]
-    rows.sort(key=lambda r: (-r.points, -r.exact_count, r.display_name.lower()))
+    rows.sort(key=lambda r: (-r.points, -r.exact_count, -r.near_count, -r.margin_count, -r.outcome_count, r.display_name.lower()))
     return rows
 
 
