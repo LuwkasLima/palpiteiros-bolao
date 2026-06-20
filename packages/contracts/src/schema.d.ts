@@ -297,6 +297,23 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/pools/{pool_id}/leaderboard/weekly-titles": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Pool Weekly Titles */
+        get: operations["pool_weekly_titles_pools__pool_id__leaderboard_weekly_titles_get"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/pools/{pool_id}/predictions": {
         parameters: {
             query?: never;
@@ -468,6 +485,8 @@ export interface components {
             points: number;
             /** Exact Count */
             exact_count: number;
+            /** Near Count */
+            near_count: number;
             /** Margin Count */
             margin_count: number;
             /** Outcome Count */
@@ -821,6 +840,30 @@ export interface components {
             corneteiro_points: number | null;
             /** Has Data */
             has_data: boolean;
+        };
+        /** WeeklyTitleCountOut */
+        WeeklyTitleCountOut: {
+            /** User Id */
+            user_id: string;
+            /** Display Name */
+            display_name: string;
+            /** Profeta Count */
+            profeta_count: number;
+            /** Profissional Count */
+            profissional_count: number;
+            /** Botequeiro Count */
+            botequeiro_count: number;
+            /** Corneteiro Count */
+            corneteiro_count: number;
+        };
+        /** WeeklyTitlesOut */
+        WeeklyTitlesOut: {
+            /** Pool Id */
+            pool_id: string;
+            /** Weeks Counted */
+            weeks_counted: number;
+            /** Rows */
+            rows: components["schemas"]["WeeklyTitleCountOut"][];
         };
     };
     responses: never;
@@ -1196,7 +1239,6 @@ export interface operations {
         parameters: {
             query?: {
                 day_start?: string | null;
-                limit?: number;
             };
             header?: never;
             path?: never;
@@ -1480,6 +1522,39 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["WeeklyHeroOut"];
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+        };
+    };
+    pool_weekly_titles_pools__pool_id__leaderboard_weekly_titles_get: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                pool_id: string;
+            };
+            cookie?: {
+                bolao_session?: string | null;
+            };
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["WeeklyTitlesOut"];
                 };
             };
             /** @description Validation Error */

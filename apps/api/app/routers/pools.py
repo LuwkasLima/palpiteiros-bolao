@@ -24,9 +24,10 @@ from app.schemas import (
     PoolOut,
     PoolSummaryOut,
     WeeklyHeroOut,
+    WeeklyTitlesOut,
 )
 from app.security import new_invite_code
-from app.services.leaderboard import compute_leaderboard, compute_weekly_hero
+from app.services.leaderboard import compute_leaderboard, compute_weekly_hero, compute_weekly_titles
 
 router = APIRouter(prefix="/pools", tags=["pools"])
 
@@ -199,3 +200,9 @@ async def pool_weekly_hero(
 ) -> WeeklyHeroOut:
     pool = await load_member_pool(pool_id, user)
     return await compute_weekly_hero(pool, week_start, week_end)
+
+
+@router.get("/{pool_id}/leaderboard/weekly-titles", response_model=WeeklyTitlesOut)
+async def pool_weekly_titles(pool_id: str, user: CurrentUser) -> WeeklyTitlesOut:
+    pool = await load_member_pool(pool_id, user)
+    return await compute_weekly_titles(pool)

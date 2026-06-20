@@ -200,6 +200,7 @@ class LeaderboardRowOut(BaseModel):
     display_name: str
     points: int
     exact_count: int
+    near_count: int
     margin_count: int
     outcome_count: int
     predictions_made: int
@@ -218,6 +219,21 @@ class WeeklyHeroOut(BaseModel):
     corneteiro_name: str | None
     corneteiro_points: int | None
     has_data: bool
+
+
+class WeeklyTitleCountOut(BaseModel):
+    user_id: str
+    display_name: str
+    profeta_count: int
+    profissional_count: int
+    botequeiro_count: int
+    corneteiro_count: int
+
+
+class WeeklyTitlesOut(BaseModel):
+    pool_id: str
+    weeks_counted: int
+    rows: list[WeeklyTitleCountOut]
 
 
 # --- Admin --------------------------------------------------------------------
