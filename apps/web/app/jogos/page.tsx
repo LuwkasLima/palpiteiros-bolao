@@ -37,7 +37,7 @@ function MatchRow({ m, showScore }: { m: MatchTodayOut; showScore: boolean }) {
       </div>
       <div className="mt-1 flex justify-between text-xs text-[var(--muted)]">
         <span>{stageBadge(m.stage, m.group_label)}</span>
-        <span>{v ? `${v.stadium} · ${v.city}` : formatKickoffTime(m.kickoff_at)}</span>
+        <span>{formatKickoffTime(m.kickoff_at)}{v && ` · ${v.stadium} · ${v.city}`}</span>
       </div>
     </div>
   );
