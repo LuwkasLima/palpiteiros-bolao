@@ -8,6 +8,7 @@ the request path; on any failure the caller falls back to the raw hero card.
 
 from __future__ import annotations
 
+import asyncio
 import hashlib
 import logging
 from datetime import datetime, timedelta
@@ -15,22 +16,24 @@ from datetime import datetime, timedelta
 from pymongo.errors import DuplicateKeyError
 
 from app.config import get_settings
-from app.models import Narrative, NewsItem, Pool, utcnow
+from app.models import Narrative, NewsItem, NewsSource, Pool, utcnow
 from app.schemas import WeeklyHeroOut
 from app.services.llm import generate_text
 
 logger = logging.getLogger(__name__)
 
 KIND_WEEKLY = "weekly"
-_NEWS_LIMIT = 5
+_NEWS_PER_SOURCE = 4  # 4 × 3 sources = up to 12 headlines, ensuring all sources are represented
 
 _SYSTEM_PROMPT = (
     "Você é o narrador bem-humorado de um bolão de amigos da Copa do Mundo. "
     "Escreva uma resenha curta (2 a 3 frases, no máximo 60 palavras) em português do Brasil "
-    "sobre a semana do bolão. Exalte o profeta (quem mais pontuou) com fatos e zoe levemente o "
-    "corneteiro (quem menos pontuou) — provocação de amigo, sarcastica e divertida, nunca ofensiva "
-    "nem ataque pessoal. Use o tom de resenha de futebol brasileira. Não invente números nem "
-    "nomes além dos fornecidos. Responda apenas com a resenha, sem títulos nem aspas."
+    "sobre a semana do bolão. Exalte o profeta (quem mais pontuou) e zoe levemente o "
+    "corneteiro (quem menos pontuou) — provocação de amigo, sarcástica e divertida, nunca ofensiva "
+    "nem ataque pessoal. Quando destaques da Copa forem fornecidos, use-os para contextualizar a "
+    "resenha — mencione jogos, resultados ou fatos marcantes da semana sempre que enriquecer a "
+    "narrativa. Use o tom de resenha de futebol brasileira. Não invente números, nomes ou fatos "
+    "além dos fornecidos. Responda apenas com a resenha, sem títulos nem aspas."
 )
 
 
@@ -41,17 +44,30 @@ def period_key(week_start: datetime) -> str:
 
 
 async def _headlines_for_week(week_start: datetime, week_end: datetime) -> list[str]:
-    """Return up to _NEWS_LIMIT news titles published during the week, newest first."""
-    items = await (
-        NewsItem.find(
-            NewsItem.published_at >= week_start,
-            NewsItem.published_at < week_end,
+    """Return up to _NEWS_PER_SOURCE titles per source, sorted newest first overall.
+
+    Fetching per-source in parallel guarantees all three feeds (ESPN, GE, Trivela) are
+    represented even when one dominates by publication volume that week.
+    """
+    async def _fetch(source: NewsSource) -> list[NewsItem]:
+        return await (
+            NewsItem.find(
+                NewsItem.source == source,
+                NewsItem.published_at >= week_start,
+                NewsItem.published_at < week_end,
+            )
+            .sort(-NewsItem.published_at)
+            .limit(_NEWS_PER_SOURCE)
+            .to_list()
         )
-        .sort(-NewsItem.published_at)
-        .limit(_NEWS_LIMIT)
-        .to_list()
+
+    batches = await asyncio.gather(*(_fetch(src) for src in NewsSource))
+    items = sorted(
+        (it for batch in batches for it in batch),
+        key=lambda it: it.published_at,
+        reverse=True,
     )
-    return [item.title for item in items]
+    return [it.title for it in items]
 
 
 def build_weekly_prompt(hero: WeeklyHeroOut, headlines: list[str] | None = None) -> tuple[str, str]:
