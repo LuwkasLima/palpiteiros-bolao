@@ -141,11 +141,21 @@ async def compute_weekly_hero(pool: Pool, week_start: datetime, week_end: dateti
     )
 
 
+_HOST_TZ_OFFSET = timedelta(hours=5)  # CDT (UTC-5): host timezone for Copa 2026 North America
+
+
 def _week_start_for(dt: datetime) -> datetime:
-    """Return the UTC Sunday 00:00 that begins the week containing dt."""
-    offset = (dt.weekday() + 1) % 7  # Mon=0…Sun=6 → Sun offset=0, Mon=1…
-    sunday = dt - timedelta(days=offset)
-    return sunday.replace(hour=0, minute=0, second=0, microsecond=0, tzinfo=None)
+    """Return the Sun 00:00 CDT that begins the week containing dt (stored as naive UTC).
+
+    Kickoff times are stored as naive UTC. Copa 2026 is hosted in North America, so the
+    "day" of a game follows CDT (UTC-5). Without this shift, early-morning UTC Sunday
+    matches (e.g. 00:00–04:00 UTC) that are Saturday night CDT would spill into the
+    next week and create spurious title buckets.
+    """
+    dt_cdt = dt - _HOST_TZ_OFFSET
+    offset = (dt_cdt.weekday() + 1) % 7  # Mon=0…Sun=6 → Sun offset=0, Mon=1…
+    sunday = dt_cdt - timedelta(days=offset)
+    return sunday.replace(hour=0, minute=0, second=0, microsecond=0)
 
 
 async def compute_weekly_titles(pool: Pool) -> WeeklyTitlesOut:
