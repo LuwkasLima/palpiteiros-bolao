@@ -16,11 +16,23 @@ _initialized = False
 _init_lock = asyncio.Lock()
 
 
+def _client_kwargs(uri: str) -> dict:
+    """TLS options keyed off the URI.
+
+    Atlas (``mongodb+srv://``) and any URI that explicitly opts into TLS needs a CA bundle.
+    A plain local ``mongodb://`` connection (the dev container) is non-TLS, and passing
+    ``tlsCAFile`` would force a TLS handshake the server can't answer.
+    """
+    lowered = uri.lower()
+    needs_tls = uri.startswith("mongodb+srv://") or "tls=true" in lowered or "ssl=true" in lowered
+    return {"tlsCAFile": certifi.where()} if needs_tls else {}
+
+
 async def init_db() -> None:
     """Connect to MongoDB and register Beanie documents (creates indexes)."""
     global _client
     settings = get_settings()
-    _client = AsyncMongoClient(settings.mongodb_uri, tlsCAFile=certifi.where())
+    _client = AsyncMongoClient(settings.mongodb_uri, **_client_kwargs(settings.mongodb_uri))
     await init_beanie(database=_client[settings.mongodb_db], document_models=ALL_DOCUMENTS)
 
 

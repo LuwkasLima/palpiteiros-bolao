@@ -23,6 +23,13 @@ async def lifespan(app: FastAPI):
 
 def create_app() -> FastAPI:
     settings = get_settings()
+
+    if settings.use_system_trust_store:
+        # Patch stdlib ssl to trust the OS store (handles corporate TLS-interception CAs).
+        import truststore
+
+        truststore.inject_into_ssl()
+
     app = FastAPI(title="Social dos Palpiteiros API", version="0.1.0", lifespan=lifespan)
 
     @app.middleware("http")
