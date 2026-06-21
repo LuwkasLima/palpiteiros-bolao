@@ -201,8 +201,7 @@ async def pool_weekly_hero(
 ) -> WeeklyHeroOut:
     pool = await load_member_pool(pool_id, user)
     hero = await compute_weekly_hero(pool, week_start, week_end)
-    hero.narrative = await get_weekly_narrative(pool, hero, week_start)
-    return hero
+    return hero.model_copy(update={"narrative": await get_weekly_narrative(pool, hero, week_start)})
 
 
 @router.get("/{pool_id}/leaderboard/weekly-titles", response_model=WeeklyTitlesOut)

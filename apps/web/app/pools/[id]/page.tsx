@@ -24,7 +24,10 @@ export default function PoolPage({ params }: { params: Promise<{ id: string }> }
     const now = new Date();
     const day = now.getDay(); // 0=Sun … 6=Sat (local time)
     const start = new Date(now);
-    start.setDate(now.getDate() - day); // rewind to Sunday
+    // On Sunday the current week just started — show the week that just closed
+    // (last Sun → yesterday Sat) instead of the empty current week.
+    const daysBack = day === 0 ? 7 : day;
+    start.setDate(now.getDate() - daysBack);
     start.setHours(0, 0, 0, 0);
     const end = new Date(start);
     end.setDate(start.getDate() + 7);

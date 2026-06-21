@@ -12,6 +12,8 @@ import hashlib
 import logging
 from datetime import datetime
 
+from pymongo.errors import DuplicateKeyError
+
 from app.config import get_settings
 from app.models import Narrative, Pool, utcnow
 from app.schemas import WeeklyHeroOut
@@ -88,13 +90,15 @@ async def get_weekly_narrative(pool: Pool, hero: WeeklyHeroOut, week_start: date
         return None  # caller falls back to the raw hero card
 
     if existing is None:
-        await Narrative(
-            pool_id=pool.id, kind=KIND_WEEKLY, period_key=key,
-            body=body, inputs_hash=digest, model=model,
-        ).insert()
+        try:
+            await Narrative(
+                pool_id=pool.id, kind=KIND_WEEKLY, period_key=key,
+                body=body, inputs_hash=digest, model=model,
+            ).insert()
+        except DuplicateKeyError:
+            # Another concurrent request beat us to the insert; that's fine.
+            pass
     else:
-        existing.body, existing.inputs_hash, existing.model, existing.created_at = (
-            body, digest, model, utcnow(),
-        )
+        existing.body, existing.inputs_hash, existing.model = body, digest, model
         await existing.save()
     return body
