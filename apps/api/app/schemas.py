@@ -230,6 +230,7 @@ class WeeklyTitleCountOut(BaseModel):
     profissional_count: int
     botequeiro_count: int
     corneteiro_count: int
+    exact_count: int
 
 
 class WeeklyTitlesOut(BaseModel):

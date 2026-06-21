@@ -185,6 +185,12 @@ async def compute_weekly_titles(pool: Pool) -> WeeklyTitlesOut:
         if bp == POINTS_EXACT:
             week_exact[week][pred.user_id] += 1
 
+    # Total exact count per user across all weeks (for tiebreaking the rows sort).
+    total_exact: dict[PydanticObjectId, int] = {uid: 0 for uid in names}
+    for ex in week_exact.values():
+        for uid, n in ex.items():
+            total_exact[uid] += n
+
     # Award titles week by week.
     profeta: dict[PydanticObjectId, int] = {uid: 0 for uid in names}
     profissional: dict[PydanticObjectId, int] = {uid: 0 for uid in names}
@@ -217,9 +223,10 @@ async def compute_weekly_titles(pool: Pool) -> WeeklyTitlesOut:
             profissional_count=profissional[uid],
             botequeiro_count=botequeiro[uid],
             corneteiro_count=corneteiro[uid],
+            exact_count=total_exact[uid],
         )
         for uid in names
     ]
-    rows.sort(key=lambda r: (-r.profeta_count, -r.profissional_count, -r.botequeiro_count, r.display_name.lower()))
+    rows.sort(key=lambda r: (-r.profeta_count, -r.profissional_count, -r.botequeiro_count, -r.exact_count, r.display_name.lower()))
 
     return WeeklyTitlesOut(pool_id=str(pool.id), weeks_counted=weeks_counted, rows=rows)
