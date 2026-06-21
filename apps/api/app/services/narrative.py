@@ -38,7 +38,7 @@ _SYSTEM_PROMPT = (
     "Regras:\n"
     "- Máximo 80 palavras no total entre os dois.\n"
     "- Quando destaques da Copa forem fornecidos, o Comentarista deve mencionar ao menos um "
-    "jogo ou fato marcante para contextualizar a resenha.\n"
+    "jogo, fato marcante ou predicao fora da realidade para contextualizar a resenha.\n"
     "- Não invente números, nomes ou fatos além dos fornecidos.\n"
     "- Responda apenas com o diálogo, sem aspas externas nem explicações."
 )
