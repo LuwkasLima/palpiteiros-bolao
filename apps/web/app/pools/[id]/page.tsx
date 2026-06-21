@@ -242,11 +242,36 @@ export default function PoolPage({ params }: { params: Promise<{ id: string }> }
       {isEndOfWeek && weeklyHero?.has_data && (
         <section className="flex flex-col gap-2">
           <SectionHeader>⚡ Semana {weeklyHero.week_label}</SectionHeader>
-          {weeklyHero.narrative && (
-            <p className="card p-4 text-sm italic leading-relaxed text-[var(--muted)]">
-              {weeklyHero.narrative}
-            </p>
-          )}
+          {weeklyHero.narrative && (() => {
+            const narradorMatch = weeklyHero.narrative!.match(/Narrador:\s*(.+?)(?=\nComentarista:|$)/s);
+            const comentaristaMatch = weeklyHero.narrative!.match(/Comentarista:\s*(.+)/s);
+            if (narradorMatch && comentaristaMatch) {
+              return (
+                <div className="card overflow-hidden">
+                  <div className="flex items-start gap-3 p-4 pb-3">
+                    <span className="text-xl leading-none mt-0.5">🎙️</span>
+                    <div className="flex flex-col gap-1">
+                      <span className="text-[10px] font-bold uppercase tracking-widest text-[var(--muted)]">Narrador</span>
+                      <p className="text-sm italic leading-relaxed text-[var(--muted)]">{narradorMatch[1].trim()}</p>
+                    </div>
+                  </div>
+                  <div className="border-t border-[var(--border)]" />
+                  <div className="flex items-start gap-3 p-4 pt-3">
+                    <span className="text-xl leading-none mt-0.5">🗣️</span>
+                    <div className="flex flex-col gap-1">
+                      <span className="text-[10px] font-bold uppercase tracking-widest text-[var(--accent)]">Comentarista</span>
+                      <p className="text-sm leading-relaxed">{comentaristaMatch[1].trim()}</p>
+                    </div>
+                  </div>
+                </div>
+              );
+            }
+            return (
+              <p className="card p-4 text-sm italic leading-relaxed text-[var(--muted)]">
+                {weeklyHero.narrative}
+              </p>
+            );
+          })()}
           <div className="grid grid-cols-2 gap-3">
             <div className="card flex flex-col items-center gap-1 p-4 text-center border-yellow-500/30">
               <span className="text-2xl">🔮</span>
