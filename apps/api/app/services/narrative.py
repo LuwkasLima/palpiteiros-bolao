@@ -10,24 +10,25 @@ from __future__ import annotations
 
 import hashlib
 import logging
-from datetime import datetime
+from datetime import datetime, timedelta
 
 from pymongo.errors import DuplicateKeyError
 
 from app.config import get_settings
-from app.models import Narrative, Pool, utcnow
+from app.models import Narrative, NewsItem, Pool, utcnow
 from app.schemas import WeeklyHeroOut
 from app.services.llm import generate_text
 
 logger = logging.getLogger(__name__)
 
 KIND_WEEKLY = "weekly"
+_NEWS_LIMIT = 5
 
 _SYSTEM_PROMPT = (
     "Você é o narrador bem-humorado de um bolão de amigos da Copa do Mundo. "
     "Escreva uma resenha curta (2 a 3 frases, no máximo 60 palavras) em português do Brasil "
-    "sobre a semana do bolão. Exalte o profeta (quem mais pontuou) e zoe levemente o "
-    "corneteiro (quem menos pontuou) — provocação de amigo, leve e divertida, nunca ofensiva "
+    "sobre a semana do bolão. Exalte o profeta (quem mais pontuou) com fatos e zoe levemente o "
+    "corneteiro (quem menos pontuou) — provocação de amigo, sarcastica e divertida, nunca ofensiva "
     "nem ataque pessoal. Use o tom de resenha de futebol brasileira. Não invente números nem "
     "nomes além dos fornecidos. Responda apenas com a resenha, sem títulos nem aspas."
 )
@@ -39,18 +40,35 @@ def period_key(week_start: datetime) -> str:
     return f"{iso.year}-W{iso.week:02d}"
 
 
-def build_weekly_prompt(hero: WeeklyHeroOut) -> tuple[str, str]:
+async def _headlines_for_week(week_start: datetime, week_end: datetime) -> list[str]:
+    """Return up to _NEWS_LIMIT news titles published during the week, newest first."""
+    items = await (
+        NewsItem.find(
+            NewsItem.published_at >= week_start,
+            NewsItem.published_at < week_end,
+        )
+        .sort(-NewsItem.published_at)
+        .limit(_NEWS_LIMIT)
+        .to_list()
+    )
+    return [item.title for item in items]
+
+
+def build_weekly_prompt(hero: WeeklyHeroOut, headlines: list[str] | None = None) -> tuple[str, str]:
     """Build the (system, user) prompt for a weekly wrap-up. Pure — no I/O."""
     user = (
         f"Semana {hero.week_label}.\n"
         f"Profeta da semana: {hero.profeta_name} com {hero.profeta_points} pontos.\n"
         f"Corneteiro da semana: {hero.corneteiro_name} com {hero.corneteiro_points} pontos.\n"
-        "Escreva a resenha da semana."
     )
+    if headlines:
+        user += "\nDestaques da semana na Copa:\n"
+        user += "".join(f"- {h}\n" for h in headlines)
+    user += "Escreva a resenha da semana."
     return _SYSTEM_PROMPT, user
 
 
-def inputs_hash(hero: WeeklyHeroOut, model: str) -> str:
+def inputs_hash(hero: WeeklyHeroOut, model: str, headlines: list[str] | None = None) -> str:
     """Hash the inputs that, if changed, should regenerate the narrative."""
     raw = "|".join(
         str(part)
@@ -61,6 +79,7 @@ def inputs_hash(hero: WeeklyHeroOut, model: str) -> str:
             hero.corneteiro_name,
             hero.corneteiro_points,
             model,
+            "||".join(headlines or []),
         )
     )
     return hashlib.sha256(raw.encode("utf-8")).hexdigest()
@@ -74,7 +93,9 @@ async def get_weekly_narrative(pool: Pool, hero: WeeklyHeroOut, week_start: date
     settings = get_settings()
     model = settings.narrative_model
     key = period_key(week_start)
-    digest = inputs_hash(hero, model)
+    week_end = week_start + timedelta(days=7)
+    headlines = await _headlines_for_week(week_start, week_end)
+    digest = inputs_hash(hero, model, headlines)
 
     existing = await Narrative.find_one(
         Narrative.pool_id == pool.id,
@@ -84,7 +105,7 @@ async def get_weekly_narrative(pool: Pool, hero: WeeklyHeroOut, week_start: date
     if existing is not None and existing.inputs_hash == digest:
         return existing.body
 
-    system, user = build_weekly_prompt(hero)
+    system, user = build_weekly_prompt(hero, headlines)
     body = await generate_text(system, user)
     if body is None:
         return None  # caller falls back to the raw hero card

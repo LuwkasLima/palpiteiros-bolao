@@ -47,6 +47,7 @@ def test_inputs_hash_is_stable_and_change_sensitive():
     assert h == narr.inputs_hash(_hero(), "m")  # stable
     assert h != narr.inputs_hash(_hero(profeta_points=27), "m")  # result changed
     assert h != narr.inputs_hash(_hero(), "other-model")  # model changed
+    assert h != narr.inputs_hash(_hero(), "m", ["Brasil vence"])  # news changed
 
 
 def test_build_weekly_prompt_includes_names_and_points():
@@ -54,6 +55,19 @@ def test_build_weekly_prompt_includes_names_and_points():
     assert "resenha" in system.lower()
     for token in ("Lucas", "26", "Diego", "2", "7/06"):
         assert token in user
+
+
+def test_build_weekly_prompt_includes_headlines_when_provided():
+    _, user = narr.build_weekly_prompt(_hero(), headlines=["Brasil goleia 4 a 0", "Messi faz dois"])
+    assert "Brasil goleia 4 a 0" in user
+    assert "Messi faz dois" in user
+
+
+def test_build_weekly_prompt_omits_headlines_section_when_empty():
+    _, user_no_news = narr.build_weekly_prompt(_hero())
+    _, user_empty = narr.build_weekly_prompt(_hero(), headlines=[])
+    assert "Destaques" not in user_no_news
+    assert "Destaques" not in user_empty
 
 
 # --- behaviour without a DB call ---------------------------------------------------------
