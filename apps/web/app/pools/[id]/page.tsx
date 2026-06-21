@@ -241,7 +241,7 @@ export default function PoolPage({ params }: { params: Promise<{ id: string }> }
 
       {isEndOfWeek && weeklyHero?.has_data && (
         <section className="flex flex-col gap-2">
-          <SectionHeader>⚡ Semana {weeklyHero.week_label}</SectionHeader>
+          <SectionHeader>⚡ Resenha da Semana {weeklyHero.week_label}</SectionHeader>
           {weeklyHero.narrative && (() => {
             const narradorMatch = weeklyHero.narrative!.match(/Narrador:\s*(.+?)(?=\nComentarista:|$)/s);
             const comentaristaMatch = weeklyHero.narrative!.match(/Comentarista:\s*(.+)/s);
