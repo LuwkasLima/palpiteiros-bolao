@@ -91,8 +91,14 @@ def build_weekly_prompt(hero: WeeklyHeroOut, headlines: list[str] | None = None)
     return _SYSTEM_PROMPT, user
 
 
-def inputs_hash(hero: WeeklyHeroOut, model: str, headlines: list[str] | None = None) -> str:
-    """Hash the inputs that, if changed, should regenerate the narrative."""
+def inputs_hash(hero: WeeklyHeroOut, model: str) -> str:
+    """Hash the inputs that, if changed, should regenerate the narrative.
+
+    Headlines are intentionally excluded: the resenha is displayed only on Sundays
+    and should be generated once per week. News changes intra-day would otherwise
+    trigger repeated regenerations. Results (profeta/corneteiro) and model changes
+    still invalidate the cache, since those represent meaningful data changes.
+    """
     raw = "|".join(
         str(part)
         for part in (
@@ -102,7 +108,6 @@ def inputs_hash(hero: WeeklyHeroOut, model: str, headlines: list[str] | None = N
             hero.corneteiro_name,
             hero.corneteiro_points,
             model,
-            "||".join(headlines or []),
         )
     )
     return hashlib.sha256(raw.encode("utf-8")).hexdigest()
@@ -118,7 +123,7 @@ async def get_weekly_narrative(pool: Pool, hero: WeeklyHeroOut, week_start: date
     key = period_key(week_start)
     week_end = week_start + timedelta(days=7)
     headlines = await _headlines_for_week(week_start, week_end)
-    digest = inputs_hash(hero, model, headlines)
+    digest = inputs_hash(hero, model)
 
     existing = await Narrative.find_one(
         Narrative.pool_id == pool.id,

@@ -47,7 +47,7 @@ def test_inputs_hash_is_stable_and_change_sensitive():
     assert h == narr.inputs_hash(_hero(), "m")  # stable
     assert h != narr.inputs_hash(_hero(profeta_points=27), "m")  # result changed
     assert h != narr.inputs_hash(_hero(), "other-model")  # model changed
-    assert h != narr.inputs_hash(_hero(), "m", ["Brasil vence"])  # news changed
+    # headlines are NOT part of the hash — resenha generates once per week regardless of news
 
 
 def test_build_weekly_prompt_includes_names_and_points():
