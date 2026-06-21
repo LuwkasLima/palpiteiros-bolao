@@ -70,7 +70,7 @@ async def compute_leaderboard(pool: Pool) -> list[LeaderboardRowOut]:
         )
         for uid in points
     ]
-    rows.sort(key=lambda r: (-r.points, -r.exact_count, r.display_name.lower()))
+    rows.sort(key=lambda r: (-r.points, -r.exact_count, -r.near_count, -r.margin_count, -r.outcome_count, r.display_name.lower()))
     return rows
 
 
@@ -167,9 +167,9 @@ async def compute_weekly_titles(pool: Pool) -> WeeklyTitlesOut:
         m.id: m async for m in Match.find(Match.status == MatchStatus.FINAL)
     }
 
-    # Accumulate per-(week, user) points using a single pass over predictions.
-    # week_points[week_start][user_id] = total points that week
+    # Accumulate per-(week, user) points and exact counts in a single pass.
     week_points: dict[datetime, dict[PydanticObjectId, int]] = {}
+    week_exact: dict[datetime, dict[PydanticObjectId, int]] = {}
 
     async for pred in Prediction.find(Prediction.pool_id == pool.id):
         if pred.user_id not in names:
@@ -179,7 +179,11 @@ async def compute_weekly_titles(pool: Pool) -> WeeklyTitlesOut:
             continue
         week = _week_start_for(match.kickoff_at)
         week_points.setdefault(week, {uid: 0 for uid in names})
+        week_exact.setdefault(week, {uid: 0 for uid in names})
         week_points[week][pred.user_id] += points_for(pred, match)
+        bp = base_points(pred.home_score, pred.away_score, match.home_score, match.away_score, match.kickoff_at)
+        if bp == POINTS_EXACT:
+            week_exact[week][pred.user_id] += 1
 
     # Award titles week by week.
     profeta: dict[PydanticObjectId, int] = {uid: 0 for uid in names}
@@ -188,12 +192,14 @@ async def compute_weekly_titles(pool: Pool) -> WeeklyTitlesOut:
     corneteiro: dict[PydanticObjectId, int] = {uid: 0 for uid in names}
     weeks_counted = 0
 
-    for scores in week_points.values():
+    for w in sorted(week_points):
+        scores = week_points[w]
         if all(pts == 0 for pts in scores.values()):
             continue  # no matches resolved this week
         weeks_counted += 1
 
-        ranked = sorted(scores.keys(), key=lambda uid: (-scores[uid], names[uid].lower()))
+        exact_w = week_exact.get(w, {})
+        ranked = sorted(scores.keys(), key=lambda uid: (-scores[uid], -exact_w.get(uid, 0), names[uid].lower()))
 
         profeta[ranked[0]] += 1
         if len(ranked) >= 2:
