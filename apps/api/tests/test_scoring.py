@@ -91,7 +91,7 @@ def test_points_for_applies_round_weight():
     group = scoring.points_for(_pred(2, 1), _match(Stage.GROUP, 2, 1))
     final = scoring.points_for(_pred(2, 1), _match(Stage.FINAL, 2, 1))
     assert group == scoring.POINTS_EXACT * 1
-    assert final == scoring.POINTS_EXACT * 13
+    assert final == scoring.POINTS_EXACT * 6
     assert final > group
 
 
@@ -187,4 +187,4 @@ def test_late_round_can_overturn_group_lead():
     final = _match(Stage.FINAL, 3, 1)
     a_gain = scoring.points_for(_pred(3, 1), final)   # exact
     b_gain = scoring.points_for(_pred(0, 0), final)   # wrong outcome -> 0
-    assert a_gain - b_gain > 20
+    assert a_gain - b_gain > 10

@@ -1,4 +1,4 @@
-export const LATEST_VERSION = "2026-06-20";
+export const LATEST_VERSION = "2026-06-28";
 
 export interface ChangelogEntry {
   version: string;
@@ -7,6 +7,15 @@ export interface ChangelogEntry {
 }
 
 export const CHANGELOG: ChangelogEntry[] = [
+  {
+    version: "2026-06-28",
+    title: "Pontuação rebalanceada nas fases finais",
+    items: [
+      "Os multiplicadores das quartas de final em diante foram reduzidos para valorizar mais a consistência ao longo de todo o torneio.",
+      "Quartas: ×4 (antes ×5) · Semifinais: ×5 (antes ×8) · Final e disputa do 3º: ×6 (antes ×13).",
+      "Grupos e oitavas de final não mudam — os pontos já acumulados continuam os mesmos.",
+    ],
+  },
   {
     version: "2026-06-20",
     title: "Palpites e títulos dos participantes",

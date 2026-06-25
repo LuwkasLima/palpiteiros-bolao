@@ -35,10 +35,10 @@ ROUND_WEIGHT: dict[Stage, int] = {
     Stage.GROUP: 1,
     Stage.R32: 2,
     Stage.R16: 3,
-    Stage.QF: 5,
-    Stage.SF: 8,
-    Stage.THIRD: 13,
-    Stage.FINAL: 13,
+    Stage.QF: 4,
+    Stage.SF: 5,
+    Stage.THIRD: 6,
+    Stage.FINAL: 6,
 }
 
 # Matches that kick off at or after Uzbekistan vs Colombia (G-K-1-UZBCOL) use V2 rules.
