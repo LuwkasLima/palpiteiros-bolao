@@ -7,6 +7,7 @@ endpoint can't be used to probe which emails exist.
 
 from __future__ import annotations
 
+import logging
 from datetime import datetime, timedelta, timezone
 from typing import Annotated
 
@@ -19,6 +20,7 @@ from app.schemas import ChangelogSeenIn, MessageOut, RequestLinkIn, UpdateProfil
 from app.security import SESSION_COOKIE, hash_token, new_token
 from app.services.email import send_magic_link
 
+logger = logging.getLogger(__name__)
 router = APIRouter(prefix="/auth", tags=["auth"])
 
 
@@ -51,7 +53,10 @@ async def request_link(payload: RequestLinkIn) -> MessageOut:
     ).insert()
 
     link = f"{settings.web_base_url}/auth/verify?token={token}"
-    send_magic_link(email, link, settings=settings)
+    try:
+        send_magic_link(email, link, settings=settings)
+    except Exception:
+        logger.exception("Failed to send magic link to %s", email)
     return MessageOut(message="If that email is valid, a sign-in link is on its way.")
 
 
