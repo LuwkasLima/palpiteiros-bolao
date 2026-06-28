@@ -160,10 +160,16 @@ async def revealed_predictions(pool_id: str, user: CurrentUser) -> RevealedPredi
                 match_id=str(match.id),
                 kickoff_at=match.kickoff_at,
                 status=match.status,
+                stage=match.stage,
+                home_team_id=str(match.home_team_id) if match.home_team_id else None,
+                away_team_id=str(match.away_team_id) if match.away_team_id else None,
                 home_team_name=team_names.get(match.home_team_id) if match.home_team_id else None,
                 away_team_name=team_names.get(match.away_team_id) if match.away_team_id else None,
                 home_score=match.home_score,
                 away_score=match.away_score,
+                advancing_team_id=str(match.advancing_team_id) if match.advancing_team_id else None,
+                penalty_home_score=match.penalty_home_score,
+                penalty_away_score=match.penalty_away_score,
                 entries=entries,
             )
         )

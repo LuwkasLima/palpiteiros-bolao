@@ -28,30 +28,49 @@ function scoreTier(
   actHome: number | null,
   actAway: number | null,
   isV2: boolean,
+  isKnockout: boolean,
 ): { label: string; color: string } | null {
   if (actHome === null || actAway === null) return null;
-  const predOut = predHome > predAway ? "H" : predHome < predAway ? "A" : "D";
-  const actOut = actHome > actAway ? "H" : actHome < actAway ? "A" : "D";
-  if (predOut !== actOut) return null;
+
   if (predHome === actHome && predAway === actAway) {
     return { label: "Placar exato", color: "text-yellow-400" };
   }
+
+  const predOut = predHome > predAway ? "H" : predHome < predAway ? "A" : "D";
+  const actOut  = actHome  > actAway  ? "H" : actHome  < actAway  ? "A" : "D";
+  const totalError = Math.abs(predHome - actHome) + Math.abs(predAway - actAway);
+
   if (!isV2) {
-    if (actOut !== "D" && predHome - predAway === actHome - actAway) {
+    if (predOut !== actOut) return null;
+    if (actOut !== "D" && predHome - predAway === actHome - actAway)
       return { label: "Diferença certa", color: "text-blue-400" };
-    }
     return { label: "Resultado certo", color: "text-green-400" };
   }
-  const totalError = Math.abs(predHome - actHome) + Math.abs(predAway - actAway);
+
+  // V2: knockout-specific tiers first.
+  if (isKnockout) {
+    if (predHome === actAway && predAway === actHome)
+      return { label: "Placar exato", color: "text-yellow-400" };   // flipped exact
+    if (totalError === 1)
+      return { label: "Quase exato", color: "text-orange-400" };    // near, outcome-agnostic
+  }
+
+  if (predOut !== actOut) {
+    if (isKnockout && Math.abs(predHome - predAway) === Math.abs(actHome - actAway))
+      return { label: "Diferença certa", color: "text-blue-400" };  // same abs margin, wrong outcome
+    return null; // miss
+  }
+
+  // Correct outcome from here.
   if (actOut === "D") {
-    return totalError === 2
-      ? { label: "Quase exato", color: "text-orange-400" }
+    if (totalError === 2) return { label: "Quase exato", color: "text-orange-400" };
+    return isKnockout
+      ? { label: "Diferença certa", color: "text-blue-400" }
       : { label: "Resultado certo", color: "text-green-400" };
   }
   if (totalError === 1) return { label: "Quase exato", color: "text-orange-400" };
-  if (predHome - predAway === actHome - actAway) {
+  if (predHome - predAway === actHome - actAway)
     return { label: "Diferença certa", color: "text-blue-400" };
-  }
   return { label: "Resultado certo", color: "text-green-400" };
 }
 
@@ -234,6 +253,7 @@ export default function MemberPage({
               const stage = meta ? (STAGE_LABEL[meta.stage] ?? meta.stage) : null;
               const weight = meta?.round_weight;
               const isV2 = new Date(toUtc(m.kickoff_at)).getTime() >= V2_CUTOFF_MS;
+              const isKnockout = meta ? meta.stage !== "group" : false;
               const scoringRound = isV2 ? "Rodada 2" : "Rodada 1";
               const tier = scoreTier(
                 entry.home_score,
@@ -241,11 +261,36 @@ export default function MemberPage({
                 m.home_score,
                 m.away_score,
                 isV2,
+                isKnockout,
               );
               const date = new Date(toUtc(m.kickoff_at)).toLocaleDateString("pt-BR", {
                 day: "numeric",
                 month: "short",
               });
+
+              // Knockout result context (from meta = MatchOut).
+              const homeTeamAdvances = isKnockout && meta?.advancing_team_id != null
+                && meta.advancing_team_id === meta.home_team_id;
+              const awayTeamAdvances = isKnockout && meta?.advancing_team_id != null
+                && meta.advancing_team_id === meta.away_team_id;
+              const penaltiesPlayed = isKnockout
+                && meta?.penalty_home_score != null
+                && meta?.penalty_away_score != null;
+
+              // Knockout prediction assessment.
+              const predAdvancingName = isKnockout && entry.advancing_team_id != null && meta != null
+                ? (entry.advancing_team_id === meta.home_team_id ? m.home_team_name : m.away_team_name)
+                : null;
+              const predAdvancingCorrect = predAdvancingName != null && meta?.advancing_team_id != null
+                ? entry.advancing_team_id === meta.advancing_team_id
+                : null;
+              const hasPenaltyPred = penaltiesPlayed
+                && entry.penalty_home_score != null
+                && entry.penalty_away_score != null;
+              const penaltyExact = hasPenaltyPred
+                && entry.penalty_home_score === meta!.penalty_home_score
+                && entry.penalty_away_score === meta!.penalty_away_score;
+
               return (
                 <div key={m.match_id} className="flex items-center justify-between p-3.5">
                   <div className="flex flex-col gap-0.5">
@@ -261,12 +306,38 @@ export default function MemberPage({
                       )}
                       <span className="text-[10px] text-[var(--muted)]">{date}</span>
                     </div>
+                    {/* Actual result */}
                     <div className="text-sm font-semibold">
-                      {m.home_team_name ?? "?"} {m.home_score} × {m.away_score}{" "}
-                      {m.away_team_name ?? "?"}
+                      <span className={homeTeamAdvances ? "text-green-400" : ""}>
+                        {m.home_team_name ?? "?"}
+                      </span>
+                      {" "}{m.home_score} × {m.away_score}{" "}
+                      <span className={awayTeamAdvances ? "text-green-400" : ""}>
+                        {m.away_team_name ?? "?"}
+                      </span>
+                      {penaltiesPlayed && (
+                        <span className="font-normal text-[var(--muted)]">
+                          {" · "}🥅 {meta!.penalty_home_score}×{meta!.penalty_away_score}
+                        </span>
+                      )}
                     </div>
+                    {/* Prediction */}
                     <div className="text-xs text-[var(--muted)]">
-                      Palpite: {entry.home_score}–{entry.away_score}
+                      ⚽ {entry.home_score}–{entry.away_score}
+                      {predAdvancingName != null && (
+                        <span className={
+                          predAdvancingCorrect === true ? "text-green-400"
+                          : predAdvancingCorrect === false ? "text-red-400"
+                          : "text-[var(--muted)]"
+                        }>
+                          {" · "}→ {predAdvancingName}
+                        </span>
+                      )}
+                      {hasPenaltyPred && (
+                        <span className={penaltyExact ? "text-green-400" : ""}>
+                          {" · "}🥅 {entry.penalty_home_score}×{entry.penalty_away_score}
+                        </span>
+                      )}
                     </div>
                   </div>
                   <div className="text-right">

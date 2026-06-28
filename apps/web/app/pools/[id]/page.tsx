@@ -409,45 +409,98 @@ function MatchPredictionsCard({
   currentUserId?: string;
 }) {
   const isFinal = match.status === "final";
+  const isKnockout = match.stage !== "group";
+  const penaltiesPlayed = isKnockout
+    && match.penalty_home_score != null
+    && match.penalty_away_score != null;
+  const homeAdvances = isKnockout && match.advancing_team_id != null
+    && match.advancing_team_id === match.home_team_id;
+  const awayAdvances = isKnockout && match.advancing_team_id != null
+    && match.advancing_team_id === match.away_team_id;
 
   return (
     <div className="card overflow-hidden">
       <div className="flex items-center justify-between bg-[var(--surface-2)] px-4 py-2.5">
-        <span className="text-sm font-semibold">{match.home_team_name ?? "?"}</span>
-        {isFinal ? (
-          <span className="font-bold text-[var(--accent)]">
-            {match.home_score} – {match.away_score}
-          </span>
-        ) : (
-          <span className="text-xs text-[var(--muted)]">em andamento</span>
-        )}
-        <span className="text-sm font-semibold">{match.away_team_name ?? "?"}</span>
+        <span className={`text-sm font-semibold ${homeAdvances ? "text-green-400" : ""}`}>
+          {match.home_team_name ?? "?"}
+        </span>
+        <div className="flex flex-col items-center">
+          {isFinal ? (
+            <span className="font-bold text-[var(--accent)]">
+              {match.home_score} – {match.away_score}
+            </span>
+          ) : (
+            <span className="text-xs text-[var(--muted)]">em andamento</span>
+          )}
+          {penaltiesPlayed && (
+            <span className="text-sm font-medium text-[var(--muted)]">
+              Pênaltis: {match.penalty_home_score}×{match.penalty_away_score}
+            </span>
+          )}
+        </div>
+        <span className={`text-sm font-semibold ${awayAdvances ? "text-green-400" : ""}`}>
+          {match.away_team_name ?? "?"}
+        </span>
       </div>
 
       <div className="divide-y divide-[var(--border)]">
         {match.entries.length === 0 ? (
           <p className="px-4 py-3 text-sm text-[var(--muted)]">Nenhum palpite registrado.</p>
         ) : (
-          match.entries.map((entry) => (
-            <div
-              key={entry.user_id}
-              className={`flex items-center justify-between px-4 py-2.5 ${
-                entry.user_id === currentUserId ? "bg-[var(--surface-2)]" : ""
-              }`}
-            >
-              <span className="text-sm font-medium">{entry.display_name}</span>
-              <div className="flex items-center gap-3">
-                <span className="font-mono text-sm">
-                  {entry.home_score} – {entry.away_score}
-                </span>
-                {isFinal && (
-                  <span className="w-14 text-right text-sm font-bold text-[var(--accent)]">
-                    {entry.points} pts
-                  </span>
-                )}
+          match.entries.map((entry) => {
+            const predAdvancingName = isKnockout && entry.advancing_team_id != null
+              ? (entry.advancing_team_id === match.home_team_id
+                  ? match.home_team_name
+                  : match.away_team_name)
+              : null;
+            const predAdvancingCorrect = predAdvancingName != null && match.advancing_team_id != null
+              ? entry.advancing_team_id === match.advancing_team_id
+              : null;
+            const hasPenaltyPred = isKnockout
+              && entry.penalty_home_score != null
+              && entry.penalty_away_score != null;
+            const penaltyExact = hasPenaltyPred && penaltiesPlayed
+              && entry.penalty_home_score === match.penalty_home_score
+              && entry.penalty_away_score === match.penalty_away_score;
+
+            return (
+              <div
+                key={entry.user_id}
+                className={`flex flex-col gap-0.5 px-4 py-2.5 ${
+                  entry.user_id === currentUserId ? "bg-[var(--surface-2)]" : ""
+                }`}
+              >
+                <div className="flex items-center justify-between gap-2">
+                  <span className="text-sm font-medium">{entry.display_name}</span>
+                  {isFinal ? (
+                    <span className="text-sm font-bold text-[var(--accent)]">
+                      +{entry.points} pts
+                    </span>
+                  ) : (
+                    <span className="text-sm font-medium text-[var(--muted)]">– pts</span>
+                  )}
+                </div>
+                <div className="text-center text-sm font-medium text-[var(--muted)]">
+                  ⚽ {entry.home_score}–{entry.away_score}
+                  {predAdvancingName != null && (
+                    <span className={
+                      predAdvancingCorrect === true ? " text-green-400"
+                      : predAdvancingCorrect === false ? " text-red-400"
+                      : ""
+                    }>
+                      {" · "}→ {predAdvancingName}
+                    </span>
+                  )}
+                  {hasPenaltyPred && (
+                    <span className={penaltyExact ? " text-green-400" : ""}>
+                      {" · "}🥅 {entry.penalty_home_score}×{entry.penalty_away_score}
+                      {penaltyExact ? " ✓" : ""}
+                    </span>
+                  )}
+                </div>
               </div>
-            </div>
-          ))
+            );
+          })
         )}
       </div>
     </div>

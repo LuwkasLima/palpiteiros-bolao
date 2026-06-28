@@ -540,6 +540,11 @@ export interface components {
              */
             kickoff_at: string;
             status: components["schemas"]["MatchStatus"];
+            stage: components["schemas"]["Stage"];
+            /** Home Team Id */
+            home_team_id: string | null;
+            /** Away Team Id */
+            away_team_id: string | null;
             /** Home Team Name */
             home_team_name: string | null;
             /** Away Team Name */
@@ -548,6 +553,12 @@ export interface components {
             home_score: number | null;
             /** Away Score */
             away_score: number | null;
+            /** Advancing Team Id */
+            advancing_team_id: string | null;
+            /** Penalty Home Score */
+            penalty_home_score: number | null;
+            /** Penalty Away Score */
+            penalty_away_score: number | null;
             /** Entries */
             entries: components["schemas"]["PredictionEntryOut"][];
         };
