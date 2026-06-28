@@ -94,9 +94,17 @@ async def set_result(match_id: str, payload: ResultIn, _: AdminUser) -> MatchOut
                 status.HTTP_400_BAD_REQUEST, "Advancing team must be one of the two playing"
             )
 
+    penalty_set = (payload.penalty_home_score is not None, payload.penalty_away_score is not None)
+    if penalty_set[0] != penalty_set[1]:
+        raise HTTPException(
+            status.HTTP_400_BAD_REQUEST, "Penalty scores must be provided together"
+        )
+
     match.home_score = payload.home_score
     match.away_score = payload.away_score
     match.advancing_team_id = advancing_id
+    match.penalty_home_score = payload.penalty_home_score
+    match.penalty_away_score = payload.penalty_away_score
     match.status = MatchStatus.FINAL
     await match.save()
     return match_to_out(match)
@@ -116,6 +124,8 @@ async def clear_result(match_id: str, _: AdminUser) -> MatchOut:
     match.home_score = None
     match.away_score = None
     match.advancing_team_id = None
+    match.penalty_home_score = None
+    match.penalty_away_score = None
     await match.save()
     return match_to_out(match)
 

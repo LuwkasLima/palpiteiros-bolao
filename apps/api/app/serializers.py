@@ -36,6 +36,8 @@ def match_to_out(match: Match, now: datetime | None = None) -> MatchOut:
         home_score=match.home_score,
         away_score=match.away_score,
         advancing_team_id=str(match.advancing_team_id) if match.advancing_team_id else None,
+        penalty_home_score=match.penalty_home_score,
+        penalty_away_score=match.penalty_away_score,
         is_locked=is_match_locked(match, now),
     )
 

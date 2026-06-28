@@ -121,6 +121,20 @@ def base_points(
     return POINTS_OUTCOME
 
 
+def penalty_base_points(pred_home: int, pred_away: int, act_home: int, act_away: int) -> int:
+    """Flat points for a penalty shootout prediction (no round-weight multiplier).
+
+    Tiers: Exact(5) / Margin(3, L1=1) / Miss(0).
+    No Near tier — penalty scores are too compressed.
+    No Outcome tier — the advancing-team pick already rewards knowing the winner.
+    """
+    if pred_home == act_home and pred_away == act_away:
+        return POINTS_EXACT
+    if abs(pred_home - act_home) + abs(pred_away - act_away) == 1:
+        return POINTS_MARGIN
+    return 0
+
+
 def points_for(prediction: Prediction, match: Match) -> int:
     """Total points a prediction earns for a finished match (0 if not yet final)."""
     if match.status != MatchStatus.FINAL or match.home_score is None or match.away_score is None:
@@ -152,5 +166,19 @@ def points_for(prediction: Prediction, match: Match) -> int:
         and prediction.advancing_team_id == match.advancing_team_id
     ):
         points += ADVANCE_BONUS * weight
+
+    if (
+        match.stage is not Stage.GROUP
+        and prediction.penalty_home_score is not None
+        and prediction.penalty_away_score is not None
+        and match.penalty_home_score is not None
+        and match.penalty_away_score is not None
+    ):
+        points += penalty_base_points(
+            prediction.penalty_home_score,
+            prediction.penalty_away_score,
+            match.penalty_home_score,
+            match.penalty_away_score,
+        )
 
     return points

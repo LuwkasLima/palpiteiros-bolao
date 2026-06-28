@@ -152,5 +152,20 @@ export function matchPoints(pred: PredictionOut, match: MatchOut): number {
   ) {
     pts += 2 * match.round_weight;
   }
+  if (
+    match.stage !== "group" &&
+    pred.penalty_home_score != null &&
+    pred.penalty_away_score != null &&
+    match.penalty_home_score != null &&
+    match.penalty_away_score != null
+  ) {
+    const ph = pred.penalty_home_score, pa = pred.penalty_away_score;
+    const ah = match.penalty_home_score, aa = match.penalty_away_score;
+    if (ph === ah && pa === aa) {
+      pts += 5;
+    } else if (Math.abs(ph - ah) + Math.abs(pa - aa) === 1) {
+      pts += 3;
+    }
+  }
   return pts;
 }

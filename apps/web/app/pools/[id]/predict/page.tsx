@@ -127,6 +127,9 @@ function MatchRow({
   const [home, setHome] = useState<string>(pred ? String(pred.home_score) : "");
   const [away, setAway] = useState<string>(pred ? String(pred.away_score) : "");
   const [advancingId, setAdvancingId] = useState<string | null>(pred?.advancing_team_id ?? null);
+  const [penaltyHome, setPenaltyHome] = useState<string>(pred?.penalty_home_score != null ? String(pred.penalty_home_score) : "");
+  const [penaltyAway, setPenaltyAway] = useState<string>(pred?.penalty_away_score != null ? String(pred.penalty_away_score) : "");
+  const [penaltyOpen, setPenaltyOpen] = useState<boolean>(pred?.penalty_home_score != null);
   const [state, setState] = useState<SaveState>("idle");
 
   const isKnockout = match.stage !== "group";
@@ -136,6 +139,10 @@ function MatchRow({
   const awayShort = sideShortLabel(match.away_team_id, tmap, match.slot_label ?? "A definir");
   const homeName = sideName(match.home_team_id, tmap);
   const awayName = sideName(match.away_team_id, tmap);
+
+  const penaltyPayload = isKnockout && penaltyHome !== "" && penaltyAway !== ""
+    ? { penalty_home_score: Number(penaltyHome), penalty_away_score: Number(penaltyAway) }
+    : {};
 
   async function save() {
     if (match.is_locked) return;
@@ -149,6 +156,7 @@ function MatchRow({
         home_score: h,
         away_score: a,
         advancing_team_id: isKnockout ? advancingId : undefined,
+        ...penaltyPayload,
       });
       onSaved(saved);
       setState("saved");
@@ -168,6 +176,27 @@ function MatchRow({
         home_score: Number(home),
         away_score: Number(away),
         advancing_team_id: id,
+        ...penaltyPayload,
+      });
+      onSaved(saved);
+      setState("saved");
+      setTimeout(() => setState("idle"), 1200);
+    } catch {
+      setState("error");
+    }
+  }
+
+  async function savePenalty(ph: string, pa: string) {
+    if (match.is_locked || home === "" || away === "") return;
+    if (ph === "" || pa === "") return;
+    setState("saving");
+    try {
+      const saved = await api.savePrediction(poolId, match.id, {
+        home_score: Number(home),
+        away_score: Number(away),
+        advancing_team_id: isKnockout ? advancingId : undefined,
+        penalty_home_score: Number(ph),
+        penalty_away_score: Number(pa),
       });
       onSaved(saved);
       setState("saved");
@@ -297,6 +326,69 @@ function MatchRow({
           )}
         </>
       )}
+
+      {isKnockout && !match.is_locked && (
+        <div className={`mt-2 -mx-3 border-y border-[var(--border)] transition-colors ${penaltyOpen ? "bg-[var(--accent)]/8" : ""}`}>
+          <button
+            className="flex w-full items-center justify-between px-3 py-2.5 text-xs text-[var(--muted)]"
+            onClick={() => setPenaltyOpen((o) => !o)}
+          >
+            <span className={penaltyOpen ? "font-medium text-[var(--accent)]" : ""}>Pênaltis</span>
+            <svg
+              width="12" height="12" viewBox="0 0 12 12" fill="none"
+              className={`transition-transform duration-200 ${penaltyOpen ? "rotate-180" : ""}`}
+            >
+              <path d="M2 4l4 4 4-4" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" />
+            </svg>
+          </button>
+          {penaltyOpen && (
+            <div className="flex items-center justify-center gap-2 pb-2.5">
+              <input
+                className="score-input"
+                inputMode="numeric"
+                value={penaltyHome}
+                onChange={(e) => setPenaltyHome(e.target.value.replace(/\D/g, "").slice(0, 2))}
+                onBlur={(e) => savePenalty(e.target.value, penaltyAway)}
+              />
+              <span className="text-[var(--muted)]">×</span>
+              <input
+                className="score-input"
+                inputMode="numeric"
+                value={penaltyAway}
+                onChange={(e) => setPenaltyAway(e.target.value.replace(/\D/g, "").slice(0, 2))}
+                onBlur={(e) => savePenalty(penaltyHome, e.target.value)}
+              />
+            </div>
+          )}
+        </div>
+      )}
+
+      {isKnockout && match.is_locked && (pred?.penalty_home_score != null || match.penalty_home_score != null) && (() => {
+        const ph = pred?.penalty_home_score ?? null;
+        const pa = pred?.penalty_away_score ?? null;
+        const ah = match.penalty_home_score;
+        const aa = match.penalty_away_score;
+        const penaltyPts = final && ph != null && ah != null
+          ? (ph === ah && pa === aa ? 5 : Math.abs(ph - ah!) + Math.abs(pa! - aa!) === 1 ? 3 : 0)
+          : null;
+        return (
+          <div className="mt-2 -mx-3 flex items-center justify-between border-y border-[var(--border)] px-3 py-2.5 text-xs">
+            <span className="text-[var(--muted)]">Pênaltis</span>
+            <div className="flex items-center gap-2">
+              {ph != null
+                ? <span className="font-medium">{ph} × {pa}</span>
+                : <span className="text-[var(--muted)]">—</span>
+              }
+              {ah != null && <span className="chip">{ah}×{aa}</span>}
+              {penaltyPts != null && (
+                <span className={`font-bold ${penaltyPts > 0 ? "text-[var(--accent)]" : "text-[var(--muted)]"}`}>
+                  {penaltyPts > 0 ? "+" : ""}{penaltyPts}
+                </span>
+              )}
+            </div>
+          </div>
+        );
+      })()}
 
       <div className="mt-1.5 flex items-center justify-between gap-2 text-xs text-[var(--muted)]">
         <span className="shrink-0">{stageBadge(match.stage, match.group_label)}</span>
