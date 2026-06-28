@@ -317,27 +317,25 @@ export default function MemberPage({
                       </span>
                       {penaltiesPlayed && (
                         <span className="font-normal text-[var(--muted)]">
-                          {" · "}Pênaltis: {meta!.penalty_home_score}×{meta!.penalty_away_score}
+                          {" · "}🥅 {meta!.penalty_home_score}×{meta!.penalty_away_score}
                         </span>
                       )}
                     </div>
                     {/* Prediction */}
                     <div className="text-xs text-[var(--muted)]">
-                      Palpite: {entry.home_score}–{entry.away_score}
+                      ⚽ {entry.home_score}–{entry.away_score}
                       {predAdvancingName != null && (
                         <span className={
                           predAdvancingCorrect === true ? "text-green-400"
                           : predAdvancingCorrect === false ? "text-red-400"
                           : "text-[var(--muted)]"
                         }>
-                          {" · "}{predAdvancingName}
-                          {predAdvancingCorrect === true ? " ✓" : predAdvancingCorrect === false ? " ✗" : ""}
+                          {" · "}→ {predAdvancingName}
                         </span>
                       )}
                       {hasPenaltyPred && (
                         <span className={penaltyExact ? "text-green-400" : ""}>
-                          {" · "}Pênaltis: {entry.penalty_home_score}×{entry.penalty_away_score}
-                          {penaltyExact ? " ✓" : ""}
+                          {" · "}🥅 {entry.penalty_home_score}×{entry.penalty_away_score}
                         </span>
                       )}
                     </div>
