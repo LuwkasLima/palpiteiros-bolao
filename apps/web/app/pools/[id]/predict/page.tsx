@@ -140,6 +140,16 @@ function MatchRow({
   const homeName = sideName(match.home_team_id, tmap);
   const awayName = sideName(match.away_team_id, tmap);
 
+  // Derive advancing team from score for non-draws; manual selection only for draws.
+  const homeNum = home !== "" ? Number(home) : null;
+  const awayNum = away !== "" ? Number(away) : null;
+  const scoreDetermined = homeNum !== null && awayNum !== null;
+  const isDraw = scoreDetermined && homeNum === awayNum;
+  const derivedAdvancingId = scoreDetermined && !isDraw
+    ? (homeNum! > awayNum! ? match.home_team_id : match.away_team_id)
+    : null;
+  const effectiveAdvancingId = isDraw || !scoreDetermined ? advancingId : derivedAdvancingId;
+
   const penaltyPayload = isKnockout && penaltyHome !== "" && penaltyAway !== ""
     ? { penalty_home_score: Number(penaltyHome), penalty_away_score: Number(penaltyAway) }
     : {};
@@ -149,13 +159,13 @@ function MatchRow({
     if (home === "" || away === "") return;
     const h = Number(home);
     const a = Number(away);
-    if (h === pred?.home_score && a === pred?.away_score && advancingId === pred?.advancing_team_id) return;
+    if (h === pred?.home_score && a === pred?.away_score && effectiveAdvancingId === pred?.advancing_team_id) return;
     setState("saving");
     try {
       const saved = await api.savePrediction(poolId, match.id, {
         home_score: h,
         away_score: a,
-        advancing_team_id: isKnockout ? advancingId : undefined,
+        advancing_team_id: isKnockout ? effectiveAdvancingId : undefined,
         ...penaltyPayload,
       });
       onSaved(saved);
@@ -194,7 +204,7 @@ function MatchRow({
       const saved = await api.savePrediction(poolId, match.id, {
         home_score: Number(home),
         away_score: Number(away),
-        advancing_team_id: isKnockout ? advancingId : undefined,
+        advancing_team_id: isKnockout ? effectiveAdvancingId : undefined,
         penalty_home_score: Number(ph),
         penalty_away_score: Number(pa),
       });
@@ -285,24 +295,33 @@ function MatchRow({
               </span>
             ) : match.is_locked ? (
               <span className="pr-4 text-sm font-medium">{advancingLabel ?? "—"}</span>
+            ) : scoreDetermined && !isDraw ? (
+              <span className="pr-4 text-sm text-[var(--muted)]">
+                → {derivedAdvancingId === match.home_team_id ? homeShort : awayShort}
+              </span>
             ) : (
-              <div className="flex gap-2 pr-4">
-                {([
-                  { id: match.home_team_id!, label: homeShort },
-                  { id: match.away_team_id!, label: awayShort },
-                ] as { id: string; label: string }[]).map(({ id, label }) => (
-                  <button
-                    key={id}
-                    onClick={() => saveAdvancing(advancingId === id ? null : id)}
-                    className={`flex-1 rounded-full border px-3 py-1.5 text-xs font-medium transition-colors ${
-                      advancingId === id
-                        ? "border-[var(--accent)] bg-[var(--accent)]/10 text-[var(--accent)]"
-                        : "border-[var(--border)] text-[var(--muted)]"
-                    }`}
-                  >
-                    {label}
-                  </button>
-                ))}
+              <div className="flex flex-col gap-1 pr-4">
+                {isDraw && (
+                  <span className="text-[10px] text-[var(--accent)]">Quem avança?</span>
+                )}
+                <div className="flex gap-2">
+                  {([
+                    { id: match.home_team_id!, label: homeShort },
+                    { id: match.away_team_id!, label: awayShort },
+                  ] as { id: string; label: string }[]).map(({ id, label }) => (
+                    <button
+                      key={id}
+                      onClick={() => saveAdvancing(advancingId === id ? null : id)}
+                      className={`flex-1 rounded-full border px-3 py-1.5 text-xs font-medium transition-colors ${
+                        advancingId === id
+                          ? "border-[var(--accent)] bg-[var(--accent)]/10 text-[var(--accent)]"
+                          : "border-[var(--border)] text-[var(--muted)]"
+                      }`}
+                    >
+                      {label}
+                    </button>
+                  ))}
+                </div>
               </div>
             )
           ) : <div />}
