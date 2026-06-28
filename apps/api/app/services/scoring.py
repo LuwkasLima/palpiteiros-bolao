@@ -17,6 +17,8 @@ V2 (kickoff_at >= SCORING_V2_SINCE): 4-tier L1-distance system, no clean-sheet b
   - Near tier: wins off by exactly 1 total goal (L1=1); draws off by exactly 1 per side (L1=2).
   - Margin tier (wins): correct goal difference but L1 > 1.
   - Margin tier (draws, knockout only): L1 ≥ 4. Group-stage draws beyond Near still earn Outcome.
+  - Shape tier (knockout only): wrong outcome but same absolute goal difference → 1 pt.
+    E.g. predict 2×1 (home), actual 1×2 (away): |+1|==|-1| → Shape. Group stage always 0.
   - Predicting 0 goals for a side earns no special bonus beyond the base tier.
 """
 
@@ -31,6 +33,7 @@ POINTS_EXACT = 5    # exact scoreline
 POINTS_NEAR = 4     # closest possible non-exact (V2 only): L1=1 for wins, L1=2 for draws
 POINTS_MARGIN = 3   # correct goal difference, wins only (both V1 and V2)
 POINTS_OUTCOME = 2  # correct outcome only
+POINTS_SHAPE = 1    # knockout only: wrong outcome but same absolute goal difference
 ADVANCE_BONUS = 2   # knockout only: correct "who advances" pick
 
 # Escalating per-round weight — the anti-runaway mechanic.
@@ -111,6 +114,8 @@ def base_points(
     pred_out = _outcome(pred_home, pred_away)
     act_out = _outcome(act_home, act_away)
     if pred_out != act_out:
+        if is_knockout and abs(pred_home - pred_away) == abs(act_home - act_away):
+            return POINTS_SHAPE
         return 0
     total_error = abs(pred_home - act_home) + abs(pred_away - act_away)
     if act_out == "draw":

@@ -125,7 +125,10 @@ function _basePointsV1(ph: number, pa: number, ah: number, aa: number): number {
 
 function _basePointsV2(ph: number, pa: number, ah: number, aa: number, isKnockout = false): number {
   if (ph === ah && pa === aa) return 5;
-  if (_outcome(ph, pa) !== _outcome(ah, aa)) return 0;
+  if (_outcome(ph, pa) !== _outcome(ah, aa)) {
+    if (isKnockout && Math.abs(ph - pa) === Math.abs(ah - aa)) return 1;
+    return 0;
+  }
   const totalError = Math.abs(ph - ah) + Math.abs(pa - aa);
   if (_outcome(ah, aa) === "draw") return totalError === 2 ? 4 : (isKnockout ? 3 : 2);
   if (totalError === 1) return 4;

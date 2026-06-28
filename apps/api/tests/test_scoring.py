@@ -71,8 +71,36 @@ def test_base_points_near_draws_unchanged_in_knockout():
 
 
 def test_base_points_wrong_outcome():
-    assert scoring.base_points(2, 1, 0, 1) == 0
-    assert scoring.base_points(0, 0, 1, 0) == 0  # draw vs home win
+    # Group stage (is_knockout=False, default) — wrong outcome always 0.
+    assert scoring.base_points(2, 1, 0, 1) == 0   # same abs diff but group → 0
+    assert scoring.base_points(0, 0, 1, 0) == 0   # draw vs win, diff mismatch → 0
+
+
+def test_base_points_shape_wrong_outcome_knockout():
+    # Wrong outcome, same absolute margin, knockout → POINTS_SHAPE.
+    assert scoring.base_points(2, 1, 1, 2, is_knockout=True) == scoring.POINTS_SHAPE  # |+1|==|-1|
+    assert scoring.base_points(1, 0, 0, 1, is_knockout=True) == scoring.POINTS_SHAPE  # |+1|==|-1|
+    assert scoring.base_points(3, 1, 1, 3, is_knockout=True) == scoring.POINTS_SHAPE  # |+2|==|-2|
+
+    # Wrong outcome, different absolute margin → 0 even in knockout.
+    assert scoring.base_points(2, 0, 0, 1, is_knockout=True) == 0   # |+2| ≠ |-1|
+    assert scoring.base_points(3, 0, 1, 2, is_knockout=True) == 0   # |+3| ≠ |-1|
+
+    # Draw prediction vs win result → 0 (diff 0 ≠ nonzero, even knockout).
+    assert scoring.base_points(1, 1, 2, 0, is_knockout=True) == 0
+
+
+def test_points_for_shape_knockout():
+    # QF (×4): predict home win, actual away win, same margin → POINTS_SHAPE × weight.
+    weight = scoring.round_weight(Stage.QF)
+    pts = scoring.points_for(_pred(2, 1), _match(Stage.QF, 1, 2))
+    assert pts == scoring.POINTS_SHAPE * weight
+
+
+def test_points_for_shape_group_is_zero():
+    # Group stage: same scenario always earns 0 (no Shape tier for group).
+    pts = scoring.points_for(_pred(2, 1), _match(Stage.GROUP, 1, 2))
+    assert pts == 0
 
 
 # ---------------------------------------------------------------------------
