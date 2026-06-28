@@ -52,14 +52,77 @@ def test_base_points_near_draws():
 
 
 def test_base_points_outcome_draws_when_far():
-    # L1 > 2 for draws → POINTS_OUTCOME.
+    # L1 > 2 for draws in group stage (is_knockout=False, the default) → POINTS_OUTCOME.
     assert scoring.base_points(0, 0, 2, 2) == scoring.POINTS_OUTCOME
     assert scoring.base_points(3, 3, 1, 1) == scoring.POINTS_OUTCOME
 
 
+def test_base_points_margin_draws_when_far_knockout():
+    # L1 > 2 for draws in knockout stage → POINTS_MARGIN (draws are harder to call).
+    assert scoring.base_points(0, 0, 2, 2, is_knockout=True) == scoring.POINTS_MARGIN
+    assert scoring.base_points(3, 3, 1, 1, is_knockout=True) == scoring.POINTS_MARGIN
+    assert scoring.base_points(0, 0, 3, 3, is_knockout=True) == scoring.POINTS_MARGIN
+
+
+def test_base_points_near_draws_unchanged_in_knockout():
+    # Near draws (L1=2) still earn POINTS_NEAR regardless of stage.
+    assert scoring.base_points(0, 0, 1, 1, is_knockout=True) == scoring.POINTS_NEAR
+    assert scoring.base_points(2, 2, 1, 1, is_knockout=True) == scoring.POINTS_NEAR
+
+
 def test_base_points_wrong_outcome():
-    assert scoring.base_points(2, 1, 0, 1) == 0
-    assert scoring.base_points(0, 0, 1, 0) == 0  # draw vs home win
+    # Group stage (is_knockout=False, default) — wrong outcome always 0.
+    assert scoring.base_points(2, 1, 0, 1) == 0   # same abs diff but group → 0
+    assert scoring.base_points(0, 0, 1, 0) == 0   # draw vs win, diff mismatch → 0
+
+
+def test_base_points_flipped_exact_knockout():
+    # Flipped exact (same numbers, wrong attribution) earns POINTS_EXACT in knockout.
+    # Score and advancing pick are treated as independent objects.
+    assert scoring.base_points(2, 1, 1, 2, is_knockout=True) == scoring.POINTS_EXACT
+    assert scoring.base_points(1, 0, 0, 1, is_knockout=True) == scoring.POINTS_EXACT
+    assert scoring.base_points(3, 1, 1, 3, is_knockout=True) == scoring.POINTS_EXACT
+    assert scoring.base_points(2, 0, 0, 2, is_knockout=True) == scoring.POINTS_EXACT
+
+
+def test_base_points_flipped_exact_group_is_zero():
+    # Group stage: flipped exact earns 0 (score and winner are not independent in group).
+    assert scoring.base_points(2, 1, 1, 2, is_knockout=False) == 0
+    assert scoring.base_points(1, 0, 0, 1, is_knockout=False) == 0
+
+
+def test_base_points_margin_wrong_outcome_knockout():
+    # Wrong outcome, same absolute margin but different score values → POINTS_MARGIN.
+    assert scoring.base_points(3, 1, 0, 2, is_knockout=True) == scoring.POINTS_MARGIN  # +2 vs -2, diff numbers
+    assert scoring.base_points(4, 1, 2, 5, is_knockout=True) == scoring.POINTS_MARGIN  # +3 vs -3, diff numbers
+    assert scoring.base_points(2, 0, 1, 3, is_knockout=True) == scoring.POINTS_MARGIN  # +2 vs -2, diff numbers
+
+    # Wrong outcome, different absolute margin → 0 even in knockout.
+    assert scoring.base_points(2, 0, 0, 1, is_knockout=True) == 0   # |+2| ≠ |-1|
+    assert scoring.base_points(3, 0, 1, 2, is_knockout=True) == 0   # |+3| ≠ |-1|
+
+    # Draw prediction vs win result → 0 (diff 0 ≠ nonzero, even knockout).
+    assert scoring.base_points(1, 1, 2, 0, is_knockout=True) == 0
+
+
+def test_points_for_flipped_exact_knockout():
+    # QF (×4): predict home win, actual away win, same numbers flipped → POINTS_EXACT × weight.
+    weight = scoring.round_weight(Stage.QF)
+    pts = scoring.points_for(_pred(2, 1), _match(Stage.QF, 1, 2))
+    assert pts == scoring.POINTS_EXACT * weight
+
+
+def test_points_for_margin_wrong_outcome_knockout():
+    # QF (×4): wrong outcome, same absolute margin, different score values → POINTS_MARGIN × weight.
+    weight = scoring.round_weight(Stage.QF)
+    pts = scoring.points_for(_pred(3, 1), _match(Stage.QF, 0, 2))
+    assert pts == scoring.POINTS_MARGIN * weight
+
+
+def test_points_for_wrong_outcome_no_margin_group_is_zero():
+    # Group stage: wrong outcome always earns 0.
+    pts = scoring.points_for(_pred(3, 1), _match(Stage.GROUP, 0, 2))
+    assert pts == 0
 
 
 # ---------------------------------------------------------------------------
@@ -68,7 +131,8 @@ def test_base_points_wrong_outcome():
 
 # kickoff_at defaults to V2 so existing tests exercise the new rules without extra args.
 def _match(stage: Stage, home: int, away: int, advancing: PydanticObjectId | None = None,
-           kickoff_at: datetime = _V2_KICKOFF):
+           kickoff_at: datetime = _V2_KICKOFF,
+           penalty_home: int | None = None, penalty_away: int | None = None):
     return SimpleNamespace(
         stage=stage,
         status=MatchStatus.FINAL,
@@ -76,14 +140,19 @@ def _match(stage: Stage, home: int, away: int, advancing: PydanticObjectId | Non
         away_score=away,
         advancing_team_id=advancing,
         kickoff_at=kickoff_at,
+        penalty_home_score=penalty_home,
+        penalty_away_score=penalty_away,
     )
 
 
-def _pred(home: int, away: int, advancing: PydanticObjectId | None = None):
+def _pred(home: int, away: int, advancing: PydanticObjectId | None = None,
+          penalty_home: int | None = None, penalty_away: int | None = None):
     return SimpleNamespace(
         home_score=home,
         away_score=away,
         advancing_team_id=advancing,
+        penalty_home_score=penalty_home,
+        penalty_away_score=penalty_away,
     )
 
 
@@ -91,7 +160,7 @@ def test_points_for_applies_round_weight():
     group = scoring.points_for(_pred(2, 1), _match(Stage.GROUP, 2, 1))
     final = scoring.points_for(_pred(2, 1), _match(Stage.FINAL, 2, 1))
     assert group == scoring.POINTS_EXACT * 1
-    assert final == scoring.POINTS_EXACT * 13
+    assert final == scoring.POINTS_EXACT * 6
     assert final > group
 
 
@@ -187,4 +256,68 @@ def test_late_round_can_overturn_group_lead():
     final = _match(Stage.FINAL, 3, 1)
     a_gain = scoring.points_for(_pred(3, 1), final)   # exact
     b_gain = scoring.points_for(_pred(0, 0), final)   # wrong outcome -> 0
-    assert a_gain - b_gain > 20
+    assert a_gain - b_gain > 10
+
+
+# ---------------------------------------------------------------------------
+# penalty_base_points — flat, no weight
+# ---------------------------------------------------------------------------
+
+def test_points_for_far_draw_group_is_outcome():
+    # Group stage: far draw still earns OUTCOME (no retroactive change).
+    weight = scoring.round_weight(Stage.GROUP)
+    pts = scoring.points_for(_pred(0, 0), _match(Stage.GROUP, 2, 2))
+    assert pts == scoring.POINTS_OUTCOME * weight
+
+
+def test_points_for_far_draw_knockout_is_margin():
+    # Knockout stage: far draw earns MARGIN.
+    weight = scoring.round_weight(Stage.R16)
+    pts = scoring.points_for(_pred(0, 0), _match(Stage.R16, 2, 2))
+    assert pts == scoring.POINTS_MARGIN * weight
+
+
+def test_penalty_base_points_exact():
+    assert scoring.penalty_base_points(5, 3, 5, 3) == scoring.POINTS_EXACT
+
+
+def test_penalty_base_points_miss():
+    # Any non-exact result → 0 (no intermediate tier).
+    assert scoring.penalty_base_points(4, 3, 5, 3) == 0   # L1=1
+    assert scoring.penalty_base_points(3, 3, 5, 3) == 0   # L1=2
+    assert scoring.penalty_base_points(3, 1, 5, 3) == 0   # L1=4
+
+
+def test_points_for_includes_penalty_flat_no_weight():
+    # Penalty points are flat (no round weight), added on top of regular scoring.
+    team = PydanticObjectId()
+    m = _match(Stage.QF, 1, 1, advancing=team, penalty_home=5, penalty_away=3)
+    p = _pred(1, 1, advancing=team, penalty_home=5, penalty_away=3)
+    weight = scoring.round_weight(Stage.QF)
+    expected = (scoring.POINTS_EXACT * weight    # score
+                + scoring.ADVANCE_BONUS * weight  # advancing pick
+                + scoring.POINTS_EXACT)           # penalty exact — flat, no weight
+    assert scoring.points_for(p, m) == expected
+
+
+def test_points_for_penalty_miss():
+    m = _match(Stage.R16, 2, 0, penalty_home=5, penalty_away=3)
+    p = _pred(2, 0, penalty_home=4, penalty_away=3)  # L1=1 → 0 (no near tier)
+    weight = scoring.round_weight(Stage.R16)
+    assert scoring.points_for(p, m) == scoring.POINTS_EXACT * weight
+
+
+def test_points_for_no_penalty_prediction_skips():
+    # Prediction without penalty fields → no penalty points, no crash.
+    m = _match(Stage.QF, 2, 1, penalty_home=5, penalty_away=3)
+    p = _pred(2, 1)  # penalty_home=None, penalty_away=None
+    weight = scoring.round_weight(Stage.QF)
+    assert scoring.points_for(p, m) == scoring.POINTS_EXACT * weight
+
+
+def test_points_for_no_match_penalty_skips():
+    # Match has no penalty result yet → no penalty points added.
+    m = _match(Stage.QF, 2, 1)  # penalty_home=None
+    p = _pred(2, 1, penalty_home=5, penalty_away=3)
+    weight = scoring.round_weight(Stage.QF)
+    assert scoring.points_for(p, m) == scoring.POINTS_EXACT * weight

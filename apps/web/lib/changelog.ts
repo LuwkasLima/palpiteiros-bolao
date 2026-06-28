@@ -1,4 +1,4 @@
-export const LATEST_VERSION = "2026-06-21";
+export const LATEST_VERSION = "2026-06-28";
 
 export interface ChangelogEntry {
   version: string;
@@ -8,10 +8,12 @@ export interface ChangelogEntry {
 
 export const CHANGELOG: ChangelogEntry[] = [
   {
-    version: "2026-06-21",
-    title: "Resenha da Semana",
+    version: "2026-06-28",
+    title: "Mata-mata: placar, classificado e pênaltis são três palpites independentes",
     items: [
-      "Todo domingo, uma resenha narrada do bolão fecha a semana, exaltando o profeta e zoando o corneteiro.",
+      "O placar no mata-mata agora é avaliado pelos números, sem depender de quem venceu. Prever 2×1 com resultado 1×2 conta como placar exato — mesmos gols, lados trocados — e vale 5 × multiplicador da fase.",
+      "Novo palpite de pênaltis: quando o jogo vai para as cobranças, você pode prever o placar da disputa. Acertar vale +5 pts fixos, sem multiplicador.",
+      "Página de regras reformulada com os três componentes explicados — placar, classificado e pênaltis — com exemplos reais, raciocínio e o máximo possível por fase.",
     ],
   },
   {

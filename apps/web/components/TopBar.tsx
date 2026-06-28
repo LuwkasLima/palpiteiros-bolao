@@ -125,12 +125,22 @@ export function TopBar() {
                 </div>
                 <p className="text-sm text-[var(--muted)]">{n.body}</p>
                 {n.cta && (
-                  <button
-                    onClick={() => { close(); setShowWhatsNew(true); }}
-                    className="self-start text-sm font-medium text-[var(--accent)] underline underline-offset-2"
-                  >
-                    {n.cta.label}
-                  </button>
+                  n.cta.href ? (
+                    <Link
+                      href={n.cta.href}
+                      onClick={close}
+                      className="self-start text-sm font-medium text-[var(--accent)] underline underline-offset-2"
+                    >
+                      {n.cta.label}
+                    </Link>
+                  ) : (
+                    <button
+                      onClick={() => { close(); setShowWhatsNew(true); }}
+                      className="self-start text-sm font-medium text-[var(--accent)] underline underline-offset-2"
+                    >
+                      {n.cta.label}
+                    </button>
+                  )
                 )}
               </div>
             ))

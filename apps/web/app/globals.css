@@ -61,7 +61,7 @@ body {
     border-color: var(--accent-2);
   }
   .score-input {
-    @apply w-12 rounded-lg text-center text-lg font-bold outline-none;
+    @apply w-10 rounded-lg text-center text-lg font-bold outline-none;
     background: var(--surface-2);
     border: 1px solid var(--border);
     color: var(--text);

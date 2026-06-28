@@ -31,6 +31,8 @@ def _to_out(pred: Prediction) -> PredictionOut:
         home_score=pred.home_score,
         away_score=pred.away_score,
         advancing_team_id=str(pred.advancing_team_id) if pred.advancing_team_id else None,
+        penalty_home_score=pred.penalty_home_score,
+        penalty_away_score=pred.penalty_away_score,
         updated_at=pred.updated_at,
     )
 
@@ -66,6 +68,16 @@ async def upsert_prediction(
             payload.advancing_team_id, not_found="Unknown advancing team"
         )
 
+    penalty_set = (payload.penalty_home_score is not None, payload.penalty_away_score is not None)
+    if penalty_set[0] != penalty_set[1]:
+        raise HTTPException(
+            status.HTTP_400_BAD_REQUEST, "Penalty scores must be provided together"
+        )
+    if any(penalty_set) and match.stage is Stage.GROUP:
+        raise HTTPException(
+            status.HTTP_400_BAD_REQUEST, "Group matches have no penalty prediction"
+        )
+
     pred = await Prediction.find_one(
         Prediction.pool_id == pool.id,
         Prediction.user_id == user.id,
@@ -79,11 +91,15 @@ async def upsert_prediction(
             home_score=payload.home_score,
             away_score=payload.away_score,
             advancing_team_id=advancing_id,
+            penalty_home_score=payload.penalty_home_score,
+            penalty_away_score=payload.penalty_away_score,
         )
     else:
         pred.home_score = payload.home_score
         pred.away_score = payload.away_score
         pred.advancing_team_id = advancing_id
+        pred.penalty_home_score = payload.penalty_home_score
+        pred.penalty_away_score = payload.penalty_away_score
         pred.updated_at = utcnow()
     await pred.save()
     return _to_out(pred)
@@ -133,6 +149,8 @@ async def revealed_predictions(pool_id: str, user: CurrentUser) -> RevealedPredi
                 home_score=p.home_score,
                 away_score=p.away_score,
                 advancing_team_id=str(p.advancing_team_id) if p.advancing_team_id else None,
+                penalty_home_score=p.penalty_home_score,
+                penalty_away_score=p.penalty_away_score,
                 points=points_for(p, match) if is_final else None,
             )
             for p in preds_by_match.get(match.id, [])

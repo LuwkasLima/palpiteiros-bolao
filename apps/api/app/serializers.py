@@ -6,6 +6,7 @@ from datetime import datetime, timezone
 
 from app.models import Match, MatchStatus, NewsItem
 from app.schemas import MatchOut, NewsItemOut
+from app.services import scoring
 
 
 def _as_utc(value: datetime) -> datetime:
@@ -25,7 +26,7 @@ def match_to_out(match: Match, now: datetime | None = None) -> MatchOut:
         id=str(match.id),
         key=match.key,
         stage=match.stage,
-        round_weight=match.round_weight,
+        round_weight=scoring.round_weight(match.stage),
         group_label=match.group_label,
         slot_label=match.slot_label,
         home_team_id=str(match.home_team_id) if match.home_team_id else None,
@@ -35,6 +36,8 @@ def match_to_out(match: Match, now: datetime | None = None) -> MatchOut:
         home_score=match.home_score,
         away_score=match.away_score,
         advancing_team_id=str(match.advancing_team_id) if match.advancing_team_id else None,
+        penalty_home_score=match.penalty_home_score,
+        penalty_away_score=match.penalty_away_score,
         is_locked=is_match_locked(match, now),
     )
 

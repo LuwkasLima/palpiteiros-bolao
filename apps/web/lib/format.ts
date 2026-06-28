@@ -123,11 +123,18 @@ function _basePointsV1(ph: number, pa: number, ah: number, aa: number): number {
   return 2;
 }
 
-function _basePointsV2(ph: number, pa: number, ah: number, aa: number): number {
+function _basePointsV2(ph: number, pa: number, ah: number, aa: number, isKnockout = false): number {
   if (ph === ah && pa === aa) return 5;
-  if (_outcome(ph, pa) !== _outcome(ah, aa)) return 0;
   const totalError = Math.abs(ph - ah) + Math.abs(pa - aa);
-  if (_outcome(ah, aa) === "draw") return totalError === 2 ? 4 : 2;
+  if (isKnockout) {
+    if (ph === aa && pa === ah) return 5;  // flipped exact — same scores, wrong attribution
+    if (totalError === 1) return 4;        // Near, outcome-agnostic in knockout
+  }
+  if (_outcome(ph, pa) !== _outcome(ah, aa)) {
+    if (isKnockout && Math.abs(ph - pa) === Math.abs(ah - aa)) return 3;  // Margin for same abs margin
+    return 0;
+  }
+  if (_outcome(ah, aa) === "draw") return totalError === 2 ? 4 : (isKnockout ? 3 : 2);
   if (totalError === 1) return 4;
   if (ph - pa === ah - aa) return 3;
   return 2;
@@ -136,7 +143,10 @@ function _basePointsV2(ph: number, pa: number, ah: number, aa: number): number {
 export function matchPoints(pred: PredictionOut, match: MatchOut): number {
   if (match.status !== "final" || match.home_score == null || match.away_score == null) return 0;
   const isV2 = new Date(match.kickoff_at) >= SCORING_V2_SINCE;
-  const baseFn = isV2 ? _basePointsV2 : _basePointsV1;
+  const isKnockout = match.stage !== "group";
+  const baseFn = isV2
+    ? (ph: number, pa: number, ah: number, aa: number) => _basePointsV2(ph, pa, ah, aa, isKnockout)
+    : _basePointsV1;
   let pts = baseFn(pred.home_score, pred.away_score, match.home_score, match.away_score) * match.round_weight;
   if (!isV2 && pts > 0) {
     const cleanSheetHits =
@@ -151,6 +161,19 @@ export function matchPoints(pred: PredictionOut, match: MatchOut): number {
     pred.advancing_team_id === match.advancing_team_id
   ) {
     pts += 2 * match.round_weight;
+  }
+  if (
+    match.stage !== "group" &&
+    pred.penalty_home_score != null &&
+    pred.penalty_away_score != null &&
+    match.penalty_home_score != null &&
+    match.penalty_away_score != null
+  ) {
+    const ph = pred.penalty_home_score, pa = pred.penalty_away_score;
+    const ah = match.penalty_home_score, aa = match.penalty_away_score;
+    if (ph === ah && pa === aa) {
+      pts += 5;
+    }
   }
   return pts;
 }

@@ -94,6 +94,8 @@ class MatchOut(BaseModel):
     home_score: int | None
     away_score: int | None
     advancing_team_id: str | None
+    penalty_home_score: int | None
+    penalty_away_score: int | None
     is_locked: bool
 
 
@@ -154,6 +156,8 @@ class PredictionIn(BaseModel):
     home_score: int = Field(ge=0, le=99)
     away_score: int = Field(ge=0, le=99)
     advancing_team_id: str | None = None
+    penalty_home_score: int | None = Field(default=None, ge=0, le=20)
+    penalty_away_score: int | None = Field(default=None, ge=0, le=20)
 
 
 class PredictionOut(BaseModel):
@@ -161,6 +165,8 @@ class PredictionOut(BaseModel):
     home_score: int
     away_score: int
     advancing_team_id: str | None
+    penalty_home_score: int | None
+    penalty_away_score: int | None
     updated_at: datetime
 
 
@@ -173,6 +179,8 @@ class PredictionEntryOut(BaseModel):
     home_score: int
     away_score: int
     advancing_team_id: str | None
+    penalty_home_score: int | None
+    penalty_away_score: int | None
     points: int | None
 
 
@@ -246,6 +254,8 @@ class ResultIn(BaseModel):
     home_score: int = Field(ge=0, le=99)
     away_score: int = Field(ge=0, le=99)
     advancing_team_id: str | None = None
+    penalty_home_score: int | None = Field(default=None, ge=0, le=20)
+    penalty_away_score: int | None = Field(default=None, ge=0, le=20)
 
 
 class MatchStatusCountsOut(BaseModel):

@@ -523,6 +523,10 @@ export interface components {
             away_score: number | null;
             /** Advancing Team Id */
             advancing_team_id: string | null;
+            /** Penalty Home Score */
+            penalty_home_score: number | null;
+            /** Penalty Away Score */
+            penalty_away_score: number | null;
             /** Is Locked */
             is_locked: boolean;
         };
@@ -713,6 +717,10 @@ export interface components {
             away_score: number;
             /** Advancing Team Id */
             advancing_team_id: string | null;
+            /** Penalty Home Score */
+            penalty_home_score: number | null;
+            /** Penalty Away Score */
+            penalty_away_score: number | null;
             /** Points */
             points: number | null;
         };
@@ -724,6 +732,10 @@ export interface components {
             away_score: number;
             /** Advancing Team Id */
             advancing_team_id?: string | null;
+            /** Penalty Home Score */
+            penalty_home_score?: number | null;
+            /** Penalty Away Score */
+            penalty_away_score?: number | null;
         };
         /** PredictionOut */
         PredictionOut: {
@@ -735,6 +747,10 @@ export interface components {
             away_score: number;
             /** Advancing Team Id */
             advancing_team_id: string | null;
+            /** Penalty Home Score */
+            penalty_home_score: number | null;
+            /** Penalty Away Score */
+            penalty_away_score: number | null;
             /**
              * Updated At
              * Format: date-time
@@ -757,6 +773,10 @@ export interface components {
             away_score: number;
             /** Advancing Team Id */
             advancing_team_id?: string | null;
+            /** Penalty Home Score */
+            penalty_home_score?: number | null;
+            /** Penalty Away Score */
+            penalty_away_score?: number | null;
         };
         /** RevealedPredictionsOut */
         RevealedPredictionsOut: {

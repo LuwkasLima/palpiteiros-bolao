@@ -2,7 +2,9 @@ export interface AppNotification {
   id: string;
   title: string;
   body: string;
-  cta?: { label: string };
+  // Without href, the CTA opens the "What's new" changelog modal.
+  // With href, it navigates to that page instead (no popup).
+  cta?: { label: string; href?: string };
   time: string;
 }
 
@@ -10,10 +12,17 @@ export interface AppNotification {
 // id must be "release-{version}" so it can be keyed to the changelog.
 export const NOTIFICATIONS: AppNotification[] = [
   {
-    id: "release-2026-06-21",
-    title: "🆕 Resenha da Semana",
-    body: "Aos domingos, uma resenha narrada fecha a semana do bolão exaltando o profeta e zoando o corneteiro.",
+    id: "release-2026-06-28",
+    title: "🆕 Mata-mata com nova pontuação",
+    body: "Placar, classificado e pênaltis agora valem pontos separados. Prever 2×1 com resultado 1×2 conta como exato pelo placar — mesmos gols, lados trocados.",
     cta: { label: "Ver o que há de novo →" },
+    time: "hoje",
+  },
+  {
+    id: "scoring-rationale-2026-06-28",
+    title: "📋 Entenda o novo sistema do mata-mata",
+    body: "Três palpites por jogo, avaliados de forma independente: o placar pelos números, o classificado por quem avança, e os pênaltis como bônus fixo.",
+    cta: { label: "Ver as regras →", href: "/regras#mata-mata" },
     time: "hoje",
   },
   {

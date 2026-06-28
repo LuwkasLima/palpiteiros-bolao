@@ -132,6 +132,8 @@ class Match(Document):
     home_score: int | None = None
     away_score: int | None = None
     advancing_team_id: PydanticObjectId | None = None
+    penalty_home_score: int | None = None
+    penalty_away_score: int | None = None
 
     class Settings:
         name = "matches"
@@ -183,6 +185,8 @@ class Prediction(Document):
     home_score: int
     away_score: int
     advancing_team_id: PydanticObjectId | None = None
+    penalty_home_score: int | None = None
+    penalty_away_score: int | None = None
     updated_at: datetime = Field(default_factory=utcnow)
 
     class Settings:

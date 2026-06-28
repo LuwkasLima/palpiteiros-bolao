@@ -1,7 +1,7 @@
 """Scoring rules — the single source of truth for how points are awarded.
 
 Design goal: keep the competition alive to the end. Base points reward how close a
-prediction is (exact > correct margin > correct outcome). An *escalating round weight*
+prediction is (exact > near > correct margin > correct outcome). An *escalating round weight*
 multiplies those points so later knockout rounds are worth far more than group games — a
 group-stage leader can never coast, and trailing players can always catch up.
 
@@ -12,8 +12,16 @@ even when the score is missed.
 Scoring versions
 ----------------
 V1 (kickoff_at < SCORING_V2_SINCE): goal-difference tier + per-side clean-sheet bonus.
-V2 (kickoff_at >= SCORING_V2_SINCE): L1-distance tier, no clean-sheet bonus.
-  - Margin tier: wins off by exactly 1 total goal; draws off by exactly 1 per side.
+  No Near tier; correct draws award Outcome points regardless of goal margin.
+V2 (kickoff_at >= SCORING_V2_SINCE): 4-tier L1-distance system, no clean-sheet bonus.
+  - Near tier: wins off by exactly 1 total goal (L1=1); draws off by exactly 1 per side (L1=2).
+  - Margin tier (wins): correct goal difference but L1 > 1.
+  - Margin tier (draws, knockout only): L1 ≥ 4. Group-stage draws beyond Near still earn Outcome.
+  - Knockout score tiers are outcome-agnostic: score and advancing pick are independent.
+    - Flipped exact (same numbers, wrong attribution — e.g. 2×1 vs 1×2): Exact.
+    - L1=1 wrong outcome: Near.
+    - Same absolute margin, different score values, wrong outcome: Margin.
+    - Wrong outcome that fits none of the above: 0.
   - Predicting 0 goals for a side earns no special bonus beyond the base tier.
 """
 
@@ -24,9 +32,9 @@ from datetime import datetime
 from app.models import Match, MatchStatus, Prediction, Stage
 
 # Base points (before the round-weight multiplier).
-POINTS_EXACT = 5    # exact scoreline
+POINTS_EXACT = 5    # exact scoreline (or flipped exact in knockout)
 POINTS_NEAR = 4     # closest possible non-exact (V2 only): L1=1 for wins, L1=2 for draws
-POINTS_MARGIN = 3   # correct goal difference, wins only (both V1 and V2)
+POINTS_MARGIN = 3   # correct goal difference (or same absolute margin, knockout wrong-outcome)
 POINTS_OUTCOME = 2  # correct outcome only
 ADVANCE_BONUS = 2   # knockout only: correct "who advances" pick
 
@@ -35,10 +43,10 @@ ROUND_WEIGHT: dict[Stage, int] = {
     Stage.GROUP: 1,
     Stage.R32: 2,
     Stage.R16: 3,
-    Stage.QF: 5,
-    Stage.SF: 8,
-    Stage.THIRD: 13,
-    Stage.FINAL: 13,
+    Stage.QF: 4,
+    Stage.SF: 5,
+    Stage.THIRD: 6,
+    Stage.FINAL: 6,
 }
 
 # Matches that kick off at or after Uzbekistan vs Colombia (G-K-1-UZBCOL) use V2 rules.
@@ -90,10 +98,14 @@ def base_points(
     act_home: int,
     act_away: int,
     kickoff_at: datetime | None = None,
+    is_knockout: bool = False,
 ) -> int:
     """Points for a single prediction vs an actual scoreline, before round weighting.
 
     Pass kickoff_at to get version-correct results; omitting it applies V2 rules.
+    Pass is_knockout=True for knockout matches to enable the draw Margin tier (L1 ≥ 4 → 3 pts
+    instead of 2 pts). Group-stage draws beyond Near always earn Outcome to avoid retroactive
+    changes to already-scored group matches.
     """
     if kickoff_at is not None and kickoff_at < SCORING_V2_SINCE:
         return _base_points_v1(pred_home, pred_away, act_home, act_away)
@@ -103,19 +115,45 @@ def base_points(
         return POINTS_EXACT
     pred_out = _outcome(pred_home, pred_away)
     act_out = _outcome(act_home, act_away)
-    if pred_out != act_out:
-        return 0
     total_error = abs(pred_home - act_home) + abs(pred_away - act_away)
+    if is_knockout:
+        # Flipped exact (same numbers, wrong attribution — e.g. 2×1 vs 1×2): score is
+        # treated as correct; the advancing pick separately handles who actually won.
+        if pred_home == act_away and pred_away == act_home:
+            return POINTS_EXACT
+        # Near is outcome-agnostic: L1=1 is close regardless of who won.
+        if total_error == 1:
+            return POINTS_NEAR
+    if pred_out != act_out:
+        # Wrong outcome: Margin if same absolute goal margin, otherwise 0.
+        if is_knockout and abs(pred_home - pred_away) == abs(act_home - act_away):
+            return POINTS_MARGIN
+        return 0
+    # Correct outcome from here:
     if act_out == "draw":
-        # L1=2 is the minimum non-exact draw error — same "near" concept as L1=1 for wins.
-        # No tier-3 for draws: goal diff is always 0 for both, so it can't distinguish.
-        return POINTS_NEAR if total_error == 2 else POINTS_OUTCOME
-    # Non-draw wins:
+        # L1=2 is the minimum non-exact draw error.
+        # Beyond Near: knockout draws earn Margin; group stays Outcome.
+        if total_error == 2:
+            return POINTS_NEAR
+        return POINTS_MARGIN if is_knockout else POINTS_OUTCOME
+    # Non-draw wins, correct outcome:
     if total_error == 1:
         return POINTS_NEAR
     if (pred_home - pred_away) == (act_home - act_away):
         return POINTS_MARGIN
     return POINTS_OUTCOME
+
+
+def penalty_base_points(pred_home: int, pred_away: int, act_home: int, act_away: int) -> int:
+    """Flat points for a penalty shootout prediction (no round-weight multiplier).
+
+    Tiers: Exact(5) / Margin(3, L1=1) / Miss(0).
+    No Near tier — penalty scores are too compressed.
+    No Outcome tier — the advancing-team pick already rewards knowing the winner.
+    """
+    if pred_home == act_home and pred_away == act_away:
+        return POINTS_EXACT
+    return 0
 
 
 def points_for(prediction: Prediction, match: Match) -> int:
@@ -126,12 +164,14 @@ def points_for(prediction: Prediction, match: Match) -> int:
     weight = round_weight(match.stage)
     is_v2 = match.kickoff_at >= SCORING_V2_SINCE
 
+    is_knockout = match.stage is not Stage.GROUP
     points = base_points(
         prediction.home_score,
         prediction.away_score,
         match.home_score,
         match.away_score,
         match.kickoff_at,
+        is_knockout=is_knockout,
     ) * weight
 
     if not is_v2 and points > 0:
@@ -143,11 +183,25 @@ def points_for(prediction: Prediction, match: Match) -> int:
         ) * weight
 
     if (
-        match.stage is not Stage.GROUP
+        is_knockout
         and prediction.advancing_team_id is not None
         and match.advancing_team_id is not None
         and prediction.advancing_team_id == match.advancing_team_id
     ):
         points += ADVANCE_BONUS * weight
+
+    if (
+        is_knockout
+        and prediction.penalty_home_score is not None
+        and prediction.penalty_away_score is not None
+        and match.penalty_home_score is not None
+        and match.penalty_away_score is not None
+    ):
+        points += penalty_base_points(
+            prediction.penalty_home_score,
+            prediction.penalty_away_score,
+            match.penalty_home_score,
+            match.penalty_away_score,
+        )
 
     return points
