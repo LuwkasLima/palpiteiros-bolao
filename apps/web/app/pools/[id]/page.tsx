@@ -433,7 +433,7 @@ function MatchPredictionsCard({
             <span className="text-xs text-[var(--muted)]">em andamento</span>
           )}
           {penaltiesPlayed && (
-            <span className="text-[10px] text-[var(--muted)]">
+            <span className="text-sm font-medium text-[var(--muted)]">
               Pênaltis: {match.penalty_home_score}×{match.penalty_away_score}
             </span>
           )}
@@ -480,21 +480,20 @@ function MatchPredictionsCard({
                     <span className="text-sm font-medium text-[var(--muted)]">– pts</span>
                   )}
                 </div>
-                <div className="text-sm font-medium text-[var(--muted)]">
-                  Placar: {entry.home_score}–{entry.away_score}
+                <div className="text-center text-sm font-medium text-[var(--muted)]">
+                  ⚽ {entry.home_score}–{entry.away_score}
                   {predAdvancingName != null && (
                     <span className={
                       predAdvancingCorrect === true ? " text-green-400"
                       : predAdvancingCorrect === false ? " text-red-400"
                       : ""
                     }>
-                      {" · "}Avança: {predAdvancingName}
-                      {predAdvancingCorrect === true ? " ✓" : predAdvancingCorrect === false ? " ✗" : ""}
+                      {" · "}→ {predAdvancingName}
                     </span>
                   )}
                   {hasPenaltyPred && (
                     <span className={penaltyExact ? " text-green-400" : ""}>
-                      {" · "}Pênaltis: {entry.penalty_home_score}×{entry.penalty_away_score}
+                      {" · "}🥅 {entry.penalty_home_score}×{entry.penalty_away_score}
                       {penaltyExact ? " ✓" : ""}
                     </span>
                   )}
