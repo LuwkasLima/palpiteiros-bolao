@@ -72,16 +72,18 @@ async def _seed_group_stage(fixtures: list[dict], teams: dict[str, Team]) -> Non
         )
 
 
-async def _seed_knockout(knockout: list[dict]) -> None:
+async def _seed_knockout(knockout: list[dict], teams: dict[str, Team]) -> None:
     for fix in knockout:
         stage = Stage(fix["stage"])
+        home = fix.get("home")
+        away = fix.get("away")
         await _upsert_match(
             fix["key"],
             stage=stage,
             round_weight=round_weight(stage),
             group_label=None,
-            home_team_id=None,
-            away_team_id=None,
+            home_team_id=teams[home].id if home else None,
+            away_team_id=teams[away].id if away else None,
             kickoff_at=datetime.fromisoformat(fix["kickoff_utc"]),
             slot_label=fix["slot_label"],
         )
@@ -94,7 +96,7 @@ async def seed() -> None:
     try:
         teams = await _upsert_teams(data["groups"])
         await _seed_group_stage(data["fixtures"], teams)
-        await _seed_knockout(data["knockout"])
+        await _seed_knockout(data["knockout"], teams)
         total = await Match.find_all().count()
         print(f"Seeded {len(teams)} teams and {total} matches.")
     finally:

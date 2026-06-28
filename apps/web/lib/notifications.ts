@@ -2,7 +2,9 @@ export interface AppNotification {
   id: string;
   title: string;
   body: string;
-  cta?: { label: string };
+  // Without href, the CTA opens the "What's new" changelog modal.
+  // With href, it navigates to that page instead (no popup).
+  cta?: { label: string; href?: string };
   time: string;
 }
 
@@ -12,8 +14,15 @@ export const NOTIFICATIONS: AppNotification[] = [
   {
     id: "release-2026-06-28",
     title: "🆕 Pontuação rebalanceada nas fases finais",
-    body: "Os multiplicadores de quartas de final em diante foram reduzidos para dar mais valor a quem acertou na fase de grupos.",
+    body: "Os multiplicadores das quartas de final em diante foram reduzidos — valem a partir das quartas (9 de julho) — para dar mais valor a quem acerta desde a fase de grupos.",
     cta: { label: "Ver o que há de novo →" },
+    time: "hoje",
+  },
+  {
+    id: "scoring-rationale-2026-06-28",
+    title: "📋 Por que mudamos a pontuação?",
+    body: "Reduzimos os pesos do mata-mata para premiar a consistência, e mantivemos o placar exato em 5 pts para o bolão seguir vivo até o fim. Entenda o raciocínio nas regras.",
+    cta: { label: "Ver as regras →", href: "/regras#mata-mata" },
     time: "hoje",
   },
   {

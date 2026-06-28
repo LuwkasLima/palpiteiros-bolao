@@ -1,7 +1,7 @@
 """Scoring rules — the single source of truth for how points are awarded.
 
 Design goal: keep the competition alive to the end. Base points reward how close a
-prediction is (exact > correct margin > correct outcome). An *escalating round weight*
+prediction is (exact > near > correct margin > correct outcome). An *escalating round weight*
 multiplies those points so later knockout rounds are worth far more than group games — a
 group-stage leader can never coast, and trailing players can always catch up.
 
@@ -12,8 +12,11 @@ even when the score is missed.
 Scoring versions
 ----------------
 V1 (kickoff_at < SCORING_V2_SINCE): goal-difference tier + per-side clean-sheet bonus.
-V2 (kickoff_at >= SCORING_V2_SINCE): L1-distance tier, no clean-sheet bonus.
-  - Margin tier: wins off by exactly 1 total goal; draws off by exactly 1 per side.
+  No Near tier; correct draws award Outcome points regardless of goal margin.
+V2 (kickoff_at >= SCORING_V2_SINCE): 4-tier L1-distance system, no clean-sheet bonus.
+  - Near tier: wins off by exactly 1 total goal (L1=1); draws off by exactly 1 per side (L1=2).
+  - Margin tier (wins only): correct goal difference but L1 > 1.
+  - No Margin tier for draws: goal difference is always 0, so it cannot distinguish predictions.
   - Predicting 0 goals for a side earns no special bonus beyond the base tier.
 """
 
