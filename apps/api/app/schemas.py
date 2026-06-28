@@ -188,10 +188,16 @@ class MatchRevealedOut(BaseModel):
     match_id: str
     kickoff_at: datetime
     status: MatchStatus
+    stage: Stage
+    home_team_id: str | None
+    away_team_id: str | None
     home_team_name: str | None
     away_team_name: str | None
     home_score: int | None
     away_score: int | None
+    advancing_team_id: str | None
+    penalty_home_score: int | None
+    penalty_away_score: int | None
     entries: list[PredictionEntryOut]
 
 
