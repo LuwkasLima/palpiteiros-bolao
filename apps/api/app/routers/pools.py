@@ -28,6 +28,7 @@ from app.schemas import (
 )
 from app.security import new_invite_code
 from app.services.leaderboard import compute_leaderboard, compute_weekly_hero, compute_weekly_titles
+from app.services.narrative import get_weekly_narrative
 
 router = APIRouter(prefix="/pools", tags=["pools"])
 
@@ -199,7 +200,8 @@ async def pool_weekly_hero(
     week_end: datetime = Query(...),
 ) -> WeeklyHeroOut:
     pool = await load_member_pool(pool_id, user)
-    return await compute_weekly_hero(pool, week_start, week_end)
+    hero = await compute_weekly_hero(pool, week_start, week_end)
+    return hero.model_copy(update={"narrative": await get_weekly_narrative(pool, hero, week_start)})
 
 
 @router.get("/{pool_id}/leaderboard/weekly-titles", response_model=WeeklyTitlesOut)

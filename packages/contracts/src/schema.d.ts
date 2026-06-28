@@ -860,6 +860,8 @@ export interface components {
             corneteiro_points: number | null;
             /** Has Data */
             has_data: boolean;
+            /** Narrative */
+            narrative?: string | null;
         };
         /** WeeklyTitleCountOut */
         WeeklyTitleCountOut: {
