@@ -17,8 +17,11 @@ V2 (kickoff_at >= SCORING_V2_SINCE): 4-tier L1-distance system, no clean-sheet b
   - Near tier: wins off by exactly 1 total goal (L1=1); draws off by exactly 1 per side (L1=2).
   - Margin tier (wins): correct goal difference but L1 > 1.
   - Margin tier (draws, knockout only): L1 ≥ 4. Group-stage draws beyond Near still earn Outcome.
-  - Shape tier (knockout only): wrong outcome but same absolute goal difference → 1 pt.
-    E.g. predict 2×1 (home), actual 1×2 (away): |+1|==|-1| → Shape. Group stage always 0.
+  - Knockout score tiers are outcome-agnostic: score and advancing pick are independent.
+    - Flipped exact (same numbers, wrong attribution — e.g. 2×1 vs 1×2): Exact.
+    - L1=1 wrong outcome: Near.
+    - Same absolute margin, different score values, wrong outcome: Margin.
+    - Wrong outcome that fits none of the above: 0.
   - Predicting 0 goals for a side earns no special bonus beyond the base tier.
 """
 
@@ -29,11 +32,10 @@ from datetime import datetime
 from app.models import Match, MatchStatus, Prediction, Stage
 
 # Base points (before the round-weight multiplier).
-POINTS_EXACT = 5    # exact scoreline
+POINTS_EXACT = 5    # exact scoreline (or flipped exact in knockout)
 POINTS_NEAR = 4     # closest possible non-exact (V2 only): L1=1 for wins, L1=2 for draws
-POINTS_MARGIN = 3   # correct goal difference, wins only (both V1 and V2)
+POINTS_MARGIN = 3   # correct goal difference (or same absolute margin, knockout wrong-outcome)
 POINTS_OUTCOME = 2  # correct outcome only
-POINTS_SHAPE = 1    # knockout only: wrong outcome but same absolute goal difference
 ADVANCE_BONUS = 2   # knockout only: correct "who advances" pick
 
 # Escalating per-round weight — the anti-runaway mechanic.
@@ -113,18 +115,28 @@ def base_points(
         return POINTS_EXACT
     pred_out = _outcome(pred_home, pred_away)
     act_out = _outcome(act_home, act_away)
-    if pred_out != act_out:
-        if is_knockout and abs(pred_home - pred_away) == abs(act_home - act_away):
-            return POINTS_SHAPE
-        return 0
     total_error = abs(pred_home - act_home) + abs(pred_away - act_away)
+    if is_knockout:
+        # Flipped exact (same numbers, wrong attribution — e.g. 2×1 vs 1×2): score is
+        # treated as correct; the advancing pick separately handles who actually won.
+        if pred_home == act_away and pred_away == act_home:
+            return POINTS_EXACT
+        # Near is outcome-agnostic: L1=1 is close regardless of who won.
+        if total_error == 1:
+            return POINTS_NEAR
+    if pred_out != act_out:
+        # Wrong outcome: Margin if same absolute goal margin, otherwise 0.
+        if is_knockout and abs(pred_home - pred_away) == abs(act_home - act_away):
+            return POINTS_MARGIN
+        return 0
+    # Correct outcome from here:
     if act_out == "draw":
-        # L1=2 is the minimum non-exact draw error — same "near" concept as L1=1 for wins.
-        # Beyond Near: knockout draws earn Margin (draws are harder to call); group stays Outcome.
+        # L1=2 is the minimum non-exact draw error.
+        # Beyond Near: knockout draws earn Margin; group stays Outcome.
         if total_error == 2:
             return POINTS_NEAR
         return POINTS_MARGIN if is_knockout else POINTS_OUTCOME
-    # Non-draw wins:
+    # Non-draw wins, correct outcome:
     if total_error == 1:
         return POINTS_NEAR
     if (pred_home - pred_away) == (act_home - act_away):

@@ -125,11 +125,15 @@ function _basePointsV1(ph: number, pa: number, ah: number, aa: number): number {
 
 function _basePointsV2(ph: number, pa: number, ah: number, aa: number, isKnockout = false): number {
   if (ph === ah && pa === aa) return 5;
+  const totalError = Math.abs(ph - ah) + Math.abs(pa - aa);
+  if (isKnockout) {
+    if (ph === aa && pa === ah) return 5;  // flipped exact — same scores, wrong attribution
+    if (totalError === 1) return 4;        // Near, outcome-agnostic in knockout
+  }
   if (_outcome(ph, pa) !== _outcome(ah, aa)) {
-    if (isKnockout && Math.abs(ph - pa) === Math.abs(ah - aa)) return 1;
+    if (isKnockout && Math.abs(ph - pa) === Math.abs(ah - aa)) return 3;  // Margin for same abs margin
     return 0;
   }
-  const totalError = Math.abs(ph - ah) + Math.abs(pa - aa);
   if (_outcome(ah, aa) === "draw") return totalError === 2 ? 4 : (isKnockout ? 3 : 2);
   if (totalError === 1) return 4;
   if (ph - pa === ah - aa) return 3;

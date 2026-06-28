@@ -76,11 +76,26 @@ def test_base_points_wrong_outcome():
     assert scoring.base_points(0, 0, 1, 0) == 0   # draw vs win, diff mismatch → 0
 
 
-def test_base_points_shape_wrong_outcome_knockout():
-    # Wrong outcome, same absolute margin, knockout → POINTS_SHAPE.
-    assert scoring.base_points(2, 1, 1, 2, is_knockout=True) == scoring.POINTS_SHAPE  # |+1|==|-1|
-    assert scoring.base_points(1, 0, 0, 1, is_knockout=True) == scoring.POINTS_SHAPE  # |+1|==|-1|
-    assert scoring.base_points(3, 1, 1, 3, is_knockout=True) == scoring.POINTS_SHAPE  # |+2|==|-2|
+def test_base_points_flipped_exact_knockout():
+    # Flipped exact (same numbers, wrong attribution) earns POINTS_EXACT in knockout.
+    # Score and advancing pick are treated as independent objects.
+    assert scoring.base_points(2, 1, 1, 2, is_knockout=True) == scoring.POINTS_EXACT
+    assert scoring.base_points(1, 0, 0, 1, is_knockout=True) == scoring.POINTS_EXACT
+    assert scoring.base_points(3, 1, 1, 3, is_knockout=True) == scoring.POINTS_EXACT
+    assert scoring.base_points(2, 0, 0, 2, is_knockout=True) == scoring.POINTS_EXACT
+
+
+def test_base_points_flipped_exact_group_is_zero():
+    # Group stage: flipped exact earns 0 (score and winner are not independent in group).
+    assert scoring.base_points(2, 1, 1, 2, is_knockout=False) == 0
+    assert scoring.base_points(1, 0, 0, 1, is_knockout=False) == 0
+
+
+def test_base_points_margin_wrong_outcome_knockout():
+    # Wrong outcome, same absolute margin but different score values → POINTS_MARGIN.
+    assert scoring.base_points(3, 1, 0, 2, is_knockout=True) == scoring.POINTS_MARGIN  # +2 vs -2, diff numbers
+    assert scoring.base_points(4, 1, 2, 5, is_knockout=True) == scoring.POINTS_MARGIN  # +3 vs -3, diff numbers
+    assert scoring.base_points(2, 0, 1, 3, is_knockout=True) == scoring.POINTS_MARGIN  # +2 vs -2, diff numbers
 
     # Wrong outcome, different absolute margin → 0 even in knockout.
     assert scoring.base_points(2, 0, 0, 1, is_knockout=True) == 0   # |+2| ≠ |-1|
@@ -90,16 +105,23 @@ def test_base_points_shape_wrong_outcome_knockout():
     assert scoring.base_points(1, 1, 2, 0, is_knockout=True) == 0
 
 
-def test_points_for_shape_knockout():
-    # QF (×4): predict home win, actual away win, same margin → POINTS_SHAPE × weight.
+def test_points_for_flipped_exact_knockout():
+    # QF (×4): predict home win, actual away win, same numbers flipped → POINTS_EXACT × weight.
     weight = scoring.round_weight(Stage.QF)
     pts = scoring.points_for(_pred(2, 1), _match(Stage.QF, 1, 2))
-    assert pts == scoring.POINTS_SHAPE * weight
+    assert pts == scoring.POINTS_EXACT * weight
 
 
-def test_points_for_shape_group_is_zero():
-    # Group stage: same scenario always earns 0 (no Shape tier for group).
-    pts = scoring.points_for(_pred(2, 1), _match(Stage.GROUP, 1, 2))
+def test_points_for_margin_wrong_outcome_knockout():
+    # QF (×4): wrong outcome, same absolute margin, different score values → POINTS_MARGIN × weight.
+    weight = scoring.round_weight(Stage.QF)
+    pts = scoring.points_for(_pred(3, 1), _match(Stage.QF, 0, 2))
+    assert pts == scoring.POINTS_MARGIN * weight
+
+
+def test_points_for_wrong_outcome_no_margin_group_is_zero():
+    # Group stage: wrong outcome always earns 0.
+    pts = scoring.points_for(_pred(3, 1), _match(Stage.GROUP, 0, 2))
     assert pts == 0
 
 
