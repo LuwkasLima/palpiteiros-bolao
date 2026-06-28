@@ -123,11 +123,11 @@ function _basePointsV1(ph: number, pa: number, ah: number, aa: number): number {
   return 2;
 }
 
-function _basePointsV2(ph: number, pa: number, ah: number, aa: number): number {
+function _basePointsV2(ph: number, pa: number, ah: number, aa: number, isKnockout = false): number {
   if (ph === ah && pa === aa) return 5;
   if (_outcome(ph, pa) !== _outcome(ah, aa)) return 0;
   const totalError = Math.abs(ph - ah) + Math.abs(pa - aa);
-  if (_outcome(ah, aa) === "draw") return totalError === 2 ? 4 : 2;
+  if (_outcome(ah, aa) === "draw") return totalError === 2 ? 4 : (isKnockout ? 3 : 2);
   if (totalError === 1) return 4;
   if (ph - pa === ah - aa) return 3;
   return 2;
@@ -136,7 +136,10 @@ function _basePointsV2(ph: number, pa: number, ah: number, aa: number): number {
 export function matchPoints(pred: PredictionOut, match: MatchOut): number {
   if (match.status !== "final" || match.home_score == null || match.away_score == null) return 0;
   const isV2 = new Date(match.kickoff_at) >= SCORING_V2_SINCE;
-  const baseFn = isV2 ? _basePointsV2 : _basePointsV1;
+  const isKnockout = match.stage !== "group";
+  const baseFn = isV2
+    ? (ph: number, pa: number, ah: number, aa: number) => _basePointsV2(ph, pa, ah, aa, isKnockout)
+    : _basePointsV1;
   let pts = baseFn(pred.home_score, pred.away_score, match.home_score, match.away_score) * match.round_weight;
   if (!isV2 && pts > 0) {
     const cleanSheetHits =

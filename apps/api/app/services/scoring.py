@@ -15,8 +15,8 @@ V1 (kickoff_at < SCORING_V2_SINCE): goal-difference tier + per-side clean-sheet 
   No Near tier; correct draws award Outcome points regardless of goal margin.
 V2 (kickoff_at >= SCORING_V2_SINCE): 4-tier L1-distance system, no clean-sheet bonus.
   - Near tier: wins off by exactly 1 total goal (L1=1); draws off by exactly 1 per side (L1=2).
-  - Margin tier (wins only): correct goal difference but L1 > 1.
-  - No Margin tier for draws: goal difference is always 0, so it cannot distinguish predictions.
+  - Margin tier (wins): correct goal difference but L1 > 1.
+  - Margin tier (draws, knockout only): L1 ≥ 4. Group-stage draws beyond Near still earn Outcome.
   - Predicting 0 goals for a side earns no special bonus beyond the base tier.
 """
 
@@ -93,10 +93,14 @@ def base_points(
     act_home: int,
     act_away: int,
     kickoff_at: datetime | None = None,
+    is_knockout: bool = False,
 ) -> int:
     """Points for a single prediction vs an actual scoreline, before round weighting.
 
     Pass kickoff_at to get version-correct results; omitting it applies V2 rules.
+    Pass is_knockout=True for knockout matches to enable the draw Margin tier (L1 ≥ 4 → 3 pts
+    instead of 2 pts). Group-stage draws beyond Near always earn Outcome to avoid retroactive
+    changes to already-scored group matches.
     """
     if kickoff_at is not None and kickoff_at < SCORING_V2_SINCE:
         return _base_points_v1(pred_home, pred_away, act_home, act_away)
@@ -111,8 +115,10 @@ def base_points(
     total_error = abs(pred_home - act_home) + abs(pred_away - act_away)
     if act_out == "draw":
         # L1=2 is the minimum non-exact draw error — same "near" concept as L1=1 for wins.
-        # No tier-3 for draws: goal diff is always 0 for both, so it can't distinguish.
-        return POINTS_NEAR if total_error == 2 else POINTS_OUTCOME
+        # Beyond Near: knockout draws earn Margin (draws are harder to call); group stays Outcome.
+        if total_error == 2:
+            return POINTS_NEAR
+        return POINTS_MARGIN if is_knockout else POINTS_OUTCOME
     # Non-draw wins:
     if total_error == 1:
         return POINTS_NEAR
@@ -143,12 +149,14 @@ def points_for(prediction: Prediction, match: Match) -> int:
     weight = round_weight(match.stage)
     is_v2 = match.kickoff_at >= SCORING_V2_SINCE
 
+    is_knockout = match.stage is not Stage.GROUP
     points = base_points(
         prediction.home_score,
         prediction.away_score,
         match.home_score,
         match.away_score,
         match.kickoff_at,
+        is_knockout=is_knockout,
     ) * weight
 
     if not is_v2 and points > 0:
@@ -160,7 +168,7 @@ def points_for(prediction: Prediction, match: Match) -> int:
         ) * weight
 
     if (
-        match.stage is not Stage.GROUP
+        is_knockout
         and prediction.advancing_team_id is not None
         and match.advancing_team_id is not None
         and prediction.advancing_team_id == match.advancing_team_id
@@ -168,7 +176,7 @@ def points_for(prediction: Prediction, match: Match) -> int:
         points += ADVANCE_BONUS * weight
 
     if (
-        match.stage is not Stage.GROUP
+        is_knockout
         and prediction.penalty_home_score is not None
         and prediction.penalty_away_score is not None
         and match.penalty_home_score is not None

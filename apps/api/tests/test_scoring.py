@@ -52,9 +52,22 @@ def test_base_points_near_draws():
 
 
 def test_base_points_outcome_draws_when_far():
-    # L1 > 2 for draws → POINTS_OUTCOME.
+    # L1 > 2 for draws in group stage (is_knockout=False, the default) → POINTS_OUTCOME.
     assert scoring.base_points(0, 0, 2, 2) == scoring.POINTS_OUTCOME
     assert scoring.base_points(3, 3, 1, 1) == scoring.POINTS_OUTCOME
+
+
+def test_base_points_margin_draws_when_far_knockout():
+    # L1 > 2 for draws in knockout stage → POINTS_MARGIN (draws are harder to call).
+    assert scoring.base_points(0, 0, 2, 2, is_knockout=True) == scoring.POINTS_MARGIN
+    assert scoring.base_points(3, 3, 1, 1, is_knockout=True) == scoring.POINTS_MARGIN
+    assert scoring.base_points(0, 0, 3, 3, is_knockout=True) == scoring.POINTS_MARGIN
+
+
+def test_base_points_near_draws_unchanged_in_knockout():
+    # Near draws (L1=2) still earn POINTS_NEAR regardless of stage.
+    assert scoring.base_points(0, 0, 1, 1, is_knockout=True) == scoring.POINTS_NEAR
+    assert scoring.base_points(2, 2, 1, 1, is_knockout=True) == scoring.POINTS_NEAR
 
 
 def test_base_points_wrong_outcome():
@@ -199,6 +212,20 @@ def test_late_round_can_overturn_group_lead():
 # ---------------------------------------------------------------------------
 # penalty_base_points — flat, no weight
 # ---------------------------------------------------------------------------
+
+def test_points_for_far_draw_group_is_outcome():
+    # Group stage: far draw still earns OUTCOME (no retroactive change).
+    weight = scoring.round_weight(Stage.GROUP)
+    pts = scoring.points_for(_pred(0, 0), _match(Stage.GROUP, 2, 2))
+    assert pts == scoring.POINTS_OUTCOME * weight
+
+
+def test_points_for_far_draw_knockout_is_margin():
+    # Knockout stage: far draw earns MARGIN.
+    weight = scoring.round_weight(Stage.R16)
+    pts = scoring.points_for(_pred(0, 0), _match(Stage.R16, 2, 2))
+    assert pts == scoring.POINTS_MARGIN * weight
+
 
 def test_penalty_base_points_exact():
     assert scoring.penalty_base_points(5, 3, 5, 3) == scoring.POINTS_EXACT
