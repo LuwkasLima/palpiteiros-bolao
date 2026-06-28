@@ -281,17 +281,10 @@ def test_penalty_base_points_exact():
     assert scoring.penalty_base_points(5, 3, 5, 3) == scoring.POINTS_EXACT
 
 
-def test_penalty_base_points_margin_l1_1():
-    # Off by 1 total goal → POINTS_MARGIN (L1=1).
-    assert scoring.penalty_base_points(4, 3, 5, 3) == scoring.POINTS_MARGIN  # home +1
-    assert scoring.penalty_base_points(5, 4, 5, 3) == scoring.POINTS_MARGIN  # away +1
-    assert scoring.penalty_base_points(6, 3, 5, 3) == scoring.POINTS_MARGIN  # home +1
-
-
-def test_penalty_base_points_miss_l1_gt_1():
-    # L1=2 or more → 0.
+def test_penalty_base_points_miss():
+    # Any non-exact result → 0 (no intermediate tier).
+    assert scoring.penalty_base_points(4, 3, 5, 3) == 0   # L1=1
     assert scoring.penalty_base_points(3, 3, 5, 3) == 0   # L1=2
-    assert scoring.penalty_base_points(5, 1, 5, 3) == 0   # L1=2
     assert scoring.penalty_base_points(3, 1, 5, 3) == 0   # L1=4
 
 
@@ -301,24 +294,15 @@ def test_points_for_includes_penalty_flat_no_weight():
     m = _match(Stage.QF, 1, 1, advancing=team, penalty_home=5, penalty_away=3)
     p = _pred(1, 1, advancing=team, penalty_home=5, penalty_away=3)
     weight = scoring.round_weight(Stage.QF)
-    expected = (scoring.POINTS_EXACT * weight         # score
-                + scoring.ADVANCE_BONUS * weight       # advancing pick
-                + scoring.POINTS_EXACT)                # penalty exact — flat, no weight
-    assert scoring.points_for(p, m) == expected
-
-
-def test_points_for_penalty_margin():
-    m = _match(Stage.SF, 0, 0, advancing=PydanticObjectId(), penalty_home=5, penalty_away=4)
-    p = _pred(0, 0, penalty_home=4, penalty_away=4)  # home off by 1 → POINTS_MARGIN
-    weight = scoring.round_weight(Stage.SF)
-    # Exact draw + no advancing match (different id) + penalty margin
-    expected = scoring.POINTS_EXACT * weight + scoring.POINTS_MARGIN
+    expected = (scoring.POINTS_EXACT * weight    # score
+                + scoring.ADVANCE_BONUS * weight  # advancing pick
+                + scoring.POINTS_EXACT)           # penalty exact — flat, no weight
     assert scoring.points_for(p, m) == expected
 
 
 def test_points_for_penalty_miss():
     m = _match(Stage.R16, 2, 0, penalty_home=5, penalty_away=3)
-    p = _pred(2, 0, penalty_home=3, penalty_away=1)  # L1=2 → 0
+    p = _pred(2, 0, penalty_home=4, penalty_away=3)  # L1=1 → 0 (no near tier)
     weight = scoring.round_weight(Stage.R16)
     assert scoring.points_for(p, m) == scoring.POINTS_EXACT * weight
 

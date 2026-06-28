@@ -153,8 +153,6 @@ def penalty_base_points(pred_home: int, pred_away: int, act_home: int, act_away:
     """
     if pred_home == act_home and pred_away == act_away:
         return POINTS_EXACT
-    if abs(pred_home - act_home) + abs(pred_away - act_away) == 1:
-        return POINTS_MARGIN
     return 0
 
 

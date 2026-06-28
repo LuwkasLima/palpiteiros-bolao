@@ -173,8 +173,6 @@ export function matchPoints(pred: PredictionOut, match: MatchOut): number {
     const ah = match.penalty_home_score, aa = match.penalty_away_score;
     if (ph === ah && pa === aa) {
       pts += 5;
-    } else if (Math.abs(ph - ah) + Math.abs(pa - aa) === 1) {
-      pts += 3;
     }
   }
   return pts;
