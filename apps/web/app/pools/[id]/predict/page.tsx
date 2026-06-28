@@ -126,7 +126,11 @@ function MatchRow({
 }) {
   const [home, setHome] = useState<string>(pred ? String(pred.home_score) : "");
   const [away, setAway] = useState<string>(pred ? String(pred.away_score) : "");
+  const [advancingId, setAdvancingId] = useState<string | null>(pred?.advancing_team_id ?? null);
   const [state, setState] = useState<SaveState>("idle");
+
+  const isKnockout = match.stage !== "group";
+  const teamsKnown = match.home_team_id !== null && match.away_team_id !== null;
 
   const homeShort = sideShortLabel(match.home_team_id, tmap, match.slot_label ?? "A definir");
   const awayShort = sideShortLabel(match.away_team_id, tmap, match.slot_label ?? "A definir");
@@ -138,10 +142,33 @@ function MatchRow({
     if (home === "" || away === "") return;
     const h = Number(home);
     const a = Number(away);
-    if (h === pred?.home_score && a === pred?.away_score) return;
+    if (h === pred?.home_score && a === pred?.away_score && advancingId === pred?.advancing_team_id) return;
     setState("saving");
     try {
-      const saved = await api.savePrediction(poolId, match.id, { home_score: h, away_score: a });
+      const saved = await api.savePrediction(poolId, match.id, {
+        home_score: h,
+        away_score: a,
+        advancing_team_id: isKnockout ? advancingId : undefined,
+      });
+      onSaved(saved);
+      setState("saved");
+      setTimeout(() => setState("idle"), 1200);
+    } catch {
+      setState("error");
+    }
+  }
+
+  async function saveAdvancing(id: string | null) {
+    if (match.is_locked) return;
+    setAdvancingId(id);
+    if (home === "" || away === "") return;
+    setState("saving");
+    try {
+      const saved = await api.savePrediction(poolId, match.id, {
+        home_score: Number(home),
+        away_score: Number(away),
+        advancing_team_id: id,
+      });
       onSaved(saved);
       setState("saved");
       setTimeout(() => setState("idle"), 1200);
@@ -153,59 +180,124 @@ function MatchRow({
   const final = match.status === "final";
   const pts = final ? (pred ? matchPoints(pred, match) : 0) : null;
 
+  const advancingLabel =
+    advancingId === match.home_team_id
+      ? homeShort
+      : advancingId === match.away_team_id
+        ? awayShort
+        : null;
+
+  const advancingCorrect =
+    pred?.advancing_team_id != null &&
+    match.advancing_team_id != null &&
+    pred.advancing_team_id === match.advancing_team_id;
+
+  const scoreInputs = (
+    <div className="flex items-center gap-1">
+      <input
+        className="score-input"
+        inputMode="numeric"
+        value={home}
+        disabled={match.is_locked}
+        onChange={(e) => setHome(e.target.value.replace(/\D/g, "").slice(0, 2))}
+        onBlur={save}
+      />
+      <span className="text-[var(--muted)]">×</span>
+      <input
+        className="score-input"
+        inputMode="numeric"
+        value={away}
+        disabled={match.is_locked}
+        onChange={(e) => setAway(e.target.value.replace(/\D/g, "").slice(0, 2))}
+        onBlur={save}
+      />
+    </div>
+  );
+
+  const statusContent = final ? (
+    <>
+      <span className="chip">{match.home_score}×{match.away_score}</span>
+      {pts != null && (
+        <span className={`mt-1 block font-bold ${pts > 0 ? "text-[var(--accent)]" : "text-[var(--muted)]"}`}>
+          {pts > 0 ? "+" : ""}{pts} pts
+        </span>
+      )}
+    </>
+  ) : match.is_locked ? (
+    <span className="text-[var(--muted)]">🔒 fechado</span>
+  ) : state === "saving" ? (
+    <span className="text-[var(--muted)]">salvando…</span>
+  ) : state === "saved" ? (
+    <span className="text-[var(--accent)]">✓ salvo</span>
+  ) : state === "error" ? (
+    <span className="text-red-400">erro</span>
+  ) : (
+    <span className="text-[var(--muted)]">{formatKickoffTime(match.kickoff_at)}</span>
+  );
+
   return (
     <div className="p-3">
-      <div className="flex items-center gap-2">
-        <div className="flex-1 text-right text-sm font-medium">{homeShort}</div>
-        <div className="flex items-center gap-1">
-          <input
-            className="score-input"
-            inputMode="numeric"
-            value={home}
-            disabled={match.is_locked}
-            onChange={(e) => setHome(e.target.value.replace(/\D/g, "").slice(0, 2))}
-            onBlur={save}
-          />
-          <span className="text-[var(--muted)]">×</span>
-          <input
-            className="score-input"
-            inputMode="numeric"
-            value={away}
-            disabled={match.is_locked}
-            onChange={(e) => setAway(e.target.value.replace(/\D/g, "").slice(0, 2))}
-            onBlur={save}
-          />
+      {isKnockout ? (
+        /* Knockout layout: 4-col grid — picker | divider | score | status */
+        <div className="grid grid-cols-[1fr_1px_auto_auto] items-center gap-y-1">
+          {/* Label row */}
+          {teamsKnown
+            ? <span className="pr-4 text-xs text-[var(--muted)]">Avança</span>
+            : <div />}
+          <div className="row-span-2 self-stretch bg-[var(--border)]" />
+          <span className="pl-4 text-xs text-[var(--muted)]">Placar</span>
+          <div className="w-20" />
+
+          {/* Content row */}
+          {teamsKnown ? (
+            final ? (
+              <span className={`pr-4 text-sm font-medium ${advancingCorrect ? "text-[var(--accent)]" : "text-[var(--muted)]"}`}>
+                {advancingLabel ?? "—"}{pred?.advancing_team_id != null ? (advancingCorrect ? " ✓" : " ✗") : ""}
+              </span>
+            ) : match.is_locked ? (
+              <span className="pr-4 text-sm font-medium">{advancingLabel ?? "—"}</span>
+            ) : (
+              <div className="flex gap-2 pr-4">
+                {([
+                  { id: match.home_team_id!, label: homeShort },
+                  { id: match.away_team_id!, label: awayShort },
+                ] as { id: string; label: string }[]).map(({ id, label }) => (
+                  <button
+                    key={id}
+                    onClick={() => saveAdvancing(advancingId === id ? null : id)}
+                    className={`flex-1 rounded-full border px-3 py-1.5 text-xs font-medium transition-colors ${
+                      advancingId === id
+                        ? "border-[var(--accent)] bg-[var(--accent)]/10 text-[var(--accent)]"
+                        : "border-[var(--border)] text-[var(--muted)]"
+                    }`}
+                  >
+                    {label}
+                  </button>
+                ))}
+              </div>
+            )
+          ) : <div />}
+          <div className="pl-4">{scoreInputs}</div>
+          <div className="w-20 text-right text-xs leading-tight">{statusContent}</div>
         </div>
-        <div className="flex-1 text-left text-sm font-medium">{awayShort}</div>
-        <div className="ml-1 w-20 text-right text-xs leading-tight">
-          {final ? (
-            <>
-              <span className="chip">{match.home_score}×{match.away_score}</span>
-              {pts != null && (
-                <span className={`mt-1 block font-bold ${pts > 0 ? "text-[var(--accent)]" : "text-[var(--muted)]"}`}>
-                  {pts > 0 ? "+" : ""}{pts} pts
-                </span>
-              )}
-            </>
-          ) : match.is_locked ? (
-            <span className="text-[var(--muted)]">🔒 fechado</span>
-          ) : state === "saving" ? (
-            <span className="text-[var(--muted)]">salvando…</span>
-          ) : state === "saved" ? (
-            <span className="text-[var(--accent)]">✓ salvo</span>
-          ) : state === "error" ? (
-            <span className="text-red-400">erro</span>
-          ) : (
-            <span className="text-[var(--muted)]">{formatKickoffTime(match.kickoff_at)}</span>
+      ) : (
+        /* Group layout: original flanking design */
+        <>
+          <div className="flex items-center gap-2">
+            <div className="flex-1 text-right text-sm font-medium">{homeShort}</div>
+            {scoreInputs}
+            <div className="flex-1 text-left text-sm font-medium">{awayShort}</div>
+            <div className="shrink-0 whitespace-nowrap text-right text-xs leading-tight">{statusContent}</div>
+          </div>
+          {(homeName || awayName) && (
+            <div className="mt-0.5 flex justify-between text-xs text-[var(--muted)]">
+              <span>{homeName}</span>
+              <span>{awayName}</span>
+            </div>
           )}
-        </div>
-      </div>
-      {(homeName || awayName) && (
-        <div className="mt-0.5 flex justify-between text-xs text-[var(--muted)]">
-          <span>{homeName}</span>
-          <span>{awayName}</span>
-        </div>
+        </>
       )}
+
       <div className="mt-1.5 flex items-center justify-between gap-2 text-xs text-[var(--muted)]">
         <span className="shrink-0">{stageBadge(match.stage, match.group_label)}</span>
         {venueInfo && <span className="min-w-0 truncate text-right">{venueInfo.stadium} · {venueInfo.city}</span>}
