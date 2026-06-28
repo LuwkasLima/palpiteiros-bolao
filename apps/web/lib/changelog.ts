@@ -9,11 +9,11 @@ export interface ChangelogEntry {
 export const CHANGELOG: ChangelogEntry[] = [
   {
     version: "2026-06-28",
-    title: "Pontuação rebalanceada nas fases finais",
+    title: "Mata-mata: placar, classificado e pênaltis são três palpites independentes",
     items: [
-      "Os multiplicadores das quartas de final em diante foram reduzidos para valorizar mais a consistência ao longo de todo o torneio.",
-      "Quartas: ×4 (antes ×5) · Semifinais: ×5 (antes ×8) · Final e disputa do 3º: ×6 (antes ×13).",
-      "Grupos e oitavas de final não mudam — os pontos já acumulados continuam os mesmos.",
+      "O placar no mata-mata agora é avaliado pelos números, sem depender de quem venceu. Prever 2×1 com resultado 1×2 conta como placar exato — mesmos gols, lados trocados — e vale 5 × multiplicador da fase.",
+      "Novo palpite de pênaltis: quando o jogo vai para as cobranças, você pode prever o placar da disputa. Acertar vale +5 pts fixos, sem multiplicador.",
+      "Página de regras reformulada com os três componentes explicados — placar, classificado e pênaltis — com exemplos reais, raciocínio e o máximo possível por fase.",
     ],
   },
   {

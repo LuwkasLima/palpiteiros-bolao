@@ -13,15 +13,15 @@ export interface AppNotification {
 export const NOTIFICATIONS: AppNotification[] = [
   {
     id: "release-2026-06-28",
-    title: "🆕 Pontuação rebalanceada nas fases finais",
-    body: "Os multiplicadores das quartas de final em diante foram reduzidos — valem a partir das quartas (9 de julho) — para dar mais valor a quem acerta desde a fase de grupos.",
+    title: "🆕 Mata-mata com nova pontuação",
+    body: "Placar, classificado e pênaltis agora valem pontos separados. Prever 2×1 com resultado 1×2 conta como exato pelo placar — mesmos gols, lados trocados.",
     cta: { label: "Ver o que há de novo →" },
     time: "hoje",
   },
   {
     id: "scoring-rationale-2026-06-28",
-    title: "📋 Por que mudamos a pontuação?",
-    body: "Reduzimos os pesos do mata-mata para premiar a consistência, e mantivemos o placar exato em 5 pts para o bolão seguir vivo até o fim. Entenda o raciocínio nas regras.",
+    title: "📋 Entenda o novo sistema do mata-mata",
+    body: "Três palpites por jogo, avaliados de forma independente: o placar pelos números, o classificado por quem avança, e os pênaltis como bônus fixo.",
     cta: { label: "Ver as regras →", href: "/regras#mata-mata" },
     time: "hoje",
   },
