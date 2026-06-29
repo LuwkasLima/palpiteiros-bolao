@@ -77,12 +77,12 @@ def test_base_points_wrong_outcome():
 
 
 def test_base_points_flipped_exact_knockout():
-    # Flipped exact (same numbers, wrong attribution) earns POINTS_EXACT in knockout.
-    # Score and advancing pick are treated as independent objects.
-    assert scoring.base_points(2, 1, 1, 2, is_knockout=True) == scoring.POINTS_EXACT
-    assert scoring.base_points(1, 0, 0, 1, is_knockout=True) == scoring.POINTS_EXACT
-    assert scoring.base_points(3, 1, 1, 3, is_knockout=True) == scoring.POINTS_EXACT
-    assert scoring.base_points(2, 0, 0, 2, is_knockout=True) == scoring.POINTS_EXACT
+    # Flipped exact (same numbers, wrong attribution) earns POINTS_MARGIN in knockout.
+    # Correct magnitude but wrong direction: capped below correct-direction Near (POINTS_NEAR).
+    assert scoring.base_points(2, 1, 1, 2, is_knockout=True) == scoring.POINTS_MARGIN
+    assert scoring.base_points(1, 0, 0, 1, is_knockout=True) == scoring.POINTS_MARGIN
+    assert scoring.base_points(3, 1, 1, 3, is_knockout=True) == scoring.POINTS_MARGIN
+    assert scoring.base_points(2, 0, 0, 2, is_knockout=True) == scoring.POINTS_MARGIN
 
 
 def test_base_points_flipped_exact_group_is_zero():
@@ -91,11 +91,34 @@ def test_base_points_flipped_exact_group_is_zero():
     assert scoring.base_points(1, 0, 0, 1, is_knockout=False) == 0
 
 
+def test_base_points_wrong_near_knockout():
+    # Wrong outcome, L1=1 → POINTS_OUTCOME (not POINTS_NEAR); correct direction always scores higher.
+    assert scoring.base_points(0, 0, 1, 0, is_knockout=True) == scoring.POINTS_OUTCOME  # draw vs home win, L1=1
+    assert scoring.base_points(1, 1, 2, 1, is_knockout=True) == scoring.POINTS_OUTCOME  # draw vs home win, L1=1
+    assert scoring.base_points(1, 1, 1, 0, is_knockout=True) == scoring.POINTS_OUTCOME  # draw vs home win, L1=1
+
+
+def test_base_points_correct_near_unchanged_knockout():
+    # Correct outcome, L1=1 → still POINTS_NEAR (unchanged by the new rules).
+    assert scoring.base_points(2, 0, 1, 0, is_knockout=True) == scoring.POINTS_NEAR  # home win, L1=1
+    assert scoring.base_points(3, 1, 2, 1, is_knockout=True) == scoring.POINTS_NEAR  # home win, L1=1
+    assert scoring.base_points(0, 1, 0, 2, is_knockout=True) == scoring.POINTS_NEAR  # away win, L1=1
+
+
+def test_base_points_correct_direction_beats_wrong_direction():
+    # Correct-direction Diff Margin (2 pts) > Wrong-direction Near or Same Margin (2 pts) — they tie
+    # at Outcome, and the advance bonus is what separates them in practice.
+    # But correct-direction Near (4 pts) always beats wrong-direction anything (max 3 pts for flipped).
+    assert scoring.base_points(3, 0, 1, 0, is_knockout=True) == scoring.POINTS_OUTCOME  # correct, diff margin
+    assert scoring.base_points(0, 0, 1, 0, is_knockout=True) == scoring.POINTS_OUTCOME  # wrong, L1=1
+    assert scoring.base_points(2, 0, 1, 0, is_knockout=True) == scoring.POINTS_NEAR     # correct, L1=1 → higher
+
+
 def test_base_points_margin_wrong_outcome_knockout():
-    # Wrong outcome, same absolute margin but different score values → POINTS_MARGIN.
-    assert scoring.base_points(3, 1, 0, 2, is_knockout=True) == scoring.POINTS_MARGIN  # +2 vs -2, diff numbers
-    assert scoring.base_points(4, 1, 2, 5, is_knockout=True) == scoring.POINTS_MARGIN  # +3 vs -3, diff numbers
-    assert scoring.base_points(2, 0, 1, 3, is_knockout=True) == scoring.POINTS_MARGIN  # +2 vs -2, diff numbers
+    # Wrong outcome, same absolute margin → POINTS_OUTCOME (capped; was POINTS_MARGIN).
+    assert scoring.base_points(3, 1, 0, 2, is_knockout=True) == scoring.POINTS_OUTCOME  # +2 vs -2
+    assert scoring.base_points(4, 1, 2, 5, is_knockout=True) == scoring.POINTS_OUTCOME  # +3 vs -3
+    assert scoring.base_points(2, 0, 1, 3, is_knockout=True) == scoring.POINTS_OUTCOME  # +2 vs -2
 
     # Wrong outcome, different absolute margin → 0 even in knockout.
     assert scoring.base_points(2, 0, 0, 1, is_knockout=True) == 0   # |+2| ≠ |-1|
@@ -106,17 +129,17 @@ def test_base_points_margin_wrong_outcome_knockout():
 
 
 def test_points_for_flipped_exact_knockout():
-    # QF (×4): predict home win, actual away win, same numbers flipped → POINTS_EXACT × weight.
+    # QF (×4): predict home win, actual away win, same numbers flipped → POINTS_MARGIN × weight.
     weight = scoring.round_weight(Stage.QF)
     pts = scoring.points_for(_pred(2, 1), _match(Stage.QF, 1, 2))
-    assert pts == scoring.POINTS_EXACT * weight
+    assert pts == scoring.POINTS_MARGIN * weight
 
 
 def test_points_for_margin_wrong_outcome_knockout():
-    # QF (×4): wrong outcome, same absolute margin, different score values → POINTS_MARGIN × weight.
+    # QF (×4): wrong outcome, same absolute margin → POINTS_OUTCOME × weight (capped).
     weight = scoring.round_weight(Stage.QF)
     pts = scoring.points_for(_pred(3, 1), _match(Stage.QF, 0, 2))
-    assert pts == scoring.POINTS_MARGIN * weight
+    assert pts == scoring.POINTS_OUTCOME * weight
 
 
 def test_points_for_wrong_outcome_no_margin_group_is_zero():

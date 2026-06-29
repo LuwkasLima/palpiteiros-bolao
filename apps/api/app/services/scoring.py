@@ -117,17 +117,19 @@ def base_points(
     act_out = _outcome(act_home, act_away)
     total_error = abs(pred_home - act_home) + abs(pred_away - act_away)
     if is_knockout:
-        # Flipped exact (same numbers, wrong attribution — e.g. 2×1 vs 1×2): score is
-        # treated as correct; the advancing pick separately handles who actually won.
+        # Flipped exact (same numbers, wrong attribution — e.g. 2×1 vs 1×2): correct
+        # magnitude but wrong direction earns Margin, not Exact. The advancing pick
+        # separately handles who won; wrong direction is still penalised vs correct direction.
         if pred_home == act_away and pred_away == act_home:
-            return POINTS_EXACT
-        # Near is outcome-agnostic: L1=1 is close regardless of who won.
-        if total_error == 1:
-            return POINTS_NEAR
-    if pred_out != act_out:
-        # Wrong outcome: Margin if same absolute goal margin, otherwise 0.
-        if is_knockout and abs(pred_home - pred_away) == abs(act_home - act_away):
             return POINTS_MARGIN
+    if pred_out != act_out:
+        # Wrong direction: near (L1=1) or same absolute margin → Outcome; otherwise 0.
+        # Capped at Outcome so correct-direction predictions always score higher.
+        if is_knockout and (
+            total_error == 1
+            or abs(pred_home - pred_away) == abs(act_home - act_away)
+        ):
+            return POINTS_OUTCOME
         return 0
     # Correct outcome from here:
     if act_out == "draw":

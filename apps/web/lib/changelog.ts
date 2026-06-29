@@ -1,4 +1,4 @@
-export const LATEST_VERSION = "2026-06-28";
+export const LATEST_VERSION = "2026-06-29";
 
 export interface ChangelogEntry {
   version: string;
@@ -7,6 +7,15 @@ export interface ChangelogEntry {
 }
 
 export const CHANGELOG: ChangelogEntry[] = [
+  {
+    version: "2026-06-29",
+    title: "Nos te ouvimos: resultado certo sempre vale mais!",
+    items: [
+      "Prever o resultado certo agora sempre pontua mais pelo placar do que prever errado — mesmo quando o placar errado estava numericamente próximo.",
+      "Placar invertido (ex: 2×1 previsto, resultado 1×2) vale 3 pts × fase (era 5 pts). Errar o vencedor não gera o mesmo bônus de quem acertou.",
+      "Nova tabela 'Todos os cenários' na página de regras mostra exatamente o que cada palpite vale contra qualquer resultado.",
+    ],
+  },
   {
     version: "2026-06-28",
     title: "Mata-mata: placar, classificado e pênaltis são três palpites independentes",
