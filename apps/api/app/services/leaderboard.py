@@ -11,7 +11,7 @@ from datetime import datetime, timedelta, timezone
 
 from beanie import PydanticObjectId
 
-from app.models import Match, MatchStatus, Pool, Prediction
+from app.models import Match, MatchStatus, Pool, Prediction, Stage
 from app.schemas import LeaderboardRowOut, WeeklyHeroOut, WeeklyTitleCountOut, WeeklyTitlesOut
 from app.services.scoring import POINTS_EXACT, POINTS_MARGIN, POINTS_NEAR, base_points, points_for
 
@@ -47,7 +47,15 @@ async def compute_leaderboard(pool: Pool) -> list[LeaderboardRowOut]:
             continue
         pts = points_for(pred, match)
         points[pred.user_id] += pts
-        bp = base_points(pred.home_score, pred.away_score, match.home_score, match.away_score, match.kickoff_at)
+        is_ko = match.stage is not Stage.GROUP
+        pred_adv_out: str | None = None
+        act_adv_out: str | None = None
+        if is_ko:
+            if pred.advancing_team_id is not None and match.home_team_id is not None:
+                pred_adv_out = "home" if pred.advancing_team_id == match.home_team_id else "away"
+            if match.advancing_team_id is not None and match.home_team_id is not None:
+                act_adv_out = "home" if match.advancing_team_id == match.home_team_id else "away"
+        bp = base_points(pred.home_score, pred.away_score, match.home_score, match.away_score, match.kickoff_at, is_knockout=is_ko, pred_advancing_out=pred_adv_out, act_advancing_out=act_adv_out)
         if bp == POINTS_EXACT:
             exact[pred.user_id] += 1
         elif bp == POINTS_NEAR:
