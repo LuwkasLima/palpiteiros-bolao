@@ -123,8 +123,7 @@ function KoContent() {
             label="Placar exato"
             pts={5}
             examples={[
-              { pred: "2 × 1", actual: "2 × 1", note: "igual" },
-              { pred: "2 × 1", actual: "1 × 2", note: "invertido — mesmos gols, lados trocados" },
+              { pred: "2 × 1", actual: "2 × 1", note: "acertou os dois lados na mosca" },
             ]}
             highlight
           />
@@ -132,16 +131,16 @@ function KoContent() {
             label="Quase exato"
             pts={4}
             examples={[
-              { pred: "4 × 1", actual: "3 × 1", note: "um lado errado por 1 gol" },
-              { pred: "2 × 1", actual: "2 × 2", note: "resultado diferente, mas distância de 1 gol" },
+              { pred: "4 × 1", actual: "3 × 1", note: "um lado errado por 1 gol, resultado certo" },
+              { pred: "0 × 0", actual: "1 × 1", note: "empate certo, 1 gol de diferença por lado" },
             ]}
           />
           <KoTierRow
             label="Diferença certa"
             pts={3}
             examples={[
-              { pred: "2 × 0", actual: "3 × 1", note: "mesma margem +2, resultado certo" },
-              { pred: "3 × 1", actual: "0 × 2", note: "mesma margem absoluta 2, resultado errado" },
+              { pred: "2 × 0", actual: "3 × 1", note: "mesma margem, resultado certo" },
+              { pred: "1 × 2", actual: "2 × 1", note: "invertido — mesmos números, lados trocados" },
             ]}
           />
           <KoTierRow
@@ -149,36 +148,33 @@ function KoContent() {
             pts={2}
             examples={[
               { pred: "1 × 0", actual: "3 × 0", note: "acertou quem ganhou, margem diferente" },
+              { pred: "2 × 2", actual: "2 × 1", note: "empate próximo, resultado errado" },
+              { pred: "0 × 1", actual: "2 × 1", note: "resultado errado, mesma margem de 1 gol" },
             ]}
           />
           <KoTierRow
             label="Errou"
             pts={0}
             examples={[
-              { pred: "2 × 1", actual: "0 × 2", note: "resultado e margem diferentes" },
+              { pred: "0 × 3", actual: "2 × 1", note: "resultado e margem errados" },
             ]}
             muted
           />
         </div>
         <p className="mt-2 text-xs text-[var(--muted)]">
-          Empates com resultado certo: valem 4 pts com erro de 1 gol por lado (ex: 0×0 previsto, 1×1 real).
+          Empates com resultado certo: valem 4 pts com erro de 1 gol por lado (ex: 0×0 previsto, 1×1 real). Erro maior vale 3 pts.
         </p>
 
         <div className="mt-3 rounded-xl border border-[var(--border)] bg-[var(--surface-2)] p-4">
-          <p className="text-sm font-semibold">Por que o placar não depende de quem venceu?</p>
+          <p className="text-sm font-semibold">Resultado errado ainda pode valer pontos</p>
           <p className="mt-2 text-sm text-[var(--muted)]">
-            No mata-mata, o resultado de 90 minutos não decide quem avança sozinho — o jogo pode ir para prorrogação e pênaltis.
-            Faz mais sentido avaliar duas perguntas separadas:{" "}
-            <strong className="text-[var(--text)]">quantos gols cada time marcou</strong> (placar) e{" "}
-            <strong className="text-[var(--text)]">quem passou de fase</strong> (classificado).
+            No mata-mata, o placar e o classificado são avaliados de forma independente. Errar o vencedor
+            não zera o palpite de placar — você ainda ganha pontos pela proximidade do placar, só que menos
+            do que quem acertou o resultado.
           </p>
           <p className="mt-2 text-sm text-[var(--muted)]">
-            Isso resolve um caso clássico de injustiça: prever{" "}
-            <span className="chip text-xs">2 × 1</span> e o jogo acabar{" "}
-            <span className="chip text-xs">1 × 2</span>. Os gols entraram exatamente certos — só que o visitante marcou os 2.
-            Na fase de grupos isso valeria 0 pts pelo placar. No mata-mata vale{" "}
-            <strong className="text-[var(--text)]">5 × multiplicador</strong>, igual a um placar exato,
-            com a penalidade caindo apenas no bônus do classificado.
+            Quem acerta o resultado <strong className="text-[var(--text)]">sempre pontua mais</strong> pelo
+            placar do que quem errou na mesma situação. A diferença fica no bônus do classificado.
           </p>
         </div>
       </section>
@@ -255,6 +251,60 @@ function KoContent() {
         </p>
       </section>
 
+      {/* All scenarios table */}
+      <section>
+        <h2 className="mb-3 font-bold text-[var(--accent-2)]">Todos os cenários</h2>
+        <p className="mb-3 text-sm text-[var(--muted)]">
+          Exemplo fixo: resultado <span className="chip text-xs">2 × 1</span> (mandante vence).
+          Pontos antes do multiplicador de fase.
+        </p>
+        <div className="card divide-y divide-[var(--border)] text-sm">
+          {/* Header */}
+          <div className="grid grid-cols-[1fr_auto_auto_auto] gap-2 px-4 py-2 text-xs font-semibold text-[var(--muted)]">
+            <span>Palpite</span>
+            <span className="text-right">Placar</span>
+            <span className="text-right">Classificado</span>
+            <span className="text-right">Total</span>
+          </div>
+          {[
+            { pred: "2 × 1", adv: "Mand.", score: 5, advance: 2, note: "Exato + classificado certo" },
+            { pred: "3 × 1", adv: "Mand.", score: 4, advance: 2, note: "Quase exato + classificado certo" },
+            { pred: "2 × 0", adv: "Mand.", score: 4, advance: 2, note: "Quase exato + classificado certo" },
+            { pred: "3 × 2", adv: "Mand.", score: 3, advance: 2, note: "Diferença certa + classificado certo" },
+            { pred: "3 × 0", adv: "Mand.", score: 2, advance: 2, note: "Só o resultado + classificado certo" },
+            { pred: "1 × 1", adv: "Mand.", score: 2, advance: 2, note: "Empate próximo (L1=1), classificado certo" },
+            { pred: "2 × 2", adv: "Mand.", score: 2, advance: 2, note: "Empate próximo (L1=1), classificado certo" },
+            { pred: "1 × 2", adv: "Visit.", score: 3, advance: 0, note: "Invertido — classificado errado" },
+            { pred: "1 × 1", adv: "Visit.", score: 2, advance: 0, note: "Empate próximo, classificado errado" },
+            { pred: "0 × 1", adv: "Visit.", score: 2, advance: 0, note: "Resultado errado, mesma margem" },
+            { pred: "2 × 3", adv: "Visit.", score: 2, advance: 0, note: "Resultado errado, mesma margem" },
+            { pred: "0 × 3", adv: "Visit.", score: 0, advance: 0, note: "Errou resultado e margem" },
+          ].map(({ pred, adv, score, advance, note }) => (
+            <div key={pred + adv} className="grid grid-cols-[1fr_auto_auto_auto] items-center gap-2 px-4 py-2.5">
+              <div className="flex flex-col gap-0.5">
+                <div className="flex items-center gap-1.5">
+                  <ScoreChip label={pred} dim />
+                  <span className="text-xs text-[var(--muted)]">→ {adv} avança</span>
+                </div>
+                <span className="text-xs text-[var(--muted)]">{note}</span>
+              </div>
+              <span className="text-right font-semibold" style={{ color: score === 0 ? "var(--muted)" : "var(--text)" }}>
+                {score > 0 ? `+${score}` : "—"}
+              </span>
+              <span className="text-right font-semibold" style={{ color: advance === 0 ? "var(--muted)" : "var(--accent)" }}>
+                {advance > 0 ? `+${advance}` : "—"}
+              </span>
+              <span className="text-right font-extrabold" style={{ color: score + advance === 0 ? "var(--muted)" : "var(--accent)" }}>
+                {score + advance > 0 ? `${score + advance} pts` : "0"}
+              </span>
+            </div>
+          ))}
+        </div>
+        <p className="mt-2 text-xs text-[var(--muted)]">
+          Multiplique tudo pelo multiplicador da fase. Pênaltis (+5 pts fixos) não entram nesta tabela.
+        </p>
+      </section>
+
       {/* Worked examples */}
       <section>
         <h2 className="mb-3 font-bold text-[var(--accent-2)]">Exemplos</h2>
@@ -269,10 +319,10 @@ function KoContent() {
           <FullKoExample
             fase="Oitavas de final"
             mult="×3"
-            score={{ pred: "2 × 1", actual: "1 × 2", tier: "Invertido (exato)", pts: "15 pts" }}
+            score={{ pred: "2 × 1", actual: "1 × 2", tier: "Invertido (diferença certa)", pts: "9 pts" }}
             adv={{ correct: false, pts: "0 pts" }}
-            total="15 pts"
-            note="Acertou cada gol — o visitante marcou 2 e o mandante 1, exatamente como previsto mas invertido. O bônus do classificado ficou de fora."
+            total="9 pts"
+            note="Os gols entraram certos mas nos lados trocados — vale Diferença certa (3 pts × 3). Errou o classificado, então sem bônus."
           />
           <FullKoExample
             fase="Quartas de final"

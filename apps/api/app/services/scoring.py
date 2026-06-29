@@ -49,6 +49,17 @@ ROUND_WEIGHT: dict[Stage, int] = {
     Stage.FINAL: 6,
 }
 
+# Penalty sub-multiplier — floor(round_weight / 2). Scales penalty predictions with round
+# importance while keeping them secondary to the regulation score.
+PENALTY_ROUND_WEIGHT: dict[Stage, int] = {
+    Stage.R32: 1,
+    Stage.R16: 1,
+    Stage.QF: 2,
+    Stage.SF: 2,
+    Stage.THIRD: 3,
+    Stage.FINAL: 3,
+}
+
 # Matches that kick off at or after Uzbekistan vs Colombia (G-K-1-UZBCOL) use V2 rules.
 # Naive UTC — matches how kickoff_at is stored and retrieved from MongoDB.
 SCORING_V2_SINCE = datetime(2026, 6, 18, 2, 0)
@@ -56,6 +67,10 @@ SCORING_V2_SINCE = datetime(2026, 6, 18, 2, 0)
 
 def round_weight(stage: Stage) -> int:
     return ROUND_WEIGHT[stage]
+
+
+def penalty_round_weight(stage: Stage) -> int:
+    return PENALTY_ROUND_WEIGHT[stage]
 
 
 def _outcome(home: int, away: int) -> str:
@@ -117,17 +132,19 @@ def base_points(
     act_out = _outcome(act_home, act_away)
     total_error = abs(pred_home - act_home) + abs(pred_away - act_away)
     if is_knockout:
-        # Flipped exact (same numbers, wrong attribution — e.g. 2×1 vs 1×2): score is
-        # treated as correct; the advancing pick separately handles who actually won.
+        # Flipped exact (same numbers, wrong attribution — e.g. 2×1 vs 1×2): correct
+        # magnitude but wrong direction earns Margin, not Exact. The advancing pick
+        # separately handles who won; wrong direction is still penalised vs correct direction.
         if pred_home == act_away and pred_away == act_home:
-            return POINTS_EXACT
-        # Near is outcome-agnostic: L1=1 is close regardless of who won.
-        if total_error == 1:
-            return POINTS_NEAR
-    if pred_out != act_out:
-        # Wrong outcome: Margin if same absolute goal margin, otherwise 0.
-        if is_knockout and abs(pred_home - pred_away) == abs(act_home - act_away):
             return POINTS_MARGIN
+    if pred_out != act_out:
+        # Wrong direction: near (L1=1) or same absolute margin → Outcome; otherwise 0.
+        # Capped at Outcome so correct-direction predictions always score higher.
+        if is_knockout and (
+            total_error == 1
+            or abs(pred_home - pred_away) == abs(act_home - act_away)
+        ):
+            return POINTS_OUTCOME
         return 0
     # Correct outcome from here:
     if act_out == "draw":
@@ -145,9 +162,9 @@ def base_points(
 
 
 def penalty_base_points(pred_home: int, pred_away: int, act_home: int, act_away: int) -> int:
-    """Flat points for a penalty shootout prediction (no round-weight multiplier).
+    """Base points for a penalty shootout prediction (before penalty_round_weight multiplier).
 
-    Tiers: Exact(5) / Margin(3, L1=1) / Miss(0).
+    Tiers: Exact(5) / Miss(0).
     No Near tier — penalty scores are too compressed.
     No Outcome tier — the advancing-team pick already rewards knowing the winner.
     """
@@ -202,6 +219,6 @@ def points_for(prediction: Prediction, match: Match) -> int:
             prediction.penalty_away_score,
             match.penalty_home_score,
             match.penalty_away_score,
-        )
+        ) * penalty_round_weight(match.stage)
 
     return points
