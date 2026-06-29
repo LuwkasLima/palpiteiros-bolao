@@ -86,7 +86,6 @@ export const api = {
       method: "POST",
       body: JSON.stringify({ version }),
     }),
-
   // Tournament
   teams: () => request<TeamOut[]>("/teams"),
   matches: (stage?: string) =>
