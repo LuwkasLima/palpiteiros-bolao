@@ -9,11 +9,12 @@ export interface ChangelogEntry {
 export const CHANGELOG: ChangelogEntry[] = [
   {
     version: "2026-06-29",
-    title: "Nos te ouvimos: resultado certo sempre vale mais!",
+    title: "Nós te ouvimos: resultado certo sempre sai na frente",
     items: [
-      "Prever o resultado certo agora sempre pontua mais pelo placar do que prever errado — mesmo quando o placar errado estava numericamente próximo.",
-      "Placar invertido (ex: 2×1 previsto, resultado 1×2) vale 3 pts × fase (era 5 pts). Errar o vencedor não gera o mesmo bônus de quem acertou.",
-      "Nova tabela 'Todos os cenários' na página de regras mostra exatamente o que cada palpite vale contra qualquer resultado.",
+      "Prever o vencedor certo agora sempre garante vantagem sobre quem errou — em qualquer nível de proximidade do placar.",
+      "Torça até o apito final: você pode estar correndo atrás do gol que completa o placar exato, ou gritando 'para por ai!' para não estragar os pontos do seu placar.",
+      "Palpite de pênaltis escala com a fase: Acertar o placar na final pode valer até 15 pts.",
+      "Todos os cenários possíveis reunidos na página de regras — saiba exatamente o que cada resultado dos palpites vale.",
     ],
   },
   {

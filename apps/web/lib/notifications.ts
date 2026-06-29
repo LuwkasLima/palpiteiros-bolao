@@ -14,7 +14,7 @@ export const NOTIFICATIONS: AppNotification[] = [
   {
     id: "release-2026-06-29",
     title: "🆕 Pontuação do mata-mata reajustada",
-    body: "Resultado certo agora sempre vale mais do que resultado errado.",
+    body: "Nós te ouvimos: vencedor certo sempre sai na frente, pênaltis escalados por fase, e todos os cenários nas regras.",
     cta: { label: "Ver o que há de novo →" },
     time: "hoje",
   },

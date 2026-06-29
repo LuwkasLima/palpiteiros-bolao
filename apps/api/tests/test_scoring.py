@@ -311,16 +311,39 @@ def test_penalty_base_points_miss():
     assert scoring.penalty_base_points(3, 1, 5, 3) == 0   # L1=4
 
 
-def test_points_for_includes_penalty_flat_no_weight():
-    # Penalty points are flat (no round weight), added on top of regular scoring.
+def test_points_for_includes_penalty_weighted():
+    # Penalty points scale by penalty_round_weight(stage), added on top of regular scoring.
     team = PydanticObjectId()
     m = _match(Stage.QF, 1, 1, advancing=team, penalty_home=5, penalty_away=3)
     p = _pred(1, 1, advancing=team, penalty_home=5, penalty_away=3)
     weight = scoring.round_weight(Stage.QF)
-    expected = (scoring.POINTS_EXACT * weight    # score
-                + scoring.ADVANCE_BONUS * weight  # advancing pick
-                + scoring.POINTS_EXACT)           # penalty exact — flat, no weight
+    p_weight = scoring.penalty_round_weight(Stage.QF)  # 2
+    expected = (scoring.POINTS_EXACT * weight
+                + scoring.ADVANCE_BONUS * weight
+                + scoring.POINTS_EXACT * p_weight)
     assert scoring.points_for(p, m) == expected
+
+
+def test_points_for_penalty_scales_in_final():
+    # Final (penalty weight ×3): exact penalty earns POINTS_EXACT × 3 = 15.
+    team = PydanticObjectId()
+    m = _match(Stage.FINAL, 1, 1, advancing=team, penalty_home=5, penalty_away=3)
+    p = _pred(1, 1, advancing=team, penalty_home=5, penalty_away=3)
+    weight = scoring.round_weight(Stage.FINAL)
+    p_weight = scoring.penalty_round_weight(Stage.FINAL)  # 3
+    expected = (scoring.POINTS_EXACT * weight
+                + scoring.ADVANCE_BONUS * weight
+                + scoring.POINTS_EXACT * p_weight)
+    assert scoring.points_for(p, m) == expected
+
+
+def test_points_for_penalty_unchanged_at_r16():
+    # R16 (penalty weight ×1): exact penalty still earns POINTS_EXACT × 1 = 5.
+    m = _match(Stage.R16, 2, 0, penalty_home=5, penalty_away=3)
+    p = _pred(2, 0, penalty_home=5, penalty_away=3)
+    weight = scoring.round_weight(Stage.R16)
+    assert scoring.penalty_round_weight(Stage.R16) == 1
+    assert scoring.points_for(p, m) == scoring.POINTS_EXACT * weight + scoring.POINTS_EXACT
 
 
 def test_points_for_penalty_miss():
