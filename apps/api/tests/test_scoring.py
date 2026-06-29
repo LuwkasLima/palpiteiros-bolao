@@ -155,7 +155,8 @@ def test_points_for_wrong_outcome_no_margin_group_is_zero():
 # kickoff_at defaults to V2 so existing tests exercise the new rules without extra args.
 def _match(stage: Stage, home: int, away: int, advancing: PydanticObjectId | None = None,
            kickoff_at: datetime = _V2_KICKOFF,
-           penalty_home: int | None = None, penalty_away: int | None = None):
+           penalty_home: int | None = None, penalty_away: int | None = None,
+           home_team_id: PydanticObjectId | None = None):
     return SimpleNamespace(
         stage=stage,
         status=MatchStatus.FINAL,
@@ -165,6 +166,7 @@ def _match(stage: Stage, home: int, away: int, advancing: PydanticObjectId | Non
         kickoff_at=kickoff_at,
         penalty_home_score=penalty_home,
         penalty_away_score=penalty_away,
+        home_team_id=home_team_id,
     )
 
 
@@ -304,8 +306,14 @@ def test_penalty_base_points_exact():
     assert scoring.penalty_base_points(5, 3, 5, 3) == scoring.POINTS_EXACT
 
 
+def test_penalty_base_points_flipped_exact():
+    # Same numbers, wrong attribution → POINTS_EXACT (direction is irrelevant for penalty scores).
+    assert scoring.penalty_base_points(5, 3, 3, 5) == scoring.POINTS_EXACT
+    assert scoring.penalty_base_points(4, 2, 2, 4) == scoring.POINTS_EXACT
+
+
 def test_penalty_base_points_miss():
-    # Any non-exact result → 0 (no intermediate tier).
+    # Any non-exact, non-flipped result → 0 (no intermediate tier).
     assert scoring.penalty_base_points(4, 3, 5, 3) == 0   # L1=1
     assert scoring.penalty_base_points(3, 3, 5, 3) == 0   # L1=2
     assert scoring.penalty_base_points(3, 1, 5, 3) == 0   # L1=4

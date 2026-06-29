@@ -173,10 +173,14 @@ def penalty_base_points(pred_home: int, pred_away: int, act_home: int, act_away:
     """Base points for a penalty shootout prediction (before penalty_round_weight multiplier).
 
     Tiers: Exact(5) / Miss(0).
+    Flipped exact (same numbers, wrong attribution) also earns Exact — penalty scores
+    have no directional meaning beyond who advances, which is tracked separately.
     No Near tier — penalty scores are too compressed.
     No Outcome tier — the advancing-team pick already rewards knowing the winner.
     """
     if pred_home == act_home and pred_away == act_away:
+        return POINTS_EXACT
+    if pred_home == act_away and pred_away == act_home:
         return POINTS_EXACT
     return 0
 
