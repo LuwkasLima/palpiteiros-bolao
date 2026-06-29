@@ -114,6 +114,8 @@ def base_points(
     act_away: int,
     kickoff_at: datetime | None = None,
     is_knockout: bool = False,
+    pred_advancing_out: str | None = None,
+    act_advancing_out: str | None = None,
 ) -> int:
     """Points for a single prediction vs an actual scoreline, before round weighting.
 
@@ -121,6 +123,12 @@ def base_points(
     Pass is_knockout=True for knockout matches to enable the draw Margin tier (L1 ≥ 4 → 3 pts
     instead of 2 pts). Group-stage draws beyond Near always earn Outcome to avoid retroactive
     changes to already-scored group matches.
+
+    In knockout V2 matches, pass pred_advancing_out / act_advancing_out ("home" or "away")
+    derived from the advancing_team_id fields so that the correct-outcome check uses who
+    the user picked to advance rather than the regulation-score direction. This correctly
+    scores draw predictions where the user manually picks the advancing team, and penalises
+    predictions where the score direction contradicts the advancing pick.
     """
     if kickoff_at is not None and kickoff_at < SCORING_V2_SINCE:
         return _base_points_v1(pred_home, pred_away, act_home, act_away)
@@ -128,8 +136,8 @@ def base_points(
     # V2: 4-tier system.
     if pred_home == act_home and pred_away == act_away:
         return POINTS_EXACT
-    pred_out = _outcome(pred_home, pred_away)
-    act_out = _outcome(act_home, act_away)
+    pred_out = pred_advancing_out if (is_knockout and pred_advancing_out is not None) else _outcome(pred_home, pred_away)
+    act_out = act_advancing_out if (is_knockout and act_advancing_out is not None) else _outcome(act_home, act_away)
     total_error = abs(pred_home - act_home) + abs(pred_away - act_away)
     if is_knockout:
         # Flipped exact (same numbers, wrong attribution — e.g. 2×1 vs 1×2): correct
@@ -182,6 +190,15 @@ def points_for(prediction: Prediction, match: Match) -> int:
     is_v2 = match.kickoff_at >= SCORING_V2_SINCE
 
     is_knockout = match.stage is not Stage.GROUP
+
+    pred_advancing_out: str | None = None
+    act_advancing_out: str | None = None
+    if is_knockout:
+        if prediction.advancing_team_id is not None and match.home_team_id is not None:
+            pred_advancing_out = "home" if prediction.advancing_team_id == match.home_team_id else "away"
+        if match.advancing_team_id is not None and match.home_team_id is not None:
+            act_advancing_out = "home" if match.advancing_team_id == match.home_team_id else "away"
+
     points = base_points(
         prediction.home_score,
         prediction.away_score,
@@ -189,6 +206,8 @@ def points_for(prediction: Prediction, match: Match) -> int:
         match.away_score,
         match.kickoff_at,
         is_knockout=is_knockout,
+        pred_advancing_out=pred_advancing_out,
+        act_advancing_out=act_advancing_out,
     ) * weight
 
     if not is_v2 and points > 0:
