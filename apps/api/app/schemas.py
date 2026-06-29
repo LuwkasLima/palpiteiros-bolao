@@ -127,6 +127,7 @@ class MemberOut(BaseModel):
     display_name: str
     role: MemberRole
     joined_at: datetime
+    bonus_points: int = 0
 
 
 class PoolSummaryOut(BaseModel):

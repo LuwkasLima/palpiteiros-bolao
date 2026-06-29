@@ -154,6 +154,7 @@ class Member(BaseModel):
     display_name: str
     role: MemberRole = MemberRole.MEMBER
     joined_at: datetime = Field(default_factory=utcnow)
+    bonus_points: int = 0
 
 
 class Pool(Document):

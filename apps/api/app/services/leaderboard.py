@@ -30,7 +30,7 @@ async def compute_leaderboard(pool: Pool) -> list[LeaderboardRowOut]:
     made: dict[PydanticObjectId, int] = {}
     names: dict[PydanticObjectId, str] = {}
     for member in pool.members:
-        points[member.user_id] = 0
+        points[member.user_id] = member.bonus_points
         exact[member.user_id] = 0
         near[member.user_id] = 0
         margin[member.user_id] = 0
