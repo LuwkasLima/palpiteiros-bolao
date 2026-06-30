@@ -189,7 +189,15 @@ async def compute_weekly_titles(pool: Pool) -> WeeklyTitlesOut:
         week_points.setdefault(week, {uid: 0 for uid in names})
         week_exact.setdefault(week, {uid: 0 for uid in names})
         week_points[week][pred.user_id] += points_for(pred, match)
-        bp = base_points(pred.home_score, pred.away_score, match.home_score, match.away_score, match.kickoff_at)
+        is_ko_w = match.stage is not Stage.GROUP
+        pred_adv_w: str | None = None
+        act_adv_w: str | None = None
+        if is_ko_w:
+            if pred.advancing_team_id is not None and match.home_team_id is not None:
+                pred_adv_w = "home" if pred.advancing_team_id == match.home_team_id else "away"
+            if match.advancing_team_id is not None and match.home_team_id is not None:
+                act_adv_w = "home" if match.advancing_team_id == match.home_team_id else "away"
+        bp = base_points(pred.home_score, pred.away_score, match.home_score, match.away_score, match.kickoff_at, is_knockout=is_ko_w, pred_advancing_out=pred_adv_w, act_advancing_out=act_adv_w)
         if bp == POINTS_EXACT:
             week_exact[week][pred.user_id] += 1
 
