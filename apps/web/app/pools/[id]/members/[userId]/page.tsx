@@ -22,6 +22,9 @@ const toUtc = (iso: string) => (/Z|[+-]\d{2}:?\d{2}$/.test(iso) ? iso : iso + "Z
 const V2_CUTOFF_MS = new Date("2026-06-18T02:00:00Z").getTime();
 
 // Mirrors the Python scoring service tier logic (scoring.py base_points / _base_points_v1).
+// predAdvancingOut / actAdvancingOut: "home" | "away" — knockout advancing direction derived from
+// advancing_team_id. When provided they override score-based outcome direction, matching the
+// backend which uses advancing_team_id instead of the regulation scoreline for knockout matches.
 function scoreTier(
   predHome: number,
   predAway: number,
@@ -29,6 +32,8 @@ function scoreTier(
   actAway: number | null,
   isV2: boolean,
   isKnockout: boolean,
+  predAdvancingOut?: string | null,
+  actAdvancingOut?: string | null,
 ): { label: string; color: string } | null {
   if (actHome === null || actAway === null) return null;
 
@@ -36,8 +41,13 @@ function scoreTier(
     return { label: "Placar exato", color: "text-yellow-400" };
   }
 
-  const predOut = predHome > predAway ? "H" : predHome < predAway ? "A" : "D";
-  const actOut  = actHome  > actAway  ? "H" : actHome  < actAway  ? "A" : "D";
+  // For V2 knockout, use advancing_team_id to determine outcome direction (mirrors backend).
+  const predOut = isV2 && isKnockout && predAdvancingOut != null
+    ? (predAdvancingOut === "home" ? "H" : "A")
+    : predHome > predAway ? "H" : predHome < predAway ? "A" : "D";
+  const actOut = isV2 && isKnockout && actAdvancingOut != null
+    ? (actAdvancingOut === "home" ? "H" : "A")
+    : actHome > actAway ? "H" : actHome < actAway ? "A" : "D";
   const totalError = Math.abs(predHome - actHome) + Math.abs(predAway - actAway);
 
   if (!isV2) {
@@ -47,17 +57,14 @@ function scoreTier(
     return { label: "Resultado certo", color: "text-green-400" };
   }
 
-  // V2: knockout-specific tiers first.
-  if (isKnockout) {
-    if (predHome === actAway && predAway === actHome)
-      return { label: "Placar exato", color: "text-yellow-400" };   // flipped exact
-    if (totalError === 1)
-      return { label: "Quase exato", color: "text-orange-400" };    // near, outcome-agnostic
-  }
+  // V2: flipped exact earns Margin (same numbers, wrong attribution), not Exact.
+  if (isKnockout && predHome === actAway && predAway === actHome)
+    return { label: "Diferença certa", color: "text-blue-400" };
 
   if (predOut !== actOut) {
-    if (isKnockout && Math.abs(predHome - predAway) === Math.abs(actHome - actAway))
-      return { label: "Diferença certa", color: "text-blue-400" };  // same abs margin, wrong outcome
+    // Wrong direction in knockout: L1=1 or same abs margin earns Outcome (capped, not Near).
+    if (isKnockout && (totalError === 1 || Math.abs(predHome - predAway) === Math.abs(actHome - actAway)))
+      return { label: "Resultado certo", color: "text-green-400" };
     return null; // miss
   }
 
@@ -255,6 +262,12 @@ export default function MemberPage({
               const isV2 = new Date(toUtc(m.kickoff_at)).getTime() >= V2_CUTOFF_MS;
               const isKnockout = meta ? meta.stage !== "group" : false;
               const scoringRound = isV2 ? "Rodada 2" : "Rodada 1";
+              const predAdvancingOut = isKnockout && entry.advancing_team_id != null && m.home_team_id != null
+                ? (entry.advancing_team_id === m.home_team_id ? "home" : "away")
+                : null;
+              const actAdvancingOut = isKnockout && m.advancing_team_id != null && m.home_team_id != null
+                ? (m.advancing_team_id === m.home_team_id ? "home" : "away")
+                : null;
               const tier = scoreTier(
                 entry.home_score,
                 entry.away_score,
@@ -262,6 +275,8 @@ export default function MemberPage({
                 m.away_score,
                 isV2,
                 isKnockout,
+                predAdvancingOut,
+                actAdvancingOut,
               );
               const date = new Date(toUtc(m.kickoff_at)).toLocaleDateString("pt-BR", {
                 day: "numeric",
