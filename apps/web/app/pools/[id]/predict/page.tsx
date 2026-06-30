@@ -47,6 +47,16 @@ export default function PredictPage({ params }: { params: Promise<{ id: string }
 
   const tmap = useMemo(() => teamMap(teams), [teams]);
   const today = useMemo(() => new Date().toLocaleDateString("en-CA"), []);
+
+  const hasIncompleteDraw = useMemo(() => {
+    if (!matches) return false;
+    return matches.some((m) => {
+      if (m.stage === "group" || m.is_locked || m.status === "final") return false;
+      if (!m.home_team_id || !m.away_team_id) return false;
+      const pred = preds[m.id];
+      return pred != null && pred.home_score === pred.away_score && pred.advancing_team_id === null;
+    });
+  }, [matches, preds]);
   const sectionRefs = useRef<Record<string, HTMLElement | null>>({});
   const byDay = useMemo(() => {
     const groups: Record<string, MatchOut[]> = {};
@@ -73,6 +83,13 @@ export default function PredictPage({ params }: { params: Promise<{ id: string }
           ← Bolão
         </Link>
       </div>
+
+      {hasIncompleteDraw && (
+        <div className="rounded-xl border border-l-4 border-amber-500/40 border-l-amber-500 bg-amber-500/10 px-4 py-3">
+          <p className="text-sm font-semibold text-amber-300">Palpite de empate incompleto</p>
+          <p className="mt-0.5 text-xs text-amber-300/75">Você tem palpites de empate no mata-mata sem selecionar quem avança. Escolha um vencedor — sem essa escolha o palpite não pontua.</p>
+        </div>
+      )}
 
       {dayKeys.map((day) => {
         const isToday = day === today;
