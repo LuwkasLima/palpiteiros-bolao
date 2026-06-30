@@ -55,6 +55,12 @@ class NextMatchTodayOut(BaseModel):
     away_flag: str | None
     group_label: str | None
     stage: Stage
+    live_home_score: int | None = None
+    live_away_score: int | None = None
+    live_elapsed: int | None = None
+    live_phase: str | None = None
+    live_penalty_home: int | None = None
+    live_penalty_away: int | None = None
 
 
 class MatchTodayOut(BaseModel):

@@ -46,6 +46,11 @@ class Settings(BaseSettings):
     anthropic_api_key: str = ""
     narrative_model: str = "claude-haiku-4-5"
 
+    # API-Football live scores
+    api_football_key: str = ""
+    api_football_league_id: int = 1
+    api_football_season: int = 2026
+
     @property
     def admin_email_set(self) -> set[str]:
         return {e.strip().lower() for e in self.admin_emails.split(",") if e.strip()}

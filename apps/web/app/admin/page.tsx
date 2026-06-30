@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useMemo, useRef, useState } from "react";
-import type { MatchOut, TeamOut } from "@bolao/contracts";
+import type { MatchOut, NextMatchTodayOut, TeamOut } from "@bolao/contracts";
 import { api, ApiError } from "@/lib/api";
 import { useAuth } from "@/lib/auth";
 import { formatKickoff, formatMatchDay, groupKickoffSort, matchDayKey, sideLabel, sideShortLabel, stageBadge, teamMap } from "@/lib/format";
@@ -10,14 +10,16 @@ export default function AdminPage() {
   const { user } = useAuth();
   const [matches, setMatches] = useState<MatchOut[] | null>(null);
   const [teams, setTeams] = useState<TeamOut[]>([]);
+  const [liveMap, setLiveMap] = useState<Map<string, NextMatchTodayOut>>(new Map());
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
     if (!user?.is_admin) return;
-    Promise.all([api.matches(), api.teams()])
-      .then(([m, t]) => {
+    Promise.all([api.matches(), api.teams(), api.inProgressMatches()])
+      .then(([m, t, live]) => {
         setMatches(m);
         setTeams(t);
+        setLiveMap(new Map(live.map((l) => [l.id, l])));
       })
       .catch((err) => setError(err instanceof ApiError ? err.message : "Erro ao carregar."));
   }, [user]);
@@ -63,7 +65,7 @@ export default function AdminPage() {
             </h2>
             <div className={`card divide-y divide-[var(--border)]${isToday ? " ring-1 ring-[var(--accent)]" : ""}`}>
               {byDay[day].map((m) => (
-                <ResultRow key={m.id} match={m} tmap={tmap} onSaved={update} />
+                <ResultRow key={m.id} match={m} tmap={tmap} onSaved={update} liveScore={liveMap.get(m.id)} />
               ))}
             </div>
           </section>
@@ -77,17 +79,25 @@ function ResultRow({
   match,
   tmap,
   onSaved,
+  liveScore,
 }: {
   match: MatchOut;
   tmap: ReturnType<typeof teamMap>;
   onSaved: (m: MatchOut) => void;
+  liveScore?: NextMatchTodayOut;
 }) {
-  const [home, setHome] = useState(match.home_score !== null ? String(match.home_score) : "");
-  const [away, setAway] = useState(match.away_score !== null ? String(match.away_score) : "");
+  const hasNoResult = match.home_score === null;
+  const liveH = hasNoResult && liveScore?.live_home_score != null ? String(liveScore.live_home_score) : null;
+  const liveA = hasNoResult && liveScore?.live_away_score != null ? String(liveScore.live_away_score) : null;
+  const livePH = hasNoResult && liveScore?.live_penalty_home != null ? String(liveScore.live_penalty_home) : null;
+  const livePA = hasNoResult && liveScore?.live_penalty_away != null ? String(liveScore.live_penalty_away) : null;
+
+  const [home, setHome] = useState(match.home_score !== null ? String(match.home_score) : (liveH ?? ""));
+  const [away, setAway] = useState(match.away_score !== null ? String(match.away_score) : (liveA ?? ""));
   const [advancing, setAdvancing] = useState(match.advancing_team_id ?? "");
-  const [penaltyHome, setPenaltyHome] = useState(match.penalty_home_score !== null ? String(match.penalty_home_score) : "");
-  const [penaltyAway, setPenaltyAway] = useState(match.penalty_away_score !== null ? String(match.penalty_away_score) : "");
-  const [penaltyOpen, setPenaltyOpen] = useState(match.penalty_home_score !== null);
+  const [penaltyHome, setPenaltyHome] = useState(match.penalty_home_score !== null ? String(match.penalty_home_score) : (livePH ?? ""));
+  const [penaltyAway, setPenaltyAway] = useState(match.penalty_away_score !== null ? String(match.penalty_away_score) : (livePA ?? ""));
+  const [penaltyOpen, setPenaltyOpen] = useState(match.penalty_home_score !== null || livePH !== null);
   const [busy, setBusy] = useState(false);
   const [err, setErr] = useState<string | null>(null);
 

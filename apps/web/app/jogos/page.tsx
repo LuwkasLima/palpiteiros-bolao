@@ -1,13 +1,15 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
-import type { MatchTodayOut } from "@bolao/contracts";
+import type { MatchTodayOut, NextMatchTodayOut } from "@bolao/contracts";
 import { api } from "@/lib/api";
 import { useAuth } from "@/lib/auth";
 import { SectionHeader } from "@/components/SectionHeader";
 import { formatKickoffTime, stageBadge } from "@/lib/format";
 import { venue } from "@/lib/venues";
+
+const POLL_INTERVAL_MS = 60_000;
 
 function localDayBounds(): { dayStart: string; dayEnd: string } {
   const now = new Date();
@@ -43,10 +45,50 @@ function MatchRow({ m, showScore }: { m: MatchTodayOut; showScore: boolean }) {
   );
 }
 
+function LiveMatchRow({ m, live }: { m: MatchTodayOut; live: NextMatchTodayOut | undefined }) {
+  const v = venue(m.key);
+  const hasScore = live?.live_home_score != null && live?.live_away_score != null;
+  const isPen = live?.live_phase === "P" || live?.live_phase === "PEN";
+  return (
+    <div className="px-4 py-3">
+      <div className="flex items-center justify-between gap-2 text-sm">
+        <span className="min-w-0 flex-1 truncate text-right font-medium">
+          {m.home_flag} {m.home_name}
+        </span>
+        {hasScore ? (
+          <span className="shrink-0 font-extrabold tabular-nums text-green-400">
+            {isPen && live!.live_penalty_home != null && (
+              <span className="mr-0.5 text-xs font-normal">({live!.live_penalty_home})</span>
+            )}
+            {live!.live_home_score} – {live!.live_away_score}
+            {isPen && live!.live_penalty_away != null && (
+              <span className="ml-0.5 text-xs font-normal">({live!.live_penalty_away})</span>
+            )}
+            {!isPen && live!.live_elapsed != null && (
+              <span className="ml-1 text-xs font-normal text-[var(--muted)]">{live!.live_elapsed}&apos;</span>
+            )}
+          </span>
+        ) : (
+          <span className="shrink-0 text-xs text-[var(--muted)]">×</span>
+        )}
+        <span className="min-w-0 flex-1 truncate font-medium">
+          {m.away_flag} {m.away_name}
+        </span>
+      </div>
+      <div className="mt-1 flex justify-between text-xs text-[var(--muted)]">
+        <span>{stageBadge(m.stage, m.group_label)} · {formatKickoffTime(m.kickoff_at)}</span>
+        {v && <span>{v.stadium} · {v.city}</span>}
+      </div>
+    </div>
+  );
+}
+
 export default function JogosPage() {
   const { user, loading } = useAuth();
   const router = useRouter();
   const [matches, setMatches] = useState<MatchTodayOut[] | null>(null);
+  const [liveMatches, setLiveMatches] = useState<NextMatchTodayOut[]>([]);
+  const intervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
 
   useEffect(() => {
     if (!loading && !user) router.replace("/login");
@@ -58,12 +100,35 @@ export default function JogosPage() {
     api.matchesToday(dayStart, dayEnd).then(setMatches).catch(() => setMatches([]));
   }, [user]);
 
+  useEffect(() => {
+    if (!user) return;
+
+    const fetchLive = () => {
+      api.inProgressMatches().then(setLiveMatches).catch(() => {});
+    };
+
+    fetchLive();
+    intervalRef.current = setInterval(fetchLive, POLL_INTERVAL_MS);
+
+    return () => {
+      if (intervalRef.current) clearInterval(intervalRef.current);
+    };
+  }, [user]);
+
+  useEffect(() => {
+    if (liveMatches.length === 0 && intervalRef.current) {
+      clearInterval(intervalRef.current);
+      intervalRef.current = null;
+    }
+  }, [liveMatches]);
+
   if (loading || !user) {
     return <p className="mt-10 text-center text-[var(--muted)]">Carregando…</p>;
   }
 
   const now = new Date();
-  const IN_PROGRESS_MS = 2 * 60 * 60 * 1000;
+  const IN_PROGRESS_MS = 3 * 60 * 60 * 1000;
+  const liveByKey = new Map(liveMatches.map((m) => [m.key, m]));
 
   const inProgress = (matches ?? []).filter((m) => {
     const ko = new Date(m.kickoff_at);
@@ -101,11 +166,17 @@ export default function JogosPage() {
           <div className="divide-y divide-[var(--border)] overflow-hidden rounded-2xl border border-green-500/30 border-l-4 border-l-green-500 bg-[var(--surface-2)]">
             {inProgress.map((m) => (
               <div key={m.id} className="relative">
-                <span className="absolute right-4 top-3.5 inline-flex items-center gap-1 rounded-full bg-green-500 px-2.5 py-0.5 text-xs font-bold text-[#04210f]">
-                  <span className="h-1.5 w-1.5 animate-pulse rounded-full bg-[#04210f]" />
-                  Ao Vivo
-                </span>
-                <MatchRow m={m} showScore={false} />
+                {["FT", "AET", "PEN"].includes(liveByKey.get(m.key)?.live_phase ?? "") ? (
+                  <span className="absolute right-4 top-3.5 inline-flex items-center rounded-full bg-[var(--muted)]/20 px-2.5 py-0.5 text-xs font-bold text-[var(--muted)]">
+                    Encerrado
+                  </span>
+                ) : (
+                  <span className="absolute right-4 top-3.5 inline-flex items-center gap-1 rounded-full bg-green-500 px-2.5 py-0.5 text-xs font-bold text-[#04210f]">
+                    <span className="h-1.5 w-1.5 animate-pulse rounded-full bg-[#04210f]" />
+                    Ao Vivo
+                  </span>
+                )}
+                <LiveMatchRow m={m} live={liveByKey.get(m.key)} />
               </div>
             ))}
           </div>

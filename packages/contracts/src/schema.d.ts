@@ -671,6 +671,18 @@ export interface components {
             /** Group Label */
             group_label: string | null;
             stage: components["schemas"]["Stage"];
+            /** Live Home Score */
+            live_home_score: number | null;
+            /** Live Away Score */
+            live_away_score: number | null;
+            /** Live Elapsed */
+            live_elapsed: number | null;
+            /** Live Phase */
+            live_phase: string | null;
+            /** Live Penalty Home */
+            live_penalty_home: number | null;
+            /** Live Penalty Away */
+            live_penalty_away: number | null;
         };
         /** PoolCreateIn */
         PoolCreateIn: {

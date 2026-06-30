@@ -10,6 +10,7 @@ from app.models import Match, MatchStatus, Stage, Team
 from app.models import utcnow
 from app.schemas import MatchOut, MatchTodayOut, NextMatchTodayOut, TeamOut
 from app.serializers import match_to_out
+from app.services.live_scores import ended_within_window, get_live_scores
 
 router = APIRouter(tags=["tournament"])
 
@@ -66,19 +67,36 @@ async def next_matches_today(window_end: datetime | None = Query(None)) -> list[
     ]
 
 
-_IN_PROGRESS_WINDOW = timedelta(hours=2)
+_IN_PROGRESS_WINDOW = timedelta(hours=3)
+# Wider window for the DB query: covers the longest possible match (≈2h40) plus
+# the 1-hour "Encerrado" display period. Matches outside _IN_PROGRESS_WINDOW are
+# only kept if ended_within_window() confirms they ended in the last hour.
+_ENDED_LOOKUP_WINDOW = timedelta(hours=5)
 
 
 @router.get("/matches/in-progress", response_model=list[NextMatchTodayOut])
 async def in_progress_matches() -> list[NextMatchTodayOut]:
     now = utcnow()
-    matches = await Match.find(
+    candidates = await Match.find(
         Match.kickoff_at <= now,
-        Match.kickoff_at > now - _IN_PROGRESS_WINDOW,
+        Match.kickoff_at > now - _ENDED_LOOKUP_WINDOW,
         Match.status != MatchStatus.FINAL,
         {"home_team_id": {"$ne": None}},
     ).to_list()
 
+    if not candidates:
+        return []
+
+    # Fetch live scores first — this populates ended_at for finished matches.
+    kickoffs = {m.key: m.kickoff_at for m in candidates}
+    scores = await get_live_scores(kickoffs)
+
+    # Keep matches that are within the normal live window OR ended within the last hour.
+    def _include(m: Match) -> bool:
+        ko = m.kickoff_at if m.kickoff_at.tzinfo else m.kickoff_at.replace(tzinfo=timezone.utc)
+        return now - ko <= _IN_PROGRESS_WINDOW or ended_within_window(ko)
+
+    matches = [m for m in candidates if _include(m)]
     if not matches:
         return []
 
@@ -98,6 +116,12 @@ async def in_progress_matches() -> list[NextMatchTodayOut]:
             away_flag=teams[m.away_team_id].flag_emoji if m.away_team_id and m.away_team_id in teams else None,
             group_label=m.group_label,
             stage=m.stage,
+            live_home_score=scores[m.key].home_score if m.key in scores else None,
+            live_away_score=scores[m.key].away_score if m.key in scores else None,
+            live_elapsed=scores[m.key].elapsed if m.key in scores else None,
+            live_phase=scores[m.key].phase if m.key in scores else None,
+            live_penalty_home=scores[m.key].penalty_home if m.key in scores else None,
+            live_penalty_away=scores[m.key].penalty_away if m.key in scores else None,
         )
         for m in matches
     ]
