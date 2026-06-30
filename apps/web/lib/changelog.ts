@@ -1,4 +1,4 @@
-export const LATEST_VERSION = "2026-06-29";
+export const LATEST_VERSION = "2026-06-30";
 
 export interface ChangelogEntry {
   version: string;
@@ -7,6 +7,15 @@ export interface ChangelogEntry {
 }
 
 export const CHANGELOG: ChangelogEntry[] = [
+  {
+    version: "2026-06-30",
+    title: "Placar ao vivo nos jogos em andamento",
+    items: [
+      "O placar em tempo real aparece direto no card do jogo — sem precisar abrir outro app.",
+      "Pênaltis? O resultado da disputa fica visível no formato (2)1–1(3) enquanto as cobranças acontecem.",
+      "Quando o jogo termina, o card passa para 'Encerrado' com o placar final e some automaticamente após 1 hora.",
+    ],
+  },
   {
     version: "2026-06-29",
     title: "Nós te ouvimos: resultado certo sempre sai na frente",

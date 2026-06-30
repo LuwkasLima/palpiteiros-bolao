@@ -12,6 +12,13 @@ export interface AppNotification {
 // id must be "release-{version}" so it can be keyed to the changelog.
 export const NOTIFICATIONS: AppNotification[] = [
   {
+    id: "release-2026-06-30",
+    title: "🟢 Placar ao vivo",
+    body: "Acompanhe o placar em tempo real direto no app — incluindo pênaltis.",
+    cta: { label: "Ver o que há de novo →" },
+    time: "hoje",
+  },
+  {
     id: "action-draw-advancing-2026-06-30",
     title: "⚠️ Palpite de empate incompleto",
     body: "Você pode ter palpites de empate no mata-mata sem ter selecionado quem avança. Sem essa escolha, o palpite pode valer menos.",
