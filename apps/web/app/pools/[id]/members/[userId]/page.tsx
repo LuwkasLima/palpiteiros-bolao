@@ -62,10 +62,9 @@ function scoreTier(
     return { label: "Diferença certa", color: "text-blue-400" };
 
   if (predOut !== actOut) {
-    // Wrong direction in knockout: L1=1 or same abs margin earns Outcome (capped, not Near).
-    if (isKnockout && (totalError === 1 || Math.abs(predHome - predAway) === Math.abs(actHome - actAway)))
-      return { label: "Resultado certo", color: "text-green-400" };
-    return null; // miss
+    // Wrong advancing direction in knockout earns Outcome points but no label — the score was
+    // close (L1=1) or same margin, yet the wrong team advanced. No existing tier label fits.
+    return null;
   }
 
   // Correct outcome from here.
