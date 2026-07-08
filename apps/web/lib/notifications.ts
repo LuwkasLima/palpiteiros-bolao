@@ -12,6 +12,13 @@ export interface AppNotification {
 // id must be "release-{version}" so it can be keyed to the changelog.
 export const NOTIFICATIONS: AppNotification[] = [
   {
+    id: "action-qf-predictions-2026-07-08",
+    title: "⚽ Quartas de final disponíveis!",
+    body: "França x Marrocos, Espanha x Bélgica, Noruega x Inglaterra e Argentina x Suíça. Faça seus palpites antes do primeiro jogo amanhã.",
+    cta: { label: "Fazer palpites →", href: "/" },
+    time: "hoje",
+  },
+  {
     id: "action-draw-advancing-2026-06-30",
     title: "⚠️ Palpite de empate incompleto",
     body: "Você pode ter palpites de empate no mata-mata sem ter selecionado quem avança. Sem essa escolha, o palpite pode valer menos.",
