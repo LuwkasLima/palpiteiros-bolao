@@ -12,6 +12,13 @@ export interface AppNotification {
 // id must be "release-{version}" so it can be keyed to the changelog.
 export const NOTIFICATIONS: AppNotification[] = [
   {
+    id: "action-sf-predictions-2026-07-13",
+    title: "⚽ Semifinais disponíveis!",
+    body: "França x Espanha amanhã e Inglaterra x Argentina na quarta. Faça seus palpites antes do apito inicial.",
+    cta: { label: "Fazer palpites →", href: "/" },
+    time: "hoje",
+  },
+  {
     id: "action-qf-predictions-2026-07-08",
     title: "⚽ Quartas de final disponíveis!",
     body: "França x Marrocos, Espanha x Bélgica, Noruega x Inglaterra e Argentina x Suíça. Faça seus palpites antes do primeiro jogo amanhã.",

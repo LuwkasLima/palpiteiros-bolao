@@ -174,12 +174,12 @@
     { "key": "R16-6",  "stage": "r16",   "slot_label": "Round of 16 — Match 6",                           "kickoff_utc": "2026-07-07T00:00:00Z" },
     { "key": "R16-7",  "stage": "r16",   "slot_label": "Round of 16 — Match 7",                           "kickoff_utc": "2026-07-07T16:00:00Z" },
     { "key": "R16-8",  "stage": "r16",   "slot_label": "Round of 16 — Match 8",                           "kickoff_utc": "2026-07-07T20:00:00Z" },
-    { "key": "QF-1",   "stage": "qf",    "slot_label": "Quarter-final — Match 1", "home": "FRA", "away": "MAR", "kickoff_utc": "2026-07-09T20:00:00Z" },
-    { "key": "QF-2",   "stage": "qf",    "slot_label": "Quarter-final — Match 2", "home": "ESP", "away": "BEL", "kickoff_utc": "2026-07-10T19:00:00Z" },
-    { "key": "QF-3",   "stage": "qf",    "slot_label": "Quarter-final — Match 3", "home": "NOR", "away": "ENG", "kickoff_utc": "2026-07-11T21:00:00Z" },
-    { "key": "QF-4",   "stage": "qf",    "slot_label": "Quarter-final — Match 4", "home": "ARG", "away": "SUI", "kickoff_utc": "2026-07-12T01:00:00Z" },
-    { "key": "SF-1",   "stage": "sf",    "slot_label": "Semi-final — Match 1", "home": "FRA", "away": "ESP", "kickoff_utc": "2026-07-14T19:00:00Z" },
-    { "key": "SF-2",   "stage": "sf",    "slot_label": "Semi-final — Match 2", "home": "ENG", "away": "ARG", "kickoff_utc": "2026-07-15T19:00:00Z" },
+    { "key": "QF-1",   "stage": "qf",    "slot_label": "Quarter-final — Match 1",                         "kickoff_utc": "2026-07-09T20:00:00Z" },
+    { "key": "QF-2",   "stage": "qf",    "slot_label": "Quarter-final — Match 2",                         "kickoff_utc": "2026-07-10T19:00:00Z" },
+    { "key": "QF-3",   "stage": "qf",    "slot_label": "Quarter-final — Match 3",                         "kickoff_utc": "2026-07-11T21:00:00Z" },
+    { "key": "QF-4",   "stage": "qf",    "slot_label": "Quarter-final — Match 4",                         "kickoff_utc": "2026-07-12T01:00:00Z" },
+    { "key": "SF-1",   "stage": "sf",    "slot_label": "Semi-final — Match 1",                            "kickoff_utc": "2026-07-14T19:00:00Z" },
+    { "key": "SF-2",   "stage": "sf",    "slot_label": "Semi-final — Match 2",                            "kickoff_utc": "2026-07-15T19:00:00Z" },
     { "key": "THIRD-1","stage": "third", "slot_label": "Third place",                                     "kickoff_utc": "2026-07-18T21:00:00Z" },
     { "key": "FINAL-1","stage": "final", "slot_label": "Final",                                           "kickoff_utc": "2026-07-19T19:00:00Z" }
   ]
