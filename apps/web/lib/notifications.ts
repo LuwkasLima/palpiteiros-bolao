@@ -14,7 +14,7 @@ export const NOTIFICATIONS: AppNotification[] = [
   {
     id: "action-final-predictions-2026-07-17",
     title: "⚽ Final e terceiro lugar disponíveis!",
-    body: "Espanha x Argentina na grande final e França x Inglaterra pela medalha de bronze. Faça seus palpites antes do jogo de amanhã.",
+    body: "Espanha x Argentina na grande final e França x Inglaterra na briga pelo terceiro lugar. Faça seus palpites antes do jogo de amanhã.",
     cta: { label: "Fazer palpites →", href: "/" },
     time: "hoje",
   },
