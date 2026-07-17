@@ -180,7 +180,7 @@
     { "key": "QF-4",   "stage": "qf",    "slot_label": "Quarter-final — Match 4", "home": "ARG", "away": "SUI", "kickoff_utc": "2026-07-12T01:00:00Z" },
     { "key": "SF-1",   "stage": "sf",    "slot_label": "Semi-final — Match 1", "home": "FRA", "away": "ESP", "kickoff_utc": "2026-07-14T19:00:00Z" },
     { "key": "SF-2",   "stage": "sf",    "slot_label": "Semi-final — Match 2", "home": "ENG", "away": "ARG", "kickoff_utc": "2026-07-15T19:00:00Z" },
-    { "key": "THIRD-1","stage": "third", "slot_label": "Third place",                                     "kickoff_utc": "2026-07-18T21:00:00Z" },
-    { "key": "FINAL-1","stage": "final", "slot_label": "Final",                                           "kickoff_utc": "2026-07-19T19:00:00Z" }
+    { "key": "THIRD-1","stage": "third", "slot_label": "Third place",                                     "home": "FRA", "away": "ENG", "kickoff_utc": "2026-07-18T21:00:00Z" },
+    { "key": "FINAL-1","stage": "final", "slot_label": "Final",                                           "home": "ESP", "away": "ARG", "kickoff_utc": "2026-07-19T19:00:00Z" }
   ]
 }
