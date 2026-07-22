@@ -9,6 +9,7 @@ import { BottomNav } from "@/components/BottomNav";
 export const metadata: Metadata = {
   title: "Social dos Palpiteiros (Beta)",
   description: "Social dos Palpiteiros — palpite, dispute e divirta-se com os amigos na Copa do Mundo 2026.",
+  robots: { index: false, follow: false },
   manifest: "/manifest.webmanifest",
   appleWebApp: {
     capable: true,

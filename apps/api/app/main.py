@@ -6,9 +6,12 @@ from contextlib import asynccontextmanager
 
 from fastapi import FastAPI, Request
 from fastapi.middleware.cors import CORSMiddleware
+from slowapi import _rate_limit_exceeded_handler
+from slowapi.errors import RateLimitExceeded
 
 from app.config import get_settings
 from app.db import close_db, ensure_db
+from app.limiter import limiter
 from app.routers import admin, auth, matches, news, pools, predictions
 
 
@@ -30,7 +33,18 @@ def create_app() -> FastAPI:
 
         truststore.inject_into_ssl()
 
-    app = FastAPI(title="Social dos Palpiteiros API", version="0.1.0", lifespan=lifespan)
+    docs_url = "/docs" if settings.expose_docs else None
+    redoc_url = "/redoc" if settings.expose_docs else None
+    app = FastAPI(
+        title="Social dos Palpiteiros API",
+        version="0.1.0",
+        lifespan=lifespan,
+        docs_url=docs_url,
+        redoc_url=redoc_url,
+    )
+
+    app.state.limiter = limiter
+    app.add_exception_handler(RateLimitExceeded, _rate_limit_exceeded_handler)
 
     @app.middleware("http")
     async def _ensure_db(request: Request, call_next):
