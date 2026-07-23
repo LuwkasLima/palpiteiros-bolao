@@ -11,10 +11,11 @@ import logging
 from datetime import datetime, timedelta, timezone
 from typing import Annotated
 
-from fastapi import APIRouter, Cookie, HTTPException, Response, status
+from fastapi import APIRouter, Cookie, HTTPException, Request, Response, status
 
 from app.config import get_settings
 from app.deps import CurrentUser
+from app.limiter import limiter
 from app.models import MagicLink, Pool, Session, User
 from app.schemas import ChangelogSeenIn, MessageOut, RequestLinkIn, UpdateProfileIn, UserOut, VerifyIn
 from app.security import SESSION_COOKIE, hash_token, new_token
@@ -40,7 +41,8 @@ def _user_out(user: User) -> UserOut:
 
 
 @router.post("/request-link", response_model=MessageOut)
-async def request_link(payload: RequestLinkIn) -> MessageOut:
+@limiter.limit("5/hour")
+async def request_link(request: Request, payload: RequestLinkIn) -> MessageOut:
     settings = get_settings()
     email = payload.email.lower()
 

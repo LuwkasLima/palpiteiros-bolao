@@ -51,6 +51,9 @@ class Settings(BaseSettings):
     api_football_league_id: int = 1
     api_football_season: int = 2026
 
+    # Set to True in dev/staging to expose /docs and /redoc. Off by default in prod.
+    expose_docs: bool = False
+
     @property
     def admin_email_set(self) -> set[str]:
         return {e.strip().lower() for e in self.admin_emails.split(",") if e.strip()}
