@@ -44,10 +44,11 @@ After completing any user-facing feature, do both of the following before consid
 
 ## Architecture
 
-- Monorepo with three apps: `apps/web`, `apps/api`, `apps/worker`.
+- Monorepo with two apps: `apps/web`, `apps/api`. There is no `apps/worker` — the API runs
+  serverless (no persistent process for a scheduler), so async-feeling work (news, live
+  scores, LLM narratives) uses a lazy refresh-on-read pattern inside `apps/api` instead.
 - `apps/web` is the React UI and may call the API only through typed client wrappers.
 - `apps/api` owns business logic, auth, and persistence.
-- `apps/worker` handles async jobs, imports, and scheduled tasks.
 - Shared types and validation schemas live in `packages/contracts`.
 - Prefer changes within the owning layer; do not place business logic in controllers or UI components.
 
